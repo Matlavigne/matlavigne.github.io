@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mon accompagnateur · Voyages accompagnés</title>
+<meta name="description" content="Les apps des voyages de groupe accompagnés : programme, annonces, carte et infos pratiques.">
+<meta name="theme-color" content="#13509f">
+<style>
+:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px}
+header{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff}
+header .wrap{padding:46px 18px 34px}
+.over{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8;margin:0 0 8px}
+h1{font-size:40px;line-height:1.05;letter-spacing:-.8px;margin:0}
+header p{margin:12px 0 0;max-width:520px;opacity:.92}
+main{padding:26px 0 40px}
+h2{font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600}
+.trip{display:flex;gap:16px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 12px;text-decoration:none;color:inherit}
+.trip:hover{border-color:var(--blue)}
+.trip .d{flex:none;width:64px;text-align:center;border-radius:12px;background:var(--soft);padding:8px 0;line-height:1.1;color:var(--blue)}
+.trip .d b{display:block;font-size:24px}
+.trip .d small{font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.trip h3{margin:0;font-size:20px;letter-spacing:-.3px}
+.trip p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.trip .go{margin-left:auto;color:var(--blue);font-size:22px}
+.trip.past{opacity:.6}
+.inst{font-size:13px;margin:-4px 0 14px 4px}
+.inst a{color:var(--blue)}
+.empty{color:var(--muted)}
+footer{font-size:12px;color:var(--muted);text-align:center;padding:0 0 30px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <p class="over">Voyages accompagnés</p>
+  <h1>Mon accompagnateur</h1>
+  <p>Retrouvez l’app de votre voyage : programme jour par jour, annonces du groupe, carte et infos pratiques.</p>
+</div></header>
+<main class="wrap">
+  <h2 id="h-next">Voyages à venir</h2>
+  <div id="next"></div>
+  <h2 id="h-past" hidden>Voyages passés</h2>
+  <div id="past"></div>
+</main>
+<footer>monaccompagnateur.ca</footer>
+
+<script>
+/* Ajoutez un voyage ici : un bloc par voyage, dans l'ordre que vous voulez. */
+const VOYAGES = [
+  { titre: "Sölden 2027", lieu: "Ötztal, Autriche", debut: "2027-03-05", fin: "2027-03-13", dates: "5 au 13 mars 2027", lien: "/solden-voyage-2027/" }
+];
+
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=new Date().toISOString().slice(0,10);
+const card=v=>{const d=new Date(v.debut+'T12:00:00');const past=v.fin<today;
+  return `<a class="trip${past?' past':''}" href="${esc(v.lien)}"><span class="d"><small>${esc(d.toLocaleDateString('fr-CA',{month:'short'}).replace('.',''))}</small><b>${esc(d.getFullYear())}</b></span><span><h3>${esc(v.titre)}</h3><p>${esc(v.lieu)} · ${esc(v.dates)}</p></span><span class="go" aria-hidden="true">›</span></a>`+(past?'':`<p class="inst"><a href="${esc(v.lien)}installer.html">Comment installer l’app de ce voyage</a></p>`);};
+const sorted=[...VOYAGES].sort((a,b)=>a.debut.localeCompare(b.debut));
+const next=sorted.filter(v=>v.fin>=today),past=sorted.filter(v=>v.fin<today).reverse();
+document.getElementById('next').innerHTML=next.length?next.map(card).join(''):'<p class="empty">Aucun voyage à venir pour le moment.</p>';
+document.getElementById('h-past').hidden=!past.length;
+document.getElementById('past').innerHTML=past.map(card).join('');
+</script>
+</body>
+</html>
