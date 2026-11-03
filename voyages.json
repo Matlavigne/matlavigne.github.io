@@ -4,7 +4,6 @@
     "sousTitre": "Voyages de ski accompagnés avec Gendron Ski",
     "intro": "Retrouvez ici les voyages que j’accompagne et l’app de chaque voyage : programme jour par jour, annonces du groupe, pistes ouvertes, météo et carte GPS."
   },
-
   "accompagnateur": {
     "nom": "Mathieu",
     "role": "Accompagnateur Gendron Ski",
@@ -12,12 +11,10 @@
     "texte": "",
     "courriel": ""
   },
-
   "organisateur": {
     "nom": "Gendron Ski",
     "site": "https://www.voyagesgendron.com/ski/"
   },
-
   "voyages": [
     {
       "titre": "Sölden 2027",
@@ -29,15 +26,15 @@
       "hotel": "Hotel Bäckelar Wirt",
       "photo": "/solden-voyage-2027/hero.webp",
       "app": "/solden-voyage-2027/",
-      "lienOrganisateur": "https://www.voyagesgendron.com/ski/voyage/solden-autriche-4/details/",
+      "lienOrganisateur": "",
       "souvenir": ""
-    }
+    },
     {
-      "titre": "Zermat 2026",
+      "titre": "Zermatt 2026",
       "lieu": "Valais, Suisse",
       "debut": "2026-01-23",
       "fin": "2026-01-31",
-      "dates": "23 au 31 Janvier 2026",
+      "dates": "23 au 31 janvier 2026",
       "photo": "/photos/zermatt_2026.jpg",
       "app": "",
       "souvenir": "Une semaine de grand soleil et un groupe génial sur les pistes du Matterhorn Glacier Paradise."
