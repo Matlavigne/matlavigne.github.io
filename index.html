@@ -3,65 +3,153 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mon accompagnateur · Voyages accompagnés</title>
-<meta name="description" content="Les apps des voyages de groupe accompagnés : programme, annonces, carte et infos pratiques.">
+<title>Mon accompagnateur · Voyages de ski accompagnés avec Gendron Ski</title>
+<meta name="description" content="Les voyages de ski accompagnés avec Gendron Ski et l’app de chaque voyage : programme, annonces du groupe, pistes ouvertes, météo et carte GPS.">
 <meta name="theme-color" content="#13509f">
+<link rel="canonical" href="https://monaccompagnateur.ca/">
+<!-- Aperçu des liens partagés (WhatsApp, Facebook, Messenger, texto) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mon accompagnateur">
+<meta property="og:locale" content="fr_CA">
+<meta property="og:url" content="https://monaccompagnateur.ca/">
+<meta property="og:title" content="Mon accompagnateur · Voyages de ski accompagnés">
+<meta property="og:description" content="Les voyages de ski accompagnés avec Gendron Ski et l’app de chaque voyage : programme, annonces, pistes ouvertes, météo et carte GPS.">
+<meta property="og:image" content="https://monaccompagnateur.ca/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Panorama de montagnes enneigées depuis le Gaislachkogl, Sölden">
+<meta name="twitter:card" content="summary_large_image">
 <style>
-:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8}
+:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--green:#246b3c}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:0 18px}
-header{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff}
-header .wrap{padding:46px 18px 34px}
-.over{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8;margin:0 0 8px}
-h1{font-size:40px;line-height:1.05;letter-spacing:-.8px;margin:0}
-header p{margin:12px 0 0;max-width:520px;opacity:.92}
-main{padding:26px 0 40px}
-h2{font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600}
-.trip{display:flex;gap:16px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 12px;text-decoration:none;color:inherit}
-.trip:hover{border-color:var(--blue)}
-.trip .d{flex:none;width:64px;text-align:center;border-radius:12px;background:var(--soft);padding:8px 0;line-height:1.1;color:var(--blue)}
-.trip .d b{display:block;font-size:24px}
-.trip .d small{font-size:11px;text-transform:uppercase;letter-spacing:1px}
-.trip h3{margin:0;font-size:20px;letter-spacing:-.3px}
-.trip p{margin:2px 0 0;font-size:14px;color:var(--muted)}
-.trip .go{margin-left:auto;color:var(--blue);font-size:22px}
-.trip.past{opacity:.6}
-.inst{font-size:13px;margin:-4px 0 14px 4px}
-.inst a{color:var(--blue)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--blue)}
+.wrap{max-width:960px;margin:0 auto;padding:0 18px}
+header.hero{position:relative;color:#fff;background:var(--blue-d) url('hero.webp') center 40%/cover no-repeat;min-height:400px;display:flex;align-items:flex-end}
+header.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#082a5cf2 0%,#0b3a78b8 45%,#0b3a7830 100%)}
+header .wrap{position:relative;z-index:1;width:100%;padding-top:60px;padding-bottom:40px}
+.over{font-size:12px;letter-spacing:2px;text-transform:uppercase;opacity:.85;margin:0 0 10px;font-weight:600}
+h1{font-size:52px;line-height:1.02;letter-spacing:-1.5px;margin:0}
+header p.lead{margin:14px 0 0;max-width:580px;font-size:18px;opacity:.94}
+header .cta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-size:15px;font-weight:600;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:11px;padding:11px 16px;min-height:46px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn.light{background:var(--white);color:var(--blue)}
+.btn.ghost{background:#ffffff1f;border-color:#ffffffa0;color:#fff}
+main{padding:42px 0 30px}
+h2{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:0 0 14px;font-weight:700}
+section+section{margin-top:40px}
+/* Cartes voyages */
+.trips{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.trip{background:var(--white);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.trip .ph{aspect-ratio:16/9;background:#c9d6e8 center/cover no-repeat;position:relative}
+.trip .badge{position:absolute;left:12px;top:12px;background:#fffffff0;color:var(--blue-d);font-size:12px;font-weight:700;border-radius:999px;padding:5px 11px}
+.trip .badge.now{background:var(--green);color:#fff}
+.trip .bd{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.trip h3{margin:0;font-size:24px;letter-spacing:-.5px;line-height:1.1}
+.trip .meta{font-size:14px;color:var(--muted)}
+.trip .tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+.tag{font-size:12px;background:var(--soft);color:var(--blue-d);border-radius:6px;padding:3px 8px}
+.trip .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:10px}
+.trip .acts .btn{font-size:14px;min-height:42px;padding:9px 13px}
+.trip .small{font-size:13px}
+.trip.past .ph{filter:saturate(.75)}
+.trip.past h3{font-size:20px}
 .empty{color:var(--muted)}
-footer{font-size:12px;color:var(--muted);text-align:center;padding:0 0 30px}
+/* Accompagnateur */
+.me{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start;background:var(--white);border:1px solid var(--line);border-radius:18px;padding:24px}
+.me img{width:132px;height:132px;border-radius:50%;object-fit:cover;border:4px solid var(--soft)}
+.me h3{margin:0;font-size:26px;letter-spacing:-.5px}
+.me .role{color:var(--blue);font-weight:600;font-size:14px;margin:2px 0 10px}
+.me .txt p{margin:0 0 10px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.how div{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px}
+.how b{display:flex;align-items:center;gap:10px;font-size:16px;margin-bottom:4px}
+.how b span{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.how p{margin:0;font-size:14px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted);text-align:center;padding:10px 18px 34px;line-height:1.7}
+footer a{color:inherit}
+@media(max-width:640px){h1{font-size:38px}header.hero{min-height:360px}.me{grid-template-columns:1fr;text-align:left}.me img{width:104px;height:104px}.how{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><div class="wrap">
-  <p class="over">Voyages accompagnés</p>
-  <h1>Mon accompagnateur</h1>
-  <p>Retrouvez l’app de votre voyage : programme jour par jour, annonces du groupe, carte et infos pratiques.</p>
+<header class="hero"><div class="wrap">
+  <p class="over">monaccompagnateur.ca</p>
+  <h1 id="h-titre">Mon accompagnateur</h1>
+  <p class="lead" id="h-sous">Voyages de ski accompagnés avec Gendron Ski</p>
+  <div class="cta"><a class="btn" href="#voyages">Voir les voyages</a><a class="btn ghost" id="h-org" href="https://www.voyagesgendron.com/ski/" target="_blank" rel="noopener">Gendron Ski ↗</a></div>
 </div></header>
+
 <main class="wrap">
-  <h2 id="h-next">Voyages à venir</h2>
-  <div id="next"></div>
-  <h2 id="h-past" hidden>Voyages passés</h2>
-  <div id="past"></div>
+  <section id="voyages" aria-labelledby="t-next">
+    <h2 id="t-next">Voyages à venir</h2>
+    <div class="trips" id="next"></div>
+  </section>
+
+  <section id="accompagnateur" aria-labelledby="t-me" hidden>
+    <h2 id="t-me">Votre accompagnateur</h2>
+    <div class="me" id="me"></div>
+  </section>
+
+  <section aria-labelledby="t-how">
+    <h2 id="t-how">Comment ça fonctionne</h2>
+    <div class="how">
+      <div><b><span>1</span>Je m’inscris</b><p>L’inscription et la réservation se font directement auprès de Gendron Ski.</p></div>
+      <div><b><span>2</span>J’installe l’app</b><p>Avant le départ, chaque voyageur reçoit l’app de son voyage : programme, annonces, bagages et infos utiles.</p></div>
+      <div><b><span>3</span>On part ensemble</b><p>Sur place, l’accompagnateur guide le groupe : rendez-vous, conseils de pistes et aide au besoin.</p></div>
+    </div>
+  </section>
+
+  <section id="passes" aria-labelledby="t-past" hidden>
+    <h2 id="t-past">Voyages passés</h2>
+    <div class="trips" id="past"></div>
+  </section>
 </main>
-<footer>monaccompagnateur.ca</footer>
 
+<footer>
+  <span id="f-org">Voyages organisés par <a href="https://www.voyagesgendron.com/ski/" target="_blank" rel="noopener">Gendron Ski</a></span> · monaccompagnateur.ca<br>
+  Photo d’en-tête : Gaislachkogl, Sloth · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a> · <a href="https://commons.wikimedia.org/wiki/File:Gaislachkogl,_3058_m_-_panoramio.jpg" target="_blank" rel="noopener">source</a>
+</footer>
+
+<script id="defaut" type="application/json">{"site": {"titre": "Mon accompagnateur", "sousTitre": "Voyages de ski accompagnés avec Gendron Ski", "intro": "Retrouvez ici les voyages que j’accompagne et l’app de chaque voyage : programme jour par jour, annonces du groupe, pistes ouvertes, météo et carte GPS."}, "accompagnateur": {"nom": "Mathieu", "role": "Accompagnateur Gendron Ski", "photo": "", "texte": "", "courriel": ""}, "organisateur": {"nom": "Gendron Ski", "site": "https://www.voyagesgendron.com/ski/"}, "voyages": [{"titre": "Sölden 2027", "lieu": "Ötztal, Autriche", "debut": "2027-03-05", "fin": "2027-03-13", "dates": "5 au 13 mars 2027", "niveau": "Intermédiaire-avancé", "hotel": "Hotel Bäckelar Wirt", "photo": "/solden-voyage-2027/hero.webp", "app": "/solden-voyage-2027/", "lienOrganisateur": "", "souvenir": ""}]}</script>
 <script>
-/* Ajoutez un voyage ici : un bloc par voyage, dans l'ordre que vous voulez. */
-const VOYAGES = [
-  { titre: "Sölden 2027", lieu: "Ötztal, Autriche", debut: "2027-03-05", fin: "2027-03-13", dates: "5 au 13 mars 2027", lien: "/solden-voyage-2027/" }
-];
-
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const today=new Date().toISOString().slice(0,10);
-const card=v=>{const d=new Date(v.debut+'T12:00:00');const past=v.fin<today;
-  return `<a class="trip${past?' past':''}" href="${esc(v.lien)}"><span class="d"><small>${esc(d.toLocaleDateString('fr-CA',{month:'short'}).replace('.',''))}</small><b>${esc(d.getFullYear())}</b></span><span><h3>${esc(v.titre)}</h3><p>${esc(v.lieu)} · ${esc(v.dates)}</p></span><span class="go" aria-hidden="true">›</span></a>`+(past?'':`<p class="inst"><a href="${esc(v.lien)}installer.html">Comment installer l’app de ce voyage</a></p>`);};
-const sorted=[...VOYAGES].sort((a,b)=>a.debut.localeCompare(b.debut));
-const next=sorted.filter(v=>v.fin>=today),past=sorted.filter(v=>v.fin<today).reverse();
-document.getElementById('next').innerHTML=next.length?next.map(card).join(''):'<p class="empty">Aucun voyage à venir pour le moment.</p>';
-document.getElementById('h-past').hidden=!past.length;
-document.getElementById('past').innerHTML=past.map(card).join('');
+(function(){
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const url=u=>/^(https?:\/\/|\/)/.test(String(u||''))?u:'';
+  const todayKey=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const daysTo=d=>Math.round((Date.parse(d+'T12:00:00Z')-Date.parse(todayKey+'T12:00:00Z'))/864e5);
+  function badge(v){
+    if(v.fin<todayKey)return'';
+    if(v.debut<=todayKey)return'<span class="badge now">En cours</span>';
+    const n=daysTo(v.debut);return`<span class="badge">${n<=1?'Départ demain':'Départ dans '+n.toLocaleString('fr-CA')+' jours'}</span>`;
+  }
+  function card(v,org,past){
+    const ph=url(v.photo);const app=url(v.app);const orgUrl=url(v.lienOrganisateur)||url(org.site);
+    return`<article class="trip${past?' past':''}"><div class="ph"${ph?` style="background-image:url('${esc(ph)}')"`:''}>${badge(v)}</div><div class="bd">
+      <h3>${esc(v.titre)}</h3><div class="meta">${esc(v.lieu||'')}${v.dates?' · '+esc(v.dates):''}</div>
+      ${!past&&(v.niveau||v.hotel)?`<div class="tags">${v.niveau?`<span class="tag">Niveau ${esc(v.niveau.toLowerCase())}</span>`:''}${v.hotel?`<span class="tag">${esc(v.hotel)}</span>`:''}</div>`:''}
+      ${past&&v.souvenir?`<p class="small" style="margin:4px 0 0">${esc(v.souvenir)}</p>`:''}
+      <div class="acts">${app?`<a class="btn" href="${esc(app)}">${past?'Revoir l’app':'Ouvrir l’app du voyage'}</a>`:''}${!past&&app?`<a class="btn light" href="${esc(app)}installer.html">Installer l’app</a>`:''}${!past&&orgUrl?`<a class="btn light" href="${esc(orgUrl)}" target="_blank" rel="noopener">Le voyage chez ${esc(org.nom||'l’organisateur')} ↗</a>`:''}</div>
+    </div></article>`;
+  }
+  function render(d){
+    const s=d.site||{},org=d.organisateur||{},me=d.accompagnateur||{};
+    if(s.titre){document.getElementById('h-titre').textContent=s.titre;}
+    if(s.sousTitre)document.getElementById('h-sous').textContent=s.sousTitre+(s.intro?'. '+s.intro:'');
+    else if(s.intro)document.getElementById('h-sous').textContent=s.intro;
+    if(url(org.site))document.getElementById('h-org').href=org.site;
+    if(org.nom)document.getElementById('h-org').textContent=org.nom+' ↗';
+    const vs=(d.voyages||[]).filter(v=>v&&v.titre&&v.debut&&v.fin).sort((a,b)=>a.debut.localeCompare(b.debut));
+    const next=vs.filter(v=>v.fin>=todayKey),past=vs.filter(v=>v.fin<todayKey).reverse();
+    document.getElementById('next').innerHTML=next.length?next.map(v=>card(v,org,false)).join(''):'<p class="empty">Aucun voyage à venir pour le moment. Les prochains voyages seront annoncés ici.</p>';
+    document.getElementById('passes').hidden=!past.length;
+    document.getElementById('past').innerHTML=past.map(v=>card(v,org,true)).join('');
+    const hasMe=!!(me.texte&&me.texte.trim());
+    document.getElementById('accompagnateur').hidden=!hasMe;
+    if(hasMe)document.getElementById('me').innerHTML=`${url(me.photo)?`<img src="${esc(me.photo)}" alt="${esc(me.nom||'Votre accompagnateur')}">`:''}<div><h3>${esc(me.nom||'')}</h3><p class="role">${esc(me.role||'')}</p><div class="txt">${me.texte.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div>${me.courriel?`<p><a class="btn light" href="mailto:${esc(me.courriel)}">Écrire à ${esc(me.nom||'l’accompagnateur')}</a></p>`:''}</div>`;
+  }
+  render(JSON.parse(document.getElementById('defaut').textContent));
+  if(location.protocol!=='file:')fetch('voyages.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{if(d&&Array.isArray(d.voyages))render(d);}).catch(()=>{});
+})();
 </script>
 </body>
 </html>
