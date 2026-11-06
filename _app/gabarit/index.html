@@ -1793,6 +1793,7 @@ function renderEtat(){
   const so=cnt(pool,'slope')[0],known=groups.some(g=>g.f&&etat[g.f]&&g.items.length);
   $('#q-ski').textContent=known?so+' piste'+(so>1?'s':'')+' ouverte'+(so>1?'s':''):'Pistes ouvertes';
   $('#q-ski-sub').textContent='État en direct · '+domLabel();
+  if(!groups.some(g=>g.f)){$('#q-ski').textContent='État des pistes';$('#q-ski-sub').textContent='Page officielle · '+domLabel();}
   const missing=groups.filter(g=>g.f&&!etatLive[g.f]);
   if(!groups.some(g=>g.f))al.hidden=true;
   else if(!known){al.hidden=false;al.textContent=etatLoading?'Chargement de l’état des domaines…':'État des domaines indisponible pour le moment. Réessayez avec « Actualiser ».';}
