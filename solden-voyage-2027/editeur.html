@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Éditeur du voyage</title>
+<meta name="theme-color" content="#13509f">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--red:#ae3933;--green:#246b3c;--amber:#8a5413}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:96px}
+a{color:var(--blue)}
+.wrap{max-width:820px;margin:0 auto;padding:0 14px}
+header{background:var(--blue-d);color:#fff;padding:18px 0 14px}
+header h1{margin:0;font-size:22px;letter-spacing:-.3px}
+header p{margin:4px 0 0;font-size:13px;opacity:.85}
+h2{font-size:17px;margin:0}
+button,.btn{font:inherit;font-size:14px;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:8px 13px;min-height:40px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.light,.btn.light{background:#fff;color:var(--blue)}
+button.danger{background:#fff;color:var(--red);border-color:#e3b7b2}
+button.mini{min-height:32px;padding:4px 9px;font-size:13px}
+button:disabled{opacity:.5;cursor:default}
+.card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+.msg{border-radius:10px;padding:10px 14px;font-size:14px;margin:12px 0}
+.msg.ok{background:#e3f1e6;color:var(--green);border:1px solid #b7d8bf}
+.msg.err{background:#fdecea;color:#8f2a24;border:1px solid #f0b8b2}
+.msg.warn{background:#fbf3e6;color:#6b4a1c;border:1px solid #e7cfa8}
+.msg.info{background:var(--soft);color:var(--blue-d);border:1px solid #c7d6ec}
+.msg[hidden]{display:none}
+details.sec{background:var(--white);border:1px solid var(--line);border-radius:14px;margin:10px 0;overflow:hidden}
+details.sec>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary .n{margin-left:auto;font-size:12px;color:var(--muted)}
+details.sec>summary:after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none}
+details.sec[open]>summary:after{transform:rotate(-135deg)}
+details.sec .body{padding:0 16px 16px;border-top:1px solid var(--line)}
+.help{font-size:13px;color:var(--muted);margin:10px 0 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.full{grid-column:1/-1}
+.f label{font-size:12px;font-weight:600;color:var(--muted)}
+.f input,.f textarea,.f select{font:inherit;font-size:15px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);width:100%;min-height:40px}
+.f textarea{min-height:70px;resize:vertical}
+.f input:focus,.f textarea:focus,.f select:focus{outline:2px solid #9cb9e3;border-color:var(--blue)}
+.f.bad input,.f.bad textarea{border-color:var(--red);background:#fff6f5}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;min-height:40px}
+.chk input{width:20px;height:20px;accent-color:var(--blue)}
+.item{border:1px solid var(--line);border-radius:12px;margin-top:12px;background:#fbfcfe}
+.item>.hd{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);background:#f4f7fb;border-radius:12px 12px 0 0}
+.item>.hd b{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item>.bd{padding:0 12px 12px}
+.item .item{background:#fff}
+.addbar{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.raw{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:220px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 16px #0b3a7814;padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:50}
+.bar .wrap{display:flex;gap:8px;align-items:center}
+.bar .st{font-size:12px;color:var(--muted);flex:1;min-width:0;line-height:1.25}
+.bar button{padding:8px 11px}
+@media(max-width:420px){.bar .wrap{flex-wrap:wrap}.bar .st{flex-basis:100%}.bar button{flex:1;justify-content:center}}
+.bar .st b{color:var(--amber)}
+ol.steps{margin:8px 0 0;padding-left:20px;font-size:14px}ol.steps li{margin:5px 0}
+code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.multi{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}.f .lab{font-size:13px;font-weight:600;color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1 id="t">Éditeur du voyage</h1><p id="t-sub">Modifiez le contenu de l’app, puis touchez « Publier ».</p></div></header>
+<main class="wrap">
+  <div id="m-load" class="msg info">Chargement…</div>
+  <div id="m-draft" class="msg warn" hidden></div>
+  <div id="m-res" class="msg" hidden></div>
+
+  <details class="sec" id="s-connexion">
+    <summary><h2>Connexion à GitHub</h2><span class="n" id="cx-state">non connecté</span></summary>
+    <div class="body">
+      <div class="grid">
+        <div class="f"><label for="cx-owner">Compte GitHub</label><input id="cx-owner" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="f"><label for="cx-repo">Dépôt de l’app</label><input id="cx-repo" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="f full"><label for="cx-token">Jeton d’accès GitHub</label><input id="cx-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></div>
+        <label class="chk full"><input type="checkbox" id="cx-keep" checked> Mémoriser le jeton sur cet appareil</label>
+      </div>
+      <div class="addbar"><button type="button" id="cx-test">Se connecter</button><button type="button" class="light" id="cx-forget">Oublier le jeton</button></div>
+      <p class="help" id="cx-msg"></p>
+      <details style="margin-top:10px"><summary style="cursor:pointer;color:var(--blue);font-size:14px">Créer le jeton (une seule fois)</summary>
+        <ol class="steps">
+          <li>Sur github.com : photo de profil › <b>Settings</b> › <b>Developer settings</b> › <b>Personal access tokens</b> › <b>Fine-grained tokens</b> › <b>Generate new token</b>.</li>
+          <li>Nom : « Éditeur voyage ». Expiration : jusqu’après le voyage (ex. 30 avril 2027).</li>
+          <li><b>Repository access</b> : <b>Only select repositories</b> › choisissez le dépôt de l’app seulement.</li>
+          <li><b>Permissions</b> › <b>Repository permissions</b> › <b>Contents</b> : <b>Read and write</b>. Rien d’autre.</li>
+          <li><b>Generate token</b>, copiez-le (il commence par <code>github_pat_</code>) et collez-le ci-dessus.</li>
+        </ol>
+        <p class="help">Le jeton ne permet de modifier que ce dépôt. Il reste sur cet appareil et n’est jamais publié. En cas de perte du téléphone, supprimez-le dans la même page GitHub.</p>
+      </details>
+    </div>
+  </details>
+
+  <details class="sec" id="s-phrase">
+    <summary><h2>Phrase du voyage (accès protégé)</h2><span class="n" id="ph-state">…</span></summary>
+    <div class="body">
+      <p class="help">Avec une phrase, le contenu publié est chiffré : sans elle, personne ne peut lire le programme, les annonces, l’hôtel ni les liens du groupe. Les voyageurs l’entrent une seule fois sur leur téléphone. Restent publics : le titre, les dates, la météo et les webcams.</p>
+      <div class="grid">
+        <div class="f full"><label for="ph-in">Phrase du voyage</label><input id="ph-in" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex. trois-mots-simples"></div>
+        <label class="chk"><input type="checkbox" id="ph-show"> Afficher la phrase</label>
+        <label class="chk"><input type="checkbox" id="ph-keep" checked> Mémoriser sur cet appareil</label>
+      </div>
+      <div class="addbar"><button type="button" id="ph-open">Ouvrir le contenu</button><button type="button" class="light" id="ph-gen">Proposer une phrase</button></div>
+      <p class="help" id="ph-msg"></p>
+      <div id="ph-invite" hidden>
+        <p class="help" style="margin-top:12px;font-weight:600;color:var(--ink)">Lien d’invitation pour les voyageurs</p>
+        <p class="help">Page d’installation avec le code QR et la phrase. À envoyer aux voyageurs seulement (courriel ou groupe WhatsApp), jamais en public.</p>
+        <div class="f full"><input id="ph-link" readonly></div>
+        <div class="addbar"><button type="button" class="light" id="ph-copy">Copier le lien</button><a class="btn light" id="ph-openlink" target="_blank" rel="noopener">Ouvrir la page</a></div>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="s-groupe">
+    <summary><h2>Liste du groupe (accompagnateur seulement)</h2><span class="n" id="g-state">…</span></summary>
+    <div class="body">
+      <p class="help">Chambres, niveaux, sous-groupes de ski, téléphones. Ces renseignements sont chiffrés avec une <b>clé accompagnateur</b>, distincte de la phrase du voyage, dans un fichier à part (<code>groupe.json</code>). Les voyageurs ne la reçoivent jamais : ils ne peuvent pas lire la liste. Dans l’app, ouvrez Infos › « Accès accompagnateur ».</p>
+      <div class="grid">
+        <div class="f full"><label for="g-key">Clé accompagnateur</label><input id="g-key" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="au moins 16 caractères"></div>
+        <label class="chk"><input type="checkbox" id="g-show"> Afficher la clé</label>
+        <label class="chk"><input type="checkbox" id="g-keep" checked> Mémoriser sur cet appareil</label>
+      </div>
+      <div class="addbar"><button type="button" id="g-open">Ouvrir la liste</button><button type="button" class="light" id="g-gen">Générer une clé forte</button></div>
+      <p class="help" id="g-msg"></p>
+      <div id="g-body" hidden>
+        <div id="g-list"></div>
+        <div class="addbar"><button type="button" class="light" id="g-add">+ Ajouter une personne</button><button type="button" class="light" id="g-paste-t">Coller une liste</button></div>
+        <div id="g-paste" hidden>
+          <p class="help">Une personne par ligne, champs séparés par des tabulations (copier-coller d’Excel) ou des points-virgules, dans cet ordre : <b>Nom ; Chambre ; Niveau ; Sous-groupe ; Téléphone ; Notes</b>.</p>
+          <div class="f full"><textarea id="g-paste-in" rows="6" placeholder="Marie Tremblay;214;Intermédiaire;Groupe A;+1 514 555-0100;"></textarea></div>
+          <div class="addbar"><button type="button" id="g-paste-go">Ajouter ces personnes</button></div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <div id="sections"></div>
+</main>
+
+<div class="bar"><div class="wrap">
+  <span class="st" id="st">Aucune modification</span>
+  <button type="button" class="light" id="b-preview">Aperçu</button>
+  <button type="button" class="light" id="b-reset">Annuler</button>
+  <button type="button" id="b-pub">Publier</button>
+</div></div>
+
+<script id="station-data" type="application/json">{"id":"soelden","version":1,"nom":"Sölden","lieu":"Ötztal · Autriche","pays":"Autriche","paysEn":"en Autriche","fuseau":"Europe/Vienna","fuseauNom":"heure d’Autriche","decalageTexte":"6 h de plus qu’à Montréal","prise":"type F","langue":{"titre":"Quelques mots d’allemand","phrases":[["Grüß Gott / Servus","Bonjour / Salut (en Autriche)"],["Danke (schön)","Merci (beaucoup)"],["Bitte","S’il vous plaît / de rien"],["Die Rechnung, bitte","L’addition, s’il vous plaît"],["Ein Wasser / ein Bier, bitte","Une eau / une bière, s’il vous plaît"],["Wo ist die Toilette?","Où sont les toilettes?"],["Entschuldigung","Pardon / excusez-moi"],["Hilfe!","À l’aide!"]]},"alias":["autriche","solden","sölden","vienne"],"domaines":{"soelden":{"nom":"Sölden","feed":"https://winter.intermaps.com/soelden/data?lang=en","bounds":[[46.895,10.86],[47.005,11.07]],"plan":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/?disableScrollZoom=true&hideCookieConsent=true","planSansWebgl":"https://winter.intermaps.com/soelden?lang=en","meteoNom":"Sölden village"},"gurgl":{"nom":"Gurgl","feed":"https://winter.intermaps.com/obergurgl_hochgurgl/data?lang=en","bounds":[[46.835,10.98],[46.925,11.1]],"plan":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en","meteoNom":"Obergurgl"}},"domaineDefaut":"soelden","tousNom":"Sölden et Gurgl","tousCourt":"Les deux","meteo":{"points":[{"domaine":"soelden","nom":"Village","lat":46.9655,"lng":11.0076,"altitude":1370},{"domaine":"soelden","nom":"Mi-station","lat":46.95,"lng":10.986,"altitude":2174},{"domaine":"soelden","nom":"Sommets","lat":46.937,"lng":10.965,"altitude":3040},{"domaine":"gurgl","nom":"Village","lat":46.8705,"lng":11.0272,"altitude":1910},{"domaine":"gurgl","nom":"Sommets","lat":46.8807,"lng":11.0858,"altitude":3000}]},"webcams":[{"domaine":"soelden","nom":"Village","altitude":1377,"image":"https://panodata.panomax.com/cams/5572/mobile_800x600.jpg","lien":"https://soelden.panomax.com/ort-winter"},{"domaine":"soelden","nom":"Gaislachkogl · mi-station","altitude":2174,"image":"https://panodata.panomax.com/cams/6657/mobile_800x600.jpg","lien":"https://soelden.panomax.com/gaislachkogl-mittelstation"},{"domaine":"soelden","nom":"Gaislachkogl · sommet","altitude":3048,"image":"https://wtvpict.feratel.com/picture/37/5761.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5761&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Hochsölden","altitude":2077,"image":"https://panodata.panomax.com/cams/501/mobile_800x600.jpg","lien":"https://soelden.panomax.com/hochsoelden"},{"domaine":"soelden","nom":"Giggijoch","altitude":2290,"image":"https://wtvpict.feratel.com/picture/37/5762.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5762&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Schwarzkogl · gare aval","altitude":2580,"image":"https://panodata.panomax.com/cams/6666/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzkogl-talstation"},{"domaine":"soelden","nom":"Seekogl","altitude":2662,"image":"https://wtvpict.feratel.com/picture/37/5760.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5760&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Glacier de Rettenbach","altitude":2680,"image":"https://panodata.panomax.com/cams/196/mobile_800x600.jpg","lien":"https://soelden.panomax.com/rettenbach"},{"domaine":"soelden","nom":"Schwarze Schneid · mi-station","altitude":3000,"image":"https://panodata.panomax.com/cams/216/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzeschneid"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · gare aval","altitude":2800,"image":"https://panodata.panomax.com/cams/195/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbach"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · sommet","altitude":3250,"image":"https://panodata.panomax.com/cams/6660/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbachkogl-felssteg"},{"domaine":"gurgl","nom":"Hochgurgl","altitude":2410,"image":"https://wtvpict.feratel.com/picture/37/5570.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5570&c2=0&c8=0"},{"domaine":"gurgl","nom":"Crosspoint","altitude":2157,"image":"https://wtvpict.feratel.com/picture/37/5571.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5571&c2=0&c8=0"},{"domaine":"gurgl","nom":"Hohe Mut","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5650.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5650&c2=0&c8=0"},{"domaine":"gurgl","nom":"Festkogl","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5651.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5651&c2=0&c8=0"}],"neige":{"titre":"Hauteurs mesurées","url":"https://tyrol.com/travel-service/snow-depths/snow-depths-in-soelden"},"avalanche":{"texte":"consultez chaque matin le bulletin officiel du Tyrol, surtout avant de sortir des pistes balisées.","liens":[{"titre":"Bulletin d’avalanche officiel","url":"https://avalanche.report"}]},"planLien":{"titre":"Plan officiel des pistes","url":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/"},"urgences":{"numeros":[{"nom":"Urgence générale","tel":"112","affiche":"112","detail":"Numéro européen, depuis tout téléphone"},{"nom":"Ambulance","tel":"144","affiche":"144"},{"nom":"Secours en montagne","tel":"140","affiche":"140","detail":"Bergrettung"},{"nom":"Police","tel":"133","affiche":"133"},{"nom":"Pompiers","tel":"122","affiche":"122"},{"nom":"Médecin de garde","tel":"141","affiche":"141","secondaire":true},{"nom":"Ambassade du Canada à Vienne","tel":"+431531383000","affiche":"+43 1 531 38 3000","detail":"Laurenzerberg 2, Vienne","secondaire":true},{"nom":"Urgence consulaire (Ottawa)","tel":"0080023266831","affiche":"00 800 2326 6831","detail":"Sans frais depuis l’étranger","secondaire":true}],"note":"Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. Sources : \u003ca href=\"https://www.oesterreich.gv.at/de/themen/notfaelle_unfaelle_und_kriminalitaet/notrufnummern\" target=\"_blank\" rel=\"noopener\">oesterreich.gv.at\u003c/a>, \u003ca href=\"https://travel.gc.ca/assistance/embassies-consulates/austria\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca\u003c/a>."},"faits":[{"titre":"+6 h","texte":"Décalage avec Montréal pendant le séjour"},{"titre":"Euro (€)","texte":"Cartes acceptées presque partout; gardez un peu d’argent comptant."},{"titre":"230 V · type F","texte":"Adaptateur nécessaire pour les fiches nord-américaines."},{"titre":"Pourboire","texte":"On arrondit l’addition, environ 5 à 10 % au restaurant."},{"titre":"Eau du robinet","texte":"Potable partout en Autriche."},{"titre":"Altitude","texte":"Jusqu’à plus de 3 000 m : crème solaire, lunettes et hydratation."}],"casierExemple":"Giggijoch, casier 214","sources":{"pistes":"Intermaps","webcams":"Panomax et Feratel","webcamsPhrase":"des domaines (Panomax, Feratel)"},"adresses":[]}</script>
+<script id="trip-data" type="application/json">{"id":"solden-voyage-2027","titre":"Gendronski Sölden","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"}}</script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+
+/* ---------- Dépôt ---------- */
+const S=JSON.parse(document.getElementById('station-data').textContent),TRIP=JSON.parse(document.getElementById('trip-data').textContent),TZL=S.fuseau;
+const DOM_OPTS=Object.entries(S.domaines).map(([k,d])=>[k,d.long||d.nom]);
+const domNom=k=>S.domaines[k]?.nom||k||'';
+/* Tous les voyages sont dans le même dépôt (TRIP.depot), chacun dans son dossier (TRIP.id) */
+const CX_KEY='editeur-connexion-v2';
+const cxOld=LS.get('editeur-connexion-v1',{});
+let cx=Object.assign({token:cxOld.token||''},LS.get(CX_KEY,{}),{owner:TRIP.depot.owner,repo:TRIP.depot.repo});
+const FILE=n=>'/contents/'+encodeURIComponent(TRIP.id)+'/'+n;
+const DRAFT_KEY=()=>'editeur-brouillon-'+TRIP.id;
+const PREVIEW_KEY='voyage-apercu-brouillon';
+$('#cx-owner').value=cx.owner;$('#cx-repo').value=cx.repo+' › '+TRIP.id;$('#cx-owner').readOnly=$('#cx-repo').readOnly=true;$('#cx-token').value=cx.token||'';
+function saveCx(){cx.token=$('#cx-token').value.trim();LS.set(CX_KEY,$('#cx-keep').checked?cx:{owner:cx.owner,repo:cx.repo});}
+const api=(path,opt={})=>fetch('https://api.github.com/repos/'+encodeURIComponent(cx.owner)+'/'+encodeURIComponent(cx.repo)+path,{...opt,headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(cx.token?{'Authorization':'Bearer '+cx.token}:{}),...(opt.headers||{})}});
+const b64enc=s=>{const b=new TextEncoder().encode(s);let x='';for(let i=0;i<b.length;i+=0x8000)x+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(x);};
+const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+
+/* ---------- Phrase du voyage : chiffrement AES-GCM, clé PBKDF2 (le même procédé que l’app) ---------- */
+const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'];
+const ITER=600000;
+const PH_KEY=()=>'editeur-phrase-'+(cx.repo||'local');
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
+const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
+async function deriveK(phrase,salt,iter){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(salt),iterations:iter},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function decryptFile(f,phrase){const k=await deriveK(phrase,f.chiffre.salt,f.chiffre.iter||ITER);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(f.chiffre.iv)},k,unb64(f.chiffre.data));const pub={...f};delete pub.chiffre;return {...pub,...JSON.parse(new TextDecoder().decode(pt))};}
+async function encryptFile(o,phrase,salt){
+  salt=salt||tob64(crypto.getRandomValues(new Uint8Array(16)));const iv=crypto.getRandomValues(new Uint8Array(12));
+  const k=await deriveK(phrase,salt,ITER);const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o))));
+  const out={};PUBLIC_KEYS.forEach(x=>{if(o[x]!==undefined)out[x]=o[x];});
+  out.chiffre={v:1,kdf:'PBKDF2-SHA256',iter:ITER,salt,iv:tob64(iv),data:tob64(ct)};return out;
+}
+let RAW=null,encSalt=null,openPhrase='';   // fichier en ligne tel que lu; sel actuel; phrase qui l’a ouvert
+const phNow=()=>normPhrase($('#ph-in').value);
+const phDirty=()=>!!V&&phNow()!==openPhrase;
+function savePh(){if($('#ph-keep').checked&&phNow())LS.set(PH_KEY(),$('#ph-in').value.trim());else LS.del(PH_KEY());}
+function phUi(){
+  const p=phNow();
+  $('#ph-state').textContent=RAW?.chiffre?(openPhrase?'✓ protégé':'🔒 phrase requise'):(p?'sera protégé':'non protégé');
+  const appUrl=new URL('./',location.href).href;
+  $('#ph-invite').hidden=!p;
+  if(p){const l=appUrl+'installer.html#cle='+encodeURIComponent(p);$('#ph-link').value=l;$('#ph-openlink').href=l;}
+  if(V&&phDirty())$('#ph-msg').textContent=RAW?.chiffre?(p?'Nouvelle phrase : elle s’appliquera à la prochaine publication. Les voyageurs devront entrer la nouvelle phrase.':'Le contenu publié est protégé : une phrase est obligatoire pour publier.'):'La protection s’activera à la prochaine publication (touchez « Publier »).';
+  else if(V)$('#ph-msg').textContent=p?'Le contenu publié est protégé par cette phrase.':'Aucune phrase : le contenu publié est lisible par toute personne qui connaît l’adresse.';
+}
+$('#ph-show').onchange=()=>{$('#ph-in').type=$('#ph-show').checked?'text':'password';};
+$('#ph-in').addEventListener('input',()=>{savePh();phUi();if(V)changed();});
+$('#ph-keep').onchange=savePh;
+$('#ph-open').onclick=()=>{savePh();load();};
+$('#ph-copy').onclick=()=>{navigator.clipboard?.writeText($('#ph-link').value).then(()=>{$('#ph-copy').textContent='Lien copié';setTimeout(()=>$('#ph-copy').textContent='Copier le lien',2000);});};
+const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','gondole','telesiege','sapin','glacier','sommet','strudel','chalet','luge','flocon','bouquetin','edelweiss','tyrol','yodel','refuge','lagopede','schnaps','crepe','cime','corniche','vallon','bretzel','grenat','myrtille','lanterne'];
+$('#ph-gen').onclick=()=>{const r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;};const w=[];while(w.length<3){const m=MOTS[r(MOTS.length)];if(!w.includes(m))w.push(m);}$('#ph-in').value=w.join('-');$('#ph-show').checked=true;$('#ph-in').type='text';savePh();phUi();if(V)changed();};
+$('#ph-in').value=LS.get(PH_KEY(),'')||'';
+
+/* ---------- Liste du groupe : fichier groupe.json, chiffré avec la clé accompagnateur ---------- */
+const GK_KEY=()=>'editeur-cle-groupe-'+(cx.repo||'local');
+const NIVEAUX=['','Débutant','Intermédiaire','Intermédiaire-avancé','Avancé','Expert'];
+let G=null,Gbase='',Gsha=null,GRAW=null,gOpenKey='';
+const gNow=()=>$('#g-key').value.trim();
+const gDirty=()=>!!G&&(pretty(G)!==Gbase||(gNow()&&gNow()!==gOpenKey));
+function gSave(){if($('#g-keep').checked&&gNow())LS.set(GK_KEY(),gNow());else LS.del(GK_KEY());}
+$('#g-key').value=LS.get(GK_KEY(),'')||'';
+$('#g-show').onchange=()=>{$('#g-key').type=$('#g-show').checked?'text':'password';};
+$('#g-keep').onchange=gSave;
+$('#g-key').addEventListener('input',()=>{gSave();if(G)changed();});
+$('#g-gen').onclick=()=>{const al='abcdefghjkmnpqrstuvwxyz23456789';const r=new Uint32Array(20);crypto.getRandomValues(r);const c=[...r].map(x=>al[x%al.length]).join('');$('#g-key').value=c.match(/.{5}/g).join('-');$('#g-show').checked=true;$('#g-key').type='text';gSave();if(G)changed();$('#g-msg').textContent='Clé générée. Notez-la dans votre gestionnaire de mots de passe : sans elle, la liste ne peut pas être rouverte.';};
+async function gLoad(){
+  $('#g-msg').textContent='Lecture de la liste…';
+  let txt=null;Gsha=null;
+  if(cx.repo){try{const r=await api(FILE('groupe.json')+'?ref=main',{cache:'no-store'});if(r.ok){const j=await r.json();txt=b64dec(j.content);Gsha=j.sha;}else if(r.status===404)txt='';}catch(e){}}
+  if(txt==null){try{const r=await fetch('groupe.json',{cache:'no-store'});if(r.ok)txt=await r.text();else if(r.status===404)txt='';}catch(e){}}
+  if(txt==null){$('#g-msg').textContent='Impossible de lire la liste du groupe. Vérifiez la connexion.';return;}
+  if(!txt.trim()){GRAW=null;G={voyageurs:[]};Gbase=pretty(G);gOpenKey='';$('#g-msg').textContent='Aucune liste publiée pour l’instant. Ajoutez des personnes, choisissez une clé accompagnateur, puis « Publier ».';gRender();return;}
+  try{GRAW=JSON.parse(txt);}catch(e){$('#g-msg').textContent='groupe.json est illisible.';return;}
+  const k=gNow();if(!k){G=null;$('#g-body').hidden=true;$('#g-state').textContent='🔒 clé requise';$('#g-msg').textContent='La liste est protégée. Entrez la clé accompagnateur, puis « Ouvrir la liste ».';return;}
+  try{const pt=await decryptFile(GRAW,k);G={voyageurs:Array.isArray(pt.voyageurs)?pt.voyageurs:[]};gOpenKey=k;Gbase=pretty(G);$('#g-msg').textContent='';gRender();}
+  catch(e){G=null;$('#g-body').hidden=true;$('#g-state').textContent='🔒 clé incorrecte';$('#g-msg').textContent='Clé incorrecte : impossible d’ouvrir la liste.';}
+}
+$('#g-open').onclick=()=>{gSave();gLoad();};
+function gRender(){
+  $('#g-body').hidden=false;const L=G.voyageurs;
+  $('#g-state').textContent=L.length+' pers.'+(GRAW?' · protégée':'');
+  $('#g-list').innerHTML=L.map((p,i)=>`<div class="item"><div class="hd"><b>${esc(p.nom||'Nouvelle personne')}${p.sousGroupe?' · '+esc(p.sousGroupe):''}</b><button type="button" class="mini danger" data-gdel="${i}" aria-label="Supprimer">✕</button></div><div class="bd"><div class="grid">
+    <div class="f"><label>Nom</label><input data-g="${i}" data-k="nom" value="${esc(p.nom)}"></div>
+    <div class="f"><label>Chambre</label><input data-g="${i}" data-k="chambre" value="${esc(p.chambre)}"></div>
+    <div class="f"><label>Niveau</label><select data-g="${i}" data-k="niveau">${NIVEAUX.map(n=>`<option${(p.niveau||'')===n?' selected':''}>${esc(n)}</option>`).join('')}${p.niveau&&!NIVEAUX.includes(p.niveau)?`<option selected>${esc(p.niveau)}</option>`:''}</select></div>
+    <div class="f"><label>Sous-groupe de ski</label><input data-g="${i}" data-k="sousGroupe" value="${esc(p.sousGroupe)}" placeholder="ex. Groupe A"></div>
+    <div class="f"><label>Téléphone</label><input data-g="${i}" data-k="telephone" type="tel" value="${esc(p.telephone)}"></div>
+    <div class="f full"><label>Notes</label><input data-g="${i}" data-k="notes" value="${esc(p.notes)}"></div></div></div></div>`).join('')||'<p class="help">Aucune personne dans la liste.</p>';
+}
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset.g==null||!G)return;G.voyageurs[+el.dataset.g][el.dataset.k]=el.value;changed();if(el.dataset.k==='nom'||el.dataset.k==='sousGroupe'){const it=G.voyageurs[+el.dataset.g];el.closest('.item').querySelector('.hd b').textContent=(it.nom||'Nouvelle personne')+(it.sousGroupe?' · '+it.sousGroupe:'');}});
+document.addEventListener('change',e=>{if(e.target.dataset.g!=null&&e.target.tagName==='SELECT')e.target.dispatchEvent(new Event('input',{bubbles:true}));});
+document.addEventListener('click',e=>{const d=e.target.closest('[data-gdel]');if(!d)return;if(!d.dataset.sure){d.dataset.sure='1';d.textContent='Supprimer?';setTimeout(()=>{if(d.isConnected){delete d.dataset.sure;d.textContent='✕';}},3500);return;}G.voyageurs.splice(+d.dataset.gdel,1);gRender();changed();});
+$('#g-add').onclick=()=>{G.voyageurs.push({nom:'',chambre:'',niveau:'',sousGroupe:'',telephone:'',notes:''});gRender();changed();};
+$('#g-paste-t').onclick=()=>{$('#g-paste').hidden=!$('#g-paste').hidden;};
+$('#g-paste-go').onclick=()=>{const lines=$('#g-paste-in').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);let n=0;
+  lines.forEach(l=>{const c=(l.includes('\t')?l.split('\t'):l.split(';')).map(x=>x.trim());if(!c[0]||/^nom$/i.test(c[0]))return;G.voyageurs.push({nom:c[0],chambre:c[1]||'',niveau:c[2]||'',sousGroupe:c[3]||'',telephone:c[4]||'',notes:c[5]||''});n++;});
+  $('#g-paste-in').value='';$('#g-paste').hidden=true;gRender();changed();$('#g-msg').textContent=n+' personne(s) ajoutée(s). Vérifiez, puis « Publier ».';};
+function gValidate(){const e=[];if(!G||!gDirty())return e;const k=gNow();
+  if(k.length<16)e.push('Liste du groupe : la clé accompagnateur doit compter au moins 16 caractères (« Générer une clé forte »).');
+  if(normPhrase(k)===phNow())e.push('Liste du groupe : la clé accompagnateur doit être différente de la phrase du voyage.');
+  G.voyageurs.forEach((p,i)=>{if(!(p.nom||'').trim())e.push(`Liste du groupe, personne ${i+1} : nom requis.`);});return e;}
+async function gPublish(){
+  const file=pretty(await encryptFile({voyageurs:G.voyageurs.map(p=>Object.fromEntries(Object.entries(p).filter(([k,v])=>v!==''&&v!=null)))},gNow(),gNow()===gOpenKey&&GRAW?.chiffre?.salt?GRAW.chiffre.salt:null));
+  const pub=JSON.parse(file);PUBLIC_KEYS.forEach(k=>delete pub[k]);const out=pretty(pub);
+  const cur=await api(FILE('groupe.json')+'?ref=main',{cache:'no-store'});const cj=cur.ok?await cur.json():null;
+  const r=await api(FILE('groupe.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour de la liste du groupe (chiffrée)',content:b64enc(out),sha:cj?.sha||Gsha||undefined,branch:'main'})});
+  if(!r.ok){const t=await r.text();throw Error('liste du groupe : '+r.status+' '+t.slice(0,120));}
+  const j=await r.json();Gsha=j.content.sha;GRAW=pub;gOpenKey=gNow();Gbase=pretty(G);gRender();
+}
+
+/* ---------- État ---------- */
+let V=null,base='',sha=null,canWrite=false;
+function msg(id,t,cls){const e=$(id);if(!t){e.hidden=true;return;}e.hidden=false;e.className='msg '+(cls||'info');e.innerHTML=t;}
+const pretty=o=>JSON.stringify(o,null,2)+'\n';
+function dirty(){return (V&&(pretty(V)!==base||phDirty()))||gDirty();}
+const vDirty=()=>!!V&&(pretty(V)!==base||phDirty());
+let saveT=0;
+function changed(){
+  const d=dirty();
+  $('#st').innerHTML=d?'<b>Modifications non publiées</b>':'Aucune modification';
+  $('#b-pub').disabled=!d;$('#b-reset').disabled=!d;
+  clearTimeout(saveT);saveT=setTimeout(()=>{if(d)LS.set(DRAFT_KEY(),{at:Date.now(),sha,data:V});else LS.del(DRAFT_KEY());},400);
+}
+
+async function load(){
+  msg('#m-load','Chargement du contenu…','info');
+  let txt=null,from='';
+  if(cx.repo){
+    try{const r=await api(FILE('voyage.json')+'?ref=main',{cache:'no-store'});if(r.ok){const j=await r.json();txt=b64dec(j.content);sha=j.sha;from='GitHub';}
+      else if(r.status===401){msg('#m-load','Jeton refusé par GitHub. Vérifiez-le dans « Connexion à GitHub ».','err');}
+    }catch(e){}
+  }
+  if(txt==null){try{const r=await fetch('voyage.json',{cache:'no-store'});if(r.ok){txt=await r.text();from='le site';}}catch(e){}}
+  if(txt==null){msg('#m-load','Impossible de lire voyage.json. Vérifiez la connexion Internet.','err');return;}
+  try{V=JSON.parse(txt);}catch(e){msg('#m-load','voyage.json contient une erreur de syntaxe : '+esc(e.message)+'. Corrigez-le une fois sur GitHub, puis rechargez cette page.','err');return;}
+  RAW=V;encSalt=V.chiffre?.salt||null;openPhrase='';
+  if(V.chiffre){
+    const ph=$('#ph-in').value;
+    if(!normPhrase(ph)){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Le contenu publié est protégé. Entrez la phrase du voyage dans « Phrase du voyage », puis touchez « Ouvrir le contenu ».','warn');$('#sections').innerHTML='';return;}
+    msg('#m-load','Ouverture du contenu protégé…','info');
+    try{V=await decryptFile(RAW,ph);openPhrase=normPhrase(ph);}
+    catch(e){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Phrase incorrecte : impossible d’ouvrir le contenu publié. Vérifiez la phrase dans « Phrase du voyage ».','err');$('#sections').innerHTML='';return;}
+  }
+  base=pretty(V);phUi();
+  msg('#m-load','Contenu chargé depuis '+from+'.'+(from!=='GitHub'?' Connectez-vous à GitHub pour pouvoir publier.':''),from==='GitHub'?'ok':'info');
+  setTimeout(()=>msg('#m-load'),4000);
+  const dr=LS.get(DRAFT_KEY(),null);
+  if(dr&&dr.data&&pretty(dr.data)!==base){
+    msg('#m-draft',`Un brouillon non publié du ${esc(new Date(dr.at).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'}))} existe sur cet appareil. <button type="button" class="mini" id="dr-use">Reprendre le brouillon</button> <button type="button" class="mini light" id="dr-drop">Ignorer</button>`,'warn');
+    $('#dr-use').onclick=()=>{V=dr.data;msg('#m-draft');render();changed();if(dr.sha&&sha&&dr.sha!==sha)msg('#m-res','Attention : voyage.json a été modifié sur GitHub depuis ce brouillon. Vérifiez avant de publier.','warn');};
+    $('#dr-drop').onclick=()=>{LS.del(DRAFT_KEY());msg('#m-draft');};
+  }
+  $('#t').textContent='Éditeur · '+(V.titre||'voyage');
+  render();changed();checkWrite();
+}
+async function checkWrite(){
+  if(!cx.repo){$('#cx-state').textContent='dépôt non indiqué';$('#s-connexion').open=true;return;}
+  if(!cx.token){canWrite=false;$('#cx-state').textContent='lecture seule';$('#cx-msg').textContent='Ajoutez votre jeton pour pouvoir publier.';$('#s-connexion').open=true;return;}
+  try{const r=await api('');if(!r.ok)throw Error(r.status);const j=await r.json();canWrite=!!j.permissions?.push;
+    $('#cx-state').textContent=canWrite?'✓ connecté':'lecture seule';
+    $('#cx-msg').textContent=canWrite?'Connecté à '+j.full_name+' avec droit de modification.':'Le jeton ne donne pas le droit de modifier '+j.full_name+'. Vérifiez la permission « Contents : Read and write ».';
+    if(!canWrite)$('#s-connexion').open=true;
+  }catch(e){canWrite=false;$('#cx-state').textContent='erreur';$('#cx-msg').textContent='Connexion impossible ('+e.message+'). Vérifiez le compte, le dépôt et le jeton.';$('#s-connexion').open=true;}
+}
+$('#cx-test').onclick=()=>{saveCx();load();};
+$('#cx-forget').onclick=()=>{$('#cx-token').value='';saveCx();checkWrite();};
+
+/* ---------- Schéma des formulaires ---------- */
+const TZ=[['America/Montreal','Heure de Montréal'],['Europe/Zurich','Heure de Zurich'],['Europe/Vienna','Heure d’Autriche']];
+if(!TZ.some(z=>z[0]===S.fuseau))TZ.push([S.fuseau,S.fuseauNom.charAt(0).toUpperCase()+S.fuseauNom.slice(1)]);
+const ITEM=[['heure','Heure','time'],['titre','Titre','text'],['lieu','Lieu','text'],['note','Note','textarea','full'],['lien','Lien (facultatif)','url'],['lienTexte','Texte du bouton du lien','text'],['rdv','Rendez-vous (compte à rebours sur l’Accueil)','bool'],['aConfirmer','Étiquette « À confirmer »','bool']];
+const S=[
+  {id:'general',titre:'Titre et dates',type:'root',fields:[['titre','Titre affiché','text'],['datesTexte','Dates affichées','text'],['debut','Premier jour','date'],['fin','Dernier jour','date'],['niveau','Niveau du groupe','text'],['sousTitre','Sous-titre','text']]},
+  {id:'depart',titre:'Compte à rebours (décollage)',type:'obj',key:'depart',help:'Le carré « J – » de l’Accueil compte jusqu’à cette heure.',fields:[['date','Date','date'],['heure','Heure','time'],['fuseau','Fuseau','tz']]},
+  {id:'annonces',titre:'Annonces',type:'list',key:'annonces',sort:'desc',help:'Une annonce n’apparaît dans l’app qu’à partir de sa date et de son heure : vous pouvez les préparer d’avance.',
+    label:a=>(a.date?a.date.replace('T',' · '):'sans date')+' — '+(a.texte||'').slice(0,50),newItem:()=>({date:nowLocal(TZL),fuseau:TZL,texte:''}),
+    fields:[['date','Publier à partir du','datetime'],['fuseau','Fuseau de cette heure','tz'],['texte','Texte de l’annonce','textarea','full']],
+    templates:[['rdv','Changement de rendez-vous'],['meteo','Mauvais temps'],['bagages','Rappel de bagages'],['demain','Rendez-vous de demain']]},
+  {id:'vols',titre:'Vols aller et retour',type:'list',key:'vols',help:'Un bloc par vol, correspondances comprises. Heures locales de chaque aéroport, comme sur la confirmation. Le numéro de vol (ex. LX 87) active les liens de suivi en direct. Les vols s’affichent en haut du Programme, et sur l’Accueil à partir de 36 heures avant le départ. Un rappel d’enregistrement en ligne s’affiche, et s’ajoute au calendrier des voyageurs, à l’heure d’ouverture (24 h avant par défaut).',
+    label:v=>({aller:'Aller',retour:'Retour',correspondance:'Correspondance'}[v.sens]||'Vol')+(v.numero?' · '+v.numero:'')+(v.date?' · '+v.date:''),
+    newItem:()=>({sens:'aller',compagnie:'',numero:'',depart:'',date:'',heure:'',fuseau:'America/Montreal',arrivee:'',dateArrivee:'',heureArrivee:'',fuseauArrivee:'Europe/Zurich',terminal:'',enregistrementHeures:24,lienEnregistrement:'',enregistrementNote:'',note:''}),
+    fields:[['sens','Type','select',[['aller','Aller'],['retour','Retour'],['correspondance','Correspondance']]],['numero','Numéro de vol (ex. LX 87)','text'],['compagnie','Compagnie','text'],['terminal','Terminal (facultatif)','text'],
+      ['depart','Départ (ex. YUL · Montréal-Trudeau)','text','full'],['date','Date de départ','date'],['heure','Heure de départ','time'],['fuseau','Fuseau du départ','tz'],
+      ['arrivee','Arrivée (ex. ZRH · Zurich)','text','full'],['dateArrivee','Date d’arrivée','date'],['heureArrivee','Heure d’arrivée','time'],['fuseauArrivee','Fuseau de l’arrivée','tz'],
+      ['enregistrementHeures','Enregistrement en ligne : ouvre combien d’heures avant (0 = pas de rappel)','number'],['lienEnregistrement','Lien d’enregistrement en ligne (site de la compagnie)','url'],['enregistrementNote','Précision sur l’enregistrement (facultatif)','text','full'],
+      ['note','Note (rendez-vous, bagages…)','textarea']]},
+  {id:'avant',titre:'Avant le départ (réunion Teams…)',type:'list',key:'avantDepart',label:a=>(a.date||'')+' — '+(a.titre||''),newItem:()=>({date:'',fuseau:'America/Montreal',heure:'',titre:'',lieu:'',note:''}),fields:[['date','Date','date'],['fuseau','Fuseau','tz'],...ITEM]},
+  {id:'programme',titre:'Programme jour par jour',type:'list',key:'programme',label:d=>(d.date||'')+' — '+(d.titre||''),newItem:()=>({date:'',fuseau:TZL,titre:'',items:[]}),
+    fields:[['date','Date','date'],['fuseau','Fuseau','tz'],['titre','Titre du jour','text','full']],
+    child:{key:'items',titre:'Rendez-vous de la journée',label:i=>(i.heure||'—')+' · '+(i.titre||''),newItem:()=>({heure:'',titre:'',lieu:'',note:''}),fields:ITEM}},
+  {id:'liens',titre:'Liens du groupe (WhatsApp, Facebook…)',type:'list',key:'liens',help:'Un lien vide reste caché dans l’app.',label:l=>(l.titre||l.type||'')+(l.url?'':' (vide)'),newItem:()=>({type:'autre',titre:'',url:''}),
+    fields:[['type','Type','select',[['whatsapp','WhatsApp'],['facebook','Facebook'],['instagram','Instagram'],['site','Site web'],['autre','Autre']]],['titre','Titre','text'],['url','Lien','url','full'],['detail','Sous-titre (facultatif)','text','full']]},
+  {id:'accompagnateur',titre:'Accompagnateur',type:'obj',key:'accompagnateur',fields:[['nom','Nom','text'],['role','Rôle','text'],['courriel','Courriel (facultatif, public)','text','full']]},
+  {id:'hotel',titre:'Hôtel',type:'obj',key:'hotel',fields:[['nom','Nom','text'],['adresse','Adresse','text'],['points','Points importants (un par ligne)','lines','full']]},
+  {id:'bagages',titre:'Bagages (app et affiche)',type:'obj',key:'bagages',fields:[['soute','En soute — une ligne par sac : nom | détail','pairs','full'],['noteSoute','Note sous la soute','textarea','full'],['cabine','En cabine — une ligne par sac : nom | détail','pairs','full'],['important','Encadré rouge','textarea','full'],['conseils','Conseils (un par ligne)','lines','full']]},
+  {id:'documents',titre:'Documents avant le départ',type:'obj',key:'documents',fields:[['liste','Cases à cocher (une par ligne)','lines','full'],['notes','Notes (une par ligne)','lines','full']]},
+  {id:'infosSki',titre:'Infos ski',type:'rootlines',key:'infosSki',label:'Une info par ligne'},
+  {id:'lieux',titre:'Lieux sur la carte',type:'list',key:'lieux',help:'Coordonnées : appui long sur le lieu dans Google Maps ou Plans, puis copiez les deux nombres.',label:l=>l.nom||'',newItem:()=>({id:'lieu'+Date.now().toString(36).slice(-4),nom:'',detail:'',lat:null,lng:null}),
+    fields:[['nom','Nom','text'],['detail','Détail','text'],['lat','Latitude','number'],['lng','Longitude','number']]},
+  {id:'remontee',titre:'Dernière remontée',type:'list',key:'derniereRemontee',help:'Pendant le séjour, l’heure s’affiche dans l’onglet Ski, et l’après-midi un compte à rebours apparaît sur l’Accueil (en rouge 45 minutes avant). '+S.fuseauNom.charAt(0).toUpperCase()+S.fuseauNom.slice(1)+'. Vérifiez les heures sur place.',label:r=>domNom(r.domaine)+(r.heure?' · '+r.heure:''),newItem:()=>({domaine:S.domaineDefaut,heure:'',texte:''}),
+    fields:[['domaine','Domaine','select',DOM_OPTS],['heure','Heure de la dernière remontée','time'],['texte','Précision (quelle remontée, vers où)','text','full']]},
+  {id:'sondage',titre:'Sondage de fin de voyage',type:'obj',key:'sondage',help:'Créez un court formulaire (Google Forms, Microsoft Forms…) et collez son lien. Une carte apparaît sur l’Accueil à partir de la date choisie (par défaut le dernier jour), pendant 30 jours après le voyage.',fields:[['lien','Lien du formulaire','url','full'],['titre','Titre (facultatif)','text'],['date','À partir du (facultatif)','date'],['texte','Texte (facultatif)','textarea']]},
+  {id:'adresses',titre:'Bonnes adresses : restos, après-ski, bars',type:'list',key:'adresses',help:'Affichées dans l’onglet Sortir, selon le domaine choisi par le voyageur. Les « coups de cœur » passent en premier avec une étoile. Avec une latitude et une longitude, l’adresse apparaît aussi sur la carte.',
+    label:a=>(a.coupDeCoeur?'★ ':'')+(a.nom||'Nouvelle adresse')+(a.domaine?' · '+domNom(a.domaine):''),
+    newItem:()=>({nom:'',categories:['restaurant'],domaine:S.domaineDefaut,secteur:'',description:'',acces:'',infos:'',tags:[],lien:'',lienTexte:'',coupDeCoeur:false,lat:null,lng:null}),
+    fields:[['nom','Nom','text'],['domaine','Domaine','select',DOM_OPTS],
+      ['categories','Catégories','multi',[['restaurant','Restaurant sur les pistes'],['apres-ski','Après-ski et bar'],['pratique','Pratique (location, pharmacie…)']],'full'],
+      ['coupDeCoeur','Coup de cœur de l’accompagnateur (en premier, avec ★)','bool','full'],
+      ['secteur','Secteur ou village','text'],['infos','Infos courtes (cuisine, heures…)','text'],
+      ['description','Description','textarea'],['acces','Comment s’y rendre','textarea'],
+      ['tags','Étiquettes','multi',[['Service rapide','Service rapide'],['Service à table','Service à table'],['Terrasse','Terrasse'],['Panorama','Panorama'],['Musique live','Musique live'],['DJ / soirée','DJ / soirée'],['Réservation conseillée','Réservation conseillée'],['Petit budget','Petit budget']],'full'],
+      ['lien','Lien (facultatif)','url'],['lienTexte','Texte du lien','text'],['lat','Latitude (facultatif)','number'],['lng','Longitude (facultatif)','number']]},
+];
+const HANDLED=new Set(['titre','datesTexte','debut','fin','niveau','sousTitre',...S.filter(s=>s.key).map(s=>s.key)]);
+function nowLocal(tz){const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;}
+
+/* ---------- Modèles d’annonces ---------- */
+const liste=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' et '+a[a.length-1];
+const TPL={
+  rdv:()=>'Changement de rendez-vous : [jour], le rendez-vous de [heure prévue] est déplacé à [nouvelle heure], [lieu]. Merci de faire suivre aux personnes de votre groupe qui n’ont pas vu ce message.',
+  meteo:()=>'Mauvais temps prévu [demain] : [vent fort / neige abondante / brouillard] en altitude. Certaines remontées pourraient fermer : vérifiez l’onglet Ski avant de partir. Le rendez-vous est [maintenu à … / déplacé à …]. Couvrez-vous bien : masque de ski, cache-cou et gants chauds.',
+  bagages:()=>{const b=V.bagages||{};const t=x=>(x||[]).map(i=>String(i.t||'').toLowerCase()).filter(Boolean);
+    const so=t(b.soute),ca=t(b.cabine);
+    const ns=String(b.noteSoute||'').split(/(?<=\.)\s/)[0].trim();
+    return 'Rappel bagages pour le vol de [jour] : '+(so.length?'en soute, '+liste(so):'en soute, [bagages]')+'. '+(ns?ns+(/[.!]$/.test(ns)?' ':'. '):'')+(ca.length?'En cabine, '+liste(ca)+'. ':'')+(b.important?String(b.important).trim().replace(/\s*$/,'')+(/[.!]$/.test(String(b.important).trim())?' ':'. '):'Les batteries et chargeurs portatifs vont en cabine, jamais en soute. ')+'Tous les détails sont dans l’app, onglet Infos.';},
+  demain:()=>'Demain [jour] : rendez-vous à [heure] à [lieu] pour [activité]. Forfait en main, casque et crème solaire. Bonne soirée!'
+};
+function tzNow(){const mtl=nowLocal('America/Montreal');return V.debut&&mtl.slice(0,10)<V.debut?'America/Montreal':TZL;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tpl]');if(!b||!V)return;
+  const tz=tzNow();if(!Array.isArray(V.annonces))V.annonces=[];
+  V.annonces.unshift({date:nowLocal(tz),fuseau:tz,texte:TPL[b.dataset.tpl]()});render();changed();
+  const sec=$('#s-annonces');sec.open=true;const ta=sec.querySelector('.item textarea');if(ta){ta.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{ta.focus();const i=ta.value.indexOf('[');if(i>=0)ta.setSelectionRange(i,ta.value.indexOf(']',i)+1);},350);}
+});
+
+/* ---------- Accès par chemin ---------- */
+const getP=(o,p)=>p.reduce((a,k)=>a==null?undefined:a[k],o);
+function setP(o,p,v){let a=o;for(let i=0;i<p.length-1;i++){if(a[p[i]]==null)a[p[i]]=typeof p[i+1]==='number'?[]:{};a=a[p[i]];}a[p[p.length-1]]=v;}
+const tzNorm=v=>({'america/toronto':'America/Montreal','america/montreal':'America/Montreal','europe/vienna':'Europe/Vienna','europe/zurich':'Europe/Zurich'})[String(v||'').toLowerCase()]||v||'';
+
+/* ---------- Rendu ---------- */
+function field(path,[k,lab,type,extra,extra2],obj){
+  const p=[...path,k],v=obj?.[k],id='f'+Math.random().toString(36).slice(2,9),P=esc(JSON.stringify(p)),full=extra==='full'||extra2==='full'||['textarea','lines','pairs'].includes(type);
+  const wrap=h=>`<div class="f${full?' full':''}">${type==='bool'?'':`<label for="${id}">${esc(lab)}</label>`}${h}</div>`;
+  switch(type){
+    case 'bool':return`<label class="chk${full?' full':''}"><input type="checkbox" id="${id}" data-p="${P}" data-t="bool"${v?' checked':''}> ${esc(lab)}</label>`;
+    case 'multi':{const have=Array.isArray(v)?v:[];const extraVals=have.filter(x=>!extra.some(([a])=>a===x));return`<div class="f full"><span class="lab">${esc(lab)}</span><div class="multi">${[...extra,...extraVals.map(x=>[x,x])].map(([a,b])=>`<label class="chk"><input type="checkbox" data-p="${P}" data-t="multi" data-g="${id}" value="${esc(a)}"${have.includes(a)?' checked':''}> ${esc(b)}</label>`).join('')}</div></div>`;}
+    case 'textarea':return wrap(`<textarea id="${id}" data-p="${P}" data-t="text">${esc(v)}</textarea>`);
+    case 'lines':return wrap(`<textarea id="${id}" data-p="${P}" data-t="lines">${esc((v||[]).join('\n'))}</textarea>`);
+    case 'pairs':return wrap(`<textarea id="${id}" data-p="${P}" data-t="pairs">${esc((v||[]).map(x=>x.t+(x.d?' | '+x.d:'')).join('\n'))}</textarea>`);
+    case 'tz':return wrap(`<select id="${id}" data-p="${P}" data-t="text">${TZ.map(([a,b])=>`<option value="${a}"${tzNorm(v)===a?' selected':''}>${b}</option>`).join('')}</select>`);
+    case 'select':return wrap(`<select id="${id}" data-p="${P}" data-t="text">${extra.map(([a,b])=>`<option value="${a}"${v===a?' selected':''}>${b}</option>`).join('')}</select>`);
+    case 'date':return wrap(`<input type="date" id="${id}" data-p="${P}" data-t="text" value="${esc(v)}">`);
+    case 'time':return wrap(`<input type="time" id="${id}" data-p="${P}" data-t="text" value="${esc(v)}">`);
+    case 'datetime':return wrap(`<input type="datetime-local" id="${id}" data-p="${P}" data-t="text" value="${esc(String(v||'').slice(0,16))}">`);
+    case 'number':return wrap(`<input type="number" step="any" inputmode="decimal" id="${id}" data-p="${P}" data-t="num" value="${v==null?'':esc(v)}">`);
+    case 'url':return wrap(`<input type="url" inputmode="url" autocapitalize="off" spellcheck="false" id="${id}" data-p="${P}" data-t="text" placeholder="https://…" value="${esc(v)}">`);
+    default:return wrap(`<input type="text" id="${id}" data-p="${P}" data-t="text" value="${esc(v)}">`);
+  }
+}
+function listHtml(path,cfg,arr){
+  arr=arr||[];
+  const items=arr.map((it,i)=>{const p=[...path,i];return`<div class="item"><div class="hd"><b>${esc(cfg.label?cfg.label(it):'#'+(i+1))}</b>
+    <button type="button" class="mini light" data-act="up" data-p="${esc(JSON.stringify(p))}" aria-label="Monter"${i===0?' disabled':''}>↑</button>
+    <button type="button" class="mini light" data-act="down" data-p="${esc(JSON.stringify(p))}" aria-label="Descendre"${i===arr.length-1?' disabled':''}>↓</button>
+    <button type="button" class="mini light" data-act="dup" data-p="${esc(JSON.stringify(p))}" aria-label="Dupliquer">⧉</button>
+    <button type="button" class="mini danger" data-act="del" data-p="${esc(JSON.stringify(p))}" aria-label="Supprimer">✕</button></div>
+    <div class="bd"><div class="grid">${cfg.fields.map(f=>field(p,f,it)).join('')}</div>
+    ${cfg.child?`<p class="help" style="margin-top:14px;font-weight:600;color:var(--ink)">${esc(cfg.child.titre)}</p>${listHtml([...p,cfg.child.key],cfg.child,it[cfg.child.key])}`:''}</div></div>`;}).join('');
+  return items+`<div class="addbar"><button type="button" class="light" data-act="add" data-p="${esc(JSON.stringify(path))}" data-cfg="${esc(cfgId(cfg))}">+ Ajouter</button></div>`
+    +(cfg.templates?`<p class="help" style="margin:12px 0 6px;font-weight:600;color:var(--ink)">Partir d’un modèle</p><div class="addbar tpl">${cfg.templates.map(([k,l])=>`<button type="button" class="light" data-tpl="${k}">${esc(l)}</button>`).join('')}</div><p class="help">Le modèle crée une annonce à publier maintenant. Remplacez les [mots entre crochets], ajustez l’heure de publication si besoin, puis « Publier ».</p>`:'');
+}
+const CFG={};function cfgId(c){const k=c.key+'|'+(c.titre||'');CFG[k]=c;return k;}
+function render(){
+  const open=new Set($$('details.sec[open]').map(d=>d.id));
+  const extra=Object.keys(V).filter(k=>!HANDLED.has(k));
+  $('#sections').innerHTML=S.map(s=>{
+    let body='',n='';
+    if(s.type==='root')body=`<div class="grid">${s.fields.map(f=>field([],f,V)).join('')}</div>`;
+    else if(s.type==='obj')body=`<div class="grid">${s.fields.map(f=>field([s.key],f,V[s.key]||{})).join('')}</div>`;
+    else if(s.type==='rootlines')body=`<div class="grid">${field([],[s.key,s.label,'lines'],V)}</div>`;
+    else{body=listHtml([s.key],s,V[s.key]);n=(V[s.key]||[]).length;}
+    return`<details class="sec" id="s-${s.id}"${open.has('s-'+s.id)?' open':''}><summary><h2>${esc(s.titre)}</h2><span class="n">${n!==''?n:''}</span></summary><div class="body">${s.help?`<p class="help">${esc(s.help)}</p>`:''}${body}</div></details>`;
+  }).join('')+`<details class="sec" id="s-avance"${open.has('s-avance')?' open':''}><summary><h2>Avancé : météo, webcams, organisateur…</h2><span class="n">${extra.length}</span></summary><div class="body"><p class="help">Format technique (JSON). À modifier seulement si nécessaire : une erreur ici est signalée avant la publication.</p><div class="f full" style="margin-top:10px"><textarea class="raw" id="raw" data-t="raw">${esc(JSON.stringify(Object.fromEntries(extra.map(k=>[k,V[k]])),null,2))}</textarea></div><p class="help" id="raw-msg"></p></div></details>`;
+}
+
+/* ---------- Saisie ---------- */
+document.addEventListener('input',e=>{
+  const el=e.target;const t=el.dataset.t;if(!t)return;
+  if(t==='raw'){try{const o=JSON.parse(el.value||'{}');Object.keys(V).filter(k=>!HANDLED.has(k)).forEach(k=>delete V[k]);Object.assign(V,o);$('#raw-msg').textContent='';el.parentNode.classList.remove('bad');}catch(err){$('#raw-msg').textContent='Erreur : '+err.message;el.parentNode.classList.add('bad');}changed();return;}
+  const p=JSON.parse(el.dataset.p);let v;
+  if(t==='multi')v=$$(`input[data-g="${el.dataset.g}"]`).filter(x=>x.checked).map(x=>x.value);
+  else if(t==='bool')v=el.checked;
+  else if(t==='num')v=el.value===''?null:Number(el.value);
+  else if(t==='lines')v=el.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  else if(t==='pairs')v=el.value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const [a,...b]=x.split('|');return b.length?{t:a.trim(),d:b.join('|').trim()}:{t:a.trim()};});
+  else v=el.value;
+  if(el.type==='datetime-local'&&v)v=v.slice(0,16);
+  setP(V,p,v);changed();
+  const hd=el.closest('.item')?.querySelector(':scope>.hd>b');if(hd){const ip=JSON.parse(el.closest('.item').querySelector('[data-act=del]').dataset.p);const cfg=findCfg(ip);if(cfg?.label)hd.textContent=cfg.label(getP(V,ip));}
+});
+document.addEventListener('change',e=>{if(e.target.dataset.t==='bool'||e.target.dataset.t==='multi'||e.target.tagName==='SELECT')e.target.dispatchEvent(new Event('input',{bubbles:true}));});
+function findCfg(p){const s=S.find(x=>x.key===p[0]);if(!s)return null;return p.length>2&&s.child?s.child:s;}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const p=JSON.parse(b.dataset.p),act=b.dataset.act;
+  if(act==='add'){const cfg=CFG[b.dataset.cfg];let arr=getP(V,p);if(!Array.isArray(arr)){arr=[];setP(V,p,arr);}const it=cfg.newItem();if(cfg.sort==='desc')arr.unshift(it);else arr.push(it);}
+  else{const arr=getP(V,p.slice(0,-1)),i=p[p.length-1];
+    if(act==='del'){const it=arr[i];const lab=findCfg(p)?.label?.(it)||'cet élément';if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Supprimer?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='✕';}},3500);return;}arr.splice(i,1);}
+    if(act==='up'&&i>0)[arr[i-1],arr[i]]=[arr[i],arr[i-1]];
+    if(act==='down'&&i<arr.length-1)[arr[i+1],arr[i]]=[arr[i],arr[i+1]];
+    if(act==='dup')arr.splice(i+1,0,JSON.parse(JSON.stringify(arr[i])));
+  }
+  render();changed();
+});
+
+/* ---------- Vérification ---------- */
+function validate(){
+  const errs=[];const okD=s=>/^\d{4}-\d\d-\d\d$/.test(s||''),okT=s=>!s||/^\d\d:\d\d$/.test(s),okU=s=>!s||/^https?:\/\/\S+$/.test(s);
+  if(!okD(V.debut)||!okD(V.fin))errs.push('Titre et dates : le premier et le dernier jour sont requis.');
+  (V.annonces||[]).forEach((a,i)=>{if(/\[[^\]]{1,60}\]/.test(a.texte||''))errs.push(`Annonce ${i+1} : remplacez les [mots entre crochets] du modèle.`);});
+  (V.annonces||[]).forEach((a,i)=>{if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(a.date||''))errs.push(`Annonce ${i+1} : date et heure de publication requises.`);if(!(a.texte||'').trim())errs.push(`Annonce ${i+1} : le texte est vide.`);});
+  (V.avantDepart||[]).forEach((a,i)=>{if(!okD(a.date))errs.push(`Avant le départ ${i+1} : date requise.`);if(!okT(a.heure))errs.push(`Avant le départ ${i+1} : heure invalide.`);if(!okU(a.lien))errs.push(`Avant le départ ${i+1} : le lien doit commencer par https://`);});
+  (V.programme||[]).forEach((d,i)=>{if(!okD(d.date))errs.push(`Programme, jour ${i+1} : date requise.`);(d.items||[]).forEach((it,j)=>{if(!(it.titre||'').trim())errs.push(`Programme ${d.date||'jour '+(i+1)}, rendez-vous ${j+1} : titre requis.`);if(!okT(it.heure))errs.push(`Programme ${d.date}, rendez-vous ${j+1} : heure invalide.`);if(!okU(it.lien))errs.push(`Programme ${d.date}, rendez-vous ${j+1} : le lien doit commencer par https://`);});});
+  (V.liens||[]).forEach((l,i)=>{if(!okU(l.url))errs.push(`Lien ${i+1} : doit commencer par https://`);});
+  (V.vols||[]).forEach((v,i)=>{if(!okD(v.date))errs.push(`Vol ${i+1} : date de départ requise.`);if(!okT(v.heure)||!okT(v.heureArrivee))errs.push(`Vol ${i+1} : heure invalide.`);if(v.dateArrivee&&!okD(v.dateArrivee))errs.push(`Vol ${i+1} : date d’arrivée invalide.`);if(!okU(v.lienEnregistrement))errs.push(`Vol ${i+1} : le lien d’enregistrement doit commencer par https://`);});
+  if(V.sondage&&!okU(V.sondage.lien))errs.push('Sondage : le lien doit commencer par https://');
+  (V.derniereRemontee||[]).forEach((r,i)=>{if(!okT(r.heure))errs.push(`Dernière remontée ${i+1} : heure invalide.`);});
+  (V.lieux||[]).forEach((l,i)=>{if(typeof l.lat!=='number'||typeof l.lng!=='number'||isNaN(l.lat)||isNaN(l.lng))errs.push(`Lieu ${i+1} (${l.nom||'sans nom'}) : latitude et longitude requises.`);});
+  if($('#raw')?.parentNode.classList.contains('bad'))errs.push('Section Avancé : erreur de format à corriger.');
+  return errs;
+}
+function clean(o){ // retire les champs vides facultatifs
+  const c=JSON.parse(JSON.stringify(o));
+  const strip=it=>{['lien','lienTexte','lieu','note','detail'].forEach(k=>{if(it[k]==='')delete it[k];});['rdv','aConfirmer'].forEach(k=>{if(it[k]===false)delete it[k];});};
+  (c.avantDepart||[]).forEach(strip);(c.programme||[]).forEach(d=>(d.items||[]).forEach(strip));
+  (c.annonces||[]).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  return c;
+}
+
+/* ---------- Aperçu, annuler, publier ---------- */
+$('#b-preview').onclick=()=>{LS.set(PREVIEW_KEY,clean(V));window.open('./?brouillon','_blank');};
+$('#b-reset').onclick=()=>{const b=$('#b-reset');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tout annuler?';setTimeout(()=>{delete b.dataset.sure;b.textContent='Annuler';},3500);return;}delete b.dataset.sure;b.textContent='Annuler';V=JSON.parse(base);LS.del(DRAFT_KEY());render();changed();msg('#m-res','Modifications annulées.','info');};
+$('#b-pub').onclick=async()=>{
+  const errs=[...(V&&vDirty()?validate():[]),...gValidate()];
+  if(errs.length){msg('#m-res','<b>À corriger avant de publier :</b><ul style="margin:6px 0 0;padding-left:18px">'+errs.map(e=>`<li>${esc(e)}</li>`).join('')+'</ul>','err');window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(!cx.token||!canWrite){msg('#m-res','Connectez-vous à GitHub avec un jeton qui permet la modification (section « Connexion à GitHub »).','err');$('#s-connexion').open=true;window.scrollTo({top:0,behavior:'smooth'});return;}
+  const b=$('#b-pub');b.disabled=true;b.textContent='Publication…';
+  try{
+   const doV=vDirty(),doG=gDirty();
+   if(doV){
+    const cur=await api(FILE('voyage.json')+'?ref=main',{cache:'no-store'});const cj=cur.ok?await cur.json():null;
+    if(cj&&sha&&cj.sha!==sha&&!b.dataset.force){b.dataset.force='1';msg('#m-res','voyage.json a été modifié sur GitHub depuis l’ouverture de cette page (par vous ailleurs ou par quelqu’un d’autre). Touchez « Publier » encore une fois pour remplacer cette version par la vôtre, ou rechargez la page pour repartir de la version en ligne.','warn');window.scrollTo({top:0,behavior:'smooth'});return;}
+    const out=pretty(clean(V));
+    const ph=phNow();
+    if(!ph&&RAW?.chiffre){throw Error('le contenu en ligne est protégé : entrez la phrase du voyage avant de publier');}
+    const file=ph?pretty(await encryptFile(JSON.parse(out),ph,ph===openPhrase?encSalt:null)):out;
+    const r=await api(FILE('voyage.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour du voyage depuis l’éditeur',content:b64enc(file),sha:cj?.sha||sha||undefined,branch:'main'})});
+    if(!r.ok){const t=await r.text();throw Error(r.status+' '+t.slice(0,140));}
+    const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();
+   }
+    if(doG)await gPublish();
+    if(doV)render();changed();
+    msg('#m-res','✓ Publié'+(doG?(doV?' (voyage et liste du groupe)':' (liste du groupe)'):'')+'. Les voyageurs verront les changements dans une à deux minutes. <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){msg('#m-res','La publication a échoué : '+esc(e.message)+'. Vos modifications restent enregistrées sur cet appareil; réessayez.','err');}
+  finally{b.textContent='Publier';b.disabled=!dirty();}
+};
+addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
+load().then(()=>gLoad());
+</script>
+</body>
+</html>

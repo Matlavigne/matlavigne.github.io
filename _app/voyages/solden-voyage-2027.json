@@ -1,0 +1,49 @@
+{
+  "id": "solden-voyage-2027",
+  "station": "soelden",
+  "titre": "Gendronski Sölden",
+  "dates": "5 au 13 mars 2027",
+  "appCourt": "Sölden 2027",
+  "nomApp": "Gendronski Sölden 2027",
+  "pied": "Sölden 2027",
+  "description": "L’app du voyage de ski en groupe à Sölden, du 5 au 13 mars 2027 : programme, annonces, pistes ouvertes, carte et infos pratiques.",
+  "ogDescription": "Voyage de ski en groupe du 5 au 13 mars 2027 : programme, annonces, pistes ouvertes, météo et carte GPS.",
+  "credit": "Photo : Gaislachkogl, Sloth · <a href=\"https://creativecommons.org/licenses/by/3.0/\" target=\"_blank\" rel=\"noopener\">CC BY 3.0</a> · <a href=\"https://commons.wikimedia.org/wiki/File:Gaislachkogl,_3058_m_-_panoramio.jpg\" target=\"_blank\" rel=\"noopener\">source</a>",
+  "cache": "gendronski-solden-2027",
+  "affiche": {
+    "titre": "Gendronski Sölden",
+    "sousDates": "5 au 13 mars 2027",
+    "bagages": {
+      "soute": [
+        {
+          "t": "Sac à skis",
+          "d": "Skis et bâtons"
+        },
+        {
+          "t": "Sac à bottes",
+          "d": "Bottes de ski et casque de ski"
+        },
+        {
+          "t": "1 bagage de 23 kg",
+          "d": "Vêtements et effets personnels"
+        }
+      ],
+      "noteSoute": "Le sac à skis et le sac à bottes sont en plus du bagage de 23 kg. Ensemble, ski et bottes, ils ne doivent pas dépasser 23 kg. Donc, c'est un bagage de 23 kg et un équipement de ski de 23 kg",
+      "cabine": [
+        {
+          "t": "1 bagage à main",
+          "d": "Format cabine, dans le compartiment au-dessus du siège"
+        },
+        {
+          "t": "1 sac personnel",
+          "d": "Sac à dos ou sac à main, sous le siège devant vous"
+        }
+      ],
+      "important": "Très important : les batteries externes et les batteries au lithium voyagent avec vous en cabine, jamais en soute.",
+      "conseils": [
+        "Gardez dans votre bagage à main : passeport, médicaments, chargeur et vos batteries.",
+        "Mettez une étiquette à votre nom sur chaque sac."
+      ]
+    }
+  }
+}
