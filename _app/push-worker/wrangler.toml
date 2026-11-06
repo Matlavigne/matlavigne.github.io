@@ -9,15 +9,13 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "monaccompagnateur-push"
-database_id = "REMPLACER-PAR-L-ID-DONNE-PAR-WRANGLER"
+database_id = "f647f5e5-4327-444a-8906-a7feae21a63c"
 
 [vars]
 # Sites autorisés à abonner un téléphone et à appeler l'API (séparés par des virgules)
 ALLOWED_ORIGINS = "https://monaccompagnateur.ca"
 # Contact VAPID transmis à Apple et Google (une URL https: ou une adresse mailto:)
 VAPID_SUBJECT = "https://monaccompagnateur.ca"
-# Clé publique produite par scripts/generate-keys.mjs
-VAPID_PUBLIC_KEY = "REMPLACER-PAR-LA-CLE-PUBLIQUE"
 # Envois par passage du cron (le forfait gratuit permet 50 requêtes sortantes par passage)
 MAX_PUSH_PER_RUN = "40"
 # Délai minimal entre la publication et l'envoi, le temps que GitHub Pages mette le site à jour
@@ -49,6 +47,5 @@ url = "/zermatt-mars2027/"
 end = "2027-03-31"
 maxSubs = 300
 
-# Secrets (jamais dans ce fichier) :
-#   npx wrangler secret put VAPID_PRIVATE_JWK
-#   npx wrangler secret put EDITOR_TOKENS
+# Secrets (jamais dans ce fichier), installés par « npm run setup » :
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, EDITOR_TOKENS

@@ -26,36 +26,25 @@ App du voyageur ── abonnement ───────┘
 | `client/editor-push.js` | À inclure dans l'éditeur : synchronise le calendrier à la publication |
 | `test/e2e.mjs` | Test de bout en bout en local (`npm test`) |
 
-## 1. Déployer le Worker (une seule fois, environ 15 minutes)
+## 1. Déployer le Worker (une seule fois, environ 10 minutes)
 
-Il faut un compte Cloudflare (le forfait gratuit suffit) et Node.js 20 ou plus. Le Worker est dans le dépôt du site, dans `_app/push-worker`.
+La base D1 `monaccompagnateur-push` est déjà créée, avec ses tables, et son identifiant est dans `wrangler.toml`. Il faut Node.js 20 ou plus.
 
 ```bash
 git clone https://github.com/Matlavigne/matlavigne.github.io
 cd matlavigne.github.io/_app/push-worker
 npm install
 npx wrangler login
-
-# Base de données : copier le database_id affiché dans wrangler.toml
-npx wrangler d1 create monaccompagnateur-push
-npm run db:init
-
-# Clés : copier la clé publique dans wrangler.toml (VAPID_PUBLIC_KEY),
-# puis coller les deux secrets quand wrangler les demande
-npm run keys
-npx wrangler secret put VAPID_PRIVATE_JWK
-npx wrangler secret put EDITOR_TOKENS
-
-npm run deploy
+npm run setup
 ```
 
-Le déploiement affiche l'adresse du Worker, par exemple `https://monaccompagnateur-push.<compte>.workers.dev`. C'est la valeur `worker` à utiliser plus bas.
+`npm run setup` déploie le Worker, génère la paire VAPID et un jeton d'éditeur par voyage, puis les enregistre comme secrets dans Cloudflare. À la fin, il affiche les jetons d'éditeur : gardez-les dans votre gestionnaire de mots de passe. Il affiche aussi l'adresse du Worker, par exemple `https://monaccompagnateur-push.<compte>.workers.dev`. Mettez-la dans `_app/config.json`.
 
-Gardez une copie de la clé privée et du jeton dans votre gestionnaire de mots de passe. **Ne régénérez pas la paire VAPID** une fois des téléphones abonnés : ils perdraient leurs alertes jusqu'à leur prochaine ouverture de l'app.
+Pour les mises à jour suivantes du code du Worker, lancez `npm run deploy`. **Ne relancez pas `npm run setup`** : de nouvelles clés VAPID désabonneraient tous les téléphones.
 
 ### Ajouter un voyage
 
-Ajoutez un bloc `[vars.TRIPS.<nom-du-dossier>]` dans `wrangler.toml`, par exemple pour St. Anton. Ajoutez son jeton dans le secret `EDITOR_TOKENS` en relançant `npx wrangler secret put EDITOR_TOKENS` avec le JSON complet de tous les voyages. Puis lancez `npm run deploy`.
+Ajoutez un bloc `[vars.TRIPS.<nom-du-dossier>]` dans `wrangler.toml`, par exemple pour St. Anton. Ajoutez son jeton au secret `EDITOR_TOKENS` : relancez `npx wrangler secret put EDITOR_TOKENS` et collez le JSON complet de tous les voyages (les anciens jetons, plus le nouveau, généré par exemple avec `npm run keys`). Puis lancez `npm run deploy`.
 
 Chaque accompagnateur reçoit le jeton de ses propres voyages seulement. Une clé `"*"` dans `EDITOR_TOKENS` sert de jeton administrateur pour tous les voyages.
 
