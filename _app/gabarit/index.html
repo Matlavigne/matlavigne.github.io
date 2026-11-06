@@ -1823,7 +1823,7 @@ function renderEtat(){
   $('#st-list').innerHTML=h||(known?`<li class="grp">Aucun élément ${stFilter==='open'?'ouvert':stFilter==='closed'?'fermé':''} pour ce filtre.</li>`:'');
   /* État des pistes suggérées : par identifiant du flux, sinon par mot-clé de la remontée */
   const fold=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  $$('[data-pick-status]').forEach(el=>{const [a,id,kw]=el.dataset.pickStatus.split('|');const e=etat[DOMS[a]?.feed];const items=e?.items||[];
+  $$('[data-pick-status]').forEach(el=>{const [a,id,kw]=el.dataset.pickStatus.split('|');el.hidden=!DOMS[a]?.feed;if(el.hidden)return;const e=etat[DOMS[a]?.feed];const items=e?.items||[];
     const x=id?items.find(i=>i.id===id):kw?items.find(i=>i.k==='lift'&&fold(i.name).includes(fold(kw))):null;
     if(x){const code=stCode(x.st);el.className='badge b-'+code;el.textContent=(!id&&kw?cleanLift(x.name)+' · ':'')+stLabel(x.st);}else{el.className='tag';el.textContent=e?(id?'État non publié':'État : voir la liste ci-dessus'):'État : …';}});
 }
