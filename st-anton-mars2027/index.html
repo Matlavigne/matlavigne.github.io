@@ -226,7 +226,6 @@ body.locked{overflow:hidden}
 .vol-route .ap{font-size:26px;font-weight:800;line-height:1}.vol-route .t{font-size:18px;font-weight:700}.vol-route .d{font-size:12px;color:var(--muted)}
 .vol-route .arr{text-align:right}.vol-route .mid{color:var(--muted);font-size:12px;text-align:center}
 .vol .row{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
-.vol-slot{min-width:0}.vol-slot .card{margin:0}
 .ck{background:var(--soft);border-radius:12px;padding:10px 12px;margin-top:10px}.ck.open{background:#fdf3d8;border:1px solid #e0b44a}.ck p{margin:0 0 6px}
 .ck .row{display:flex;gap:8px;flex-wrap:wrap}
 .g-grp{margin:14px 0 6px;font-weight:700;color:var(--pine)}
@@ -1231,7 +1230,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 17:54</span></p>
+  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 18:07</span></p>
 </section>
 </main>
 
@@ -1434,12 +1433,9 @@ function renderProgram(){
   $('#days').innerHTML=V.programme.map((d,i)=>{
     const tz=d.fuseau||TZL;const dd=zoned(d.date,'12:00',tz);
     const past=dayKey(n,tz)>d.date;const open=i===ti||(ti<0&&n<start&&i===0);
-    const vl=volsList().filter(v=>v.date===d.date);
-    const volLi=v=>`<li class="vol-li"><span class="h">${esc(v.heure||'—')}</span><div class="vol-slot" data-vol="${v.idx}"></div></li>`;
-    let items='';(d.items||[]).forEach(it=>{const at=it.heure?zoned(d.date,it.heure,tz):null;
-      while(vl.length&&at&&at>vl[0].dep)items+=volLi(vl.shift());items+=itemHtml(it);});
-    items+=vl.map(volLi).join('');
-    return`<details class="day${i===ti?' today':''}${past?' past':''}"${open?' open':''}><summary><span class="dnum"><small>${esc(fmt(dd,'UTC',{weekday:'short'}).replace('.',''))}</small><b>${esc(fmt(dd,'UTC',{day:'numeric'}))}</b></span><span><h3>${esc(d.titre||'')}</h3><span class="sub">${esc(fmt(dd,'UTC',{weekday:'long',day:'numeric',month:'long'}))}${i===ti?' · aujourd’hui':''}${tz==='America/Toronto'?' · heure de Montréal':''}</span></span></summary><ul class="items">${items||'<li><span class="h">—</span><div class="n">Détails à venir.</div></li>'}</ul></details>`;
+    const items=(d.items||[]).map(it=>itemHtml(it)).join('');
+    const vols=volsList().filter(v=>v.date===d.date).map(v=>`<div class="vol-slot" data-vol="${v.idx}"></div>`).join('');
+    return`<details class="day${i===ti?' today':''}${past?' past':''}"${open?' open':''}><summary><span class="dnum"><small>${esc(fmt(dd,'UTC',{weekday:'short'}).replace('.',''))}</small><b>${esc(fmt(dd,'UTC',{day:'numeric'}))}</b></span><span><h3>${esc(d.titre||'')}</h3><span class="sub">${esc(fmt(dd,'UTC',{weekday:'long',day:'numeric',month:'long'}))}${i===ti?' · aujourd’hui':''}${tz==='America/Toronto'?' · heure de Montréal':''}</span></span></summary><ul class="items">${items||'<li><span class="h">—</span><div class="n">Détails à venir.</div></li>'}</ul></details>${vols}`;
   }).join('');
   const pre=(V.avantDepart||[]);
   $('#pre').innerHTML=pre.length?`<details class="day"${n<start?' open':''}><summary><span class="dnum"><small>avant</small><b>✈</b></span><span><h3>Avant le départ</h3><span class="sub">Préparatifs et réunion d’information</span></span></summary><ul class="items">${pre.map(it=>itemHtml(it,it.date?fmt(zoned(it.date,'12:00',it.fuseau||'America/Toronto'),'UTC',{weekday:'long',day:'numeric',month:'long'})+(it.heure?' · heure de Montréal':''):'')).join('')}</ul></details>`:'';
@@ -1669,7 +1665,7 @@ function ckHtml(v,i,n,full){
   const cal=`<button type="button" class="light" data-ck-ics="${i}">Rappel dans mon calendrier</button>`;
   return `<div class="ck${open?' open':''}"><p><b>${open?'L’enregistrement en ligne est ouvert.':'Enregistrement en ligne'}</b> ${open?'Enregistrez-vous et gardez votre carte d’embarquement dans le téléphone.':'Il ouvre '+ckH(v)+' h avant le départ, '+quand+'.'}</p>${v.enregistrementNote?`<p class="small">${esc(v.enregistrementNote)}</p>`:''}<div class="row">${open?btn:cal}</div></div>`;
 }
-/* Les vols sont placés dans le programme, à leur heure, le jour du départ.
+/* Chaque vol est placé en pleine largeur après la journée de son départ.
    Le jour du vol est sa date de départ locale (v.date); un vol dont le jour
    n’est pas dans le programme reste affiché en haut. */
 function volPlaced(v){return (V.programme||[]).some(d=>d.date===v.date);}
@@ -1677,7 +1673,7 @@ function fillVolSlots(){const n=NOW(),list=volsList();
   document.querySelectorAll('#days .vol-slot').forEach(el=>{const v=list[+el.dataset.vol];el.innerHTML=v?volCard(v,n):'';});}
 function renderVols(){
   const n=NOW(),list=volsList(),loose=list.filter(v=>!volPlaced(v));
-  $('#vols').innerHTML=list.length?`${loose.length?`<p class="overline">Vos vols</p>${loose.map(v=>volCard(v,n)).join('')}`:''}<p class="small" style="margin:${loose.length?'-4px':'0'} 0 16px">Les vols sont placés dans le programme, à leur heure. L’état affiché suit l’horaire prévu; pour un retard ou un changement de porte, touchez « Suivre le vol en direct » ou consultez l’app de la compagnie.</p>`:'';
+  $('#vols').innerHTML=list.length?`${loose.length?`<p class="overline">Vos vols</p>${loose.map(v=>volCard(v,n)).join('')}`:''}<p class="small" style="margin:${loose.length?'-4px':'0'} 0 16px">Chaque vol est placé dans le programme, après la journée de son départ. L’état affiché suit l’horaire prévu; pour un retard ou un changement de porte, touchez « Suivre le vol en direct » ou consultez l’app de la compagnie.</p>`:'';
   fillVolSlots();
   const cur=list.filter(v=>n>=new Date(Math.min(v.dep-36*36e5,ckOpen(v)-12*36e5))&&n<=new Date((v.arr||v.dep).getTime()+3*36e5));
   $('#home-vol').innerHTML=cur.length?`<p class="overline">${cur.length>1?'Vos vols':'Votre vol'}</p>${cur.map(v=>volCard(v,n)).join('')}`:'';
