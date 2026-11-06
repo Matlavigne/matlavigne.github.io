@@ -9,7 +9,7 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "monaccompagnateur-push"
-database_id = "f647f5e5-4327-444a-8906-a7feae21a63c"
+database_id = "fe8618b4-e283-4e83-b9de-ed2235358117"
 
 [vars]
 # Sites autorisés à abonner un téléphone et à appeler l'API (séparés par des virgules)
