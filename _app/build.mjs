@@ -6,7 +6,7 @@
 //
 // Fichiers générés dans chaque dossier de voyage (ne pas les modifier à la main) :
 //   index.html, editeur.html, installer.html, affiche-bagages.html, sw.js, manifest.webmanifest
-// Jamais touchés : voyage.json, groupe.json, images et icônes (propres à chaque voyage).
+// Jamais touchés : voyage.json, images et icônes (propres à chaque voyage).
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";

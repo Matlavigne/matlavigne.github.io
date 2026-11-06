@@ -127,25 +127,10 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
   </details>
 
   <details class="sec" id="s-groupe">
-    <summary><h2>Liste du groupe (accompagnateur seulement)</h2><span class="n" id="g-state">…</span></summary>
+    <summary><h2>Liste du groupe (accompagnateur seulement)</h2><span class="n">sur le téléphone</span></summary>
     <div class="body">
-      <p class="help">Chambres, niveaux, sous-groupes de ski, téléphones. Ces renseignements sont chiffrés avec une <b>clé accompagnateur</b>, distincte de la phrase du voyage, dans un fichier à part (<code>groupe.json</code>). Les voyageurs ne la reçoivent jamais : ils ne peuvent pas lire la liste. Dans l’app, ouvrez Infos › « Accès accompagnateur ».</p>
-      <div class="grid">
-        <div class="f full"><label for="g-key">Clé accompagnateur</label><input id="g-key" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="au moins 16 caractères"></div>
-        <label class="chk"><input type="checkbox" id="g-show"> Afficher la clé</label>
-        <label class="chk"><input type="checkbox" id="g-keep" checked> Mémoriser sur cet appareil</label>
-      </div>
-      <div class="addbar"><button type="button" id="g-open">Ouvrir la liste</button><button type="button" class="light" id="g-gen">Générer une clé forte</button></div>
-      <p class="help" id="g-msg"></p>
-      <div id="g-body" hidden>
-        <div id="g-list"></div>
-        <div class="addbar"><button type="button" class="light" id="g-add">+ Ajouter une personne</button><button type="button" class="light" id="g-paste-t">Coller une liste</button></div>
-        <div id="g-paste" hidden>
-          <p class="help">Une personne par ligne, champs séparés par des tabulations (copier-coller d’Excel) ou des points-virgules, dans cet ordre : <b>Nom ; Chambre ; Niveau ; Sous-groupe ; Téléphone ; Notes</b>.</p>
-          <div class="f full"><textarea id="g-paste-in" rows="6" placeholder="Marie Tremblay;214;Intermédiaire;Groupe A;+1 514 555-0100;"></textarea></div>
-          <div class="addbar"><button type="button" id="g-paste-go">Ajouter ces personnes</button></div>
-        </div>
-      </div>
+      <p class="help">La liste du groupe ne passe plus par le site : aucune donnée des voyageurs n’est publiée, même chiffrée. Elle se gère dans l’app, sur votre téléphone : <b>Infos › Accès accompagnateur</b>. Importez-y un fichier CSV (Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre) ou ajoutez les personnes à la main. Elle reste sur ce téléphone seulement; gardez une copie du CSV pour la réimporter au besoin.</p>
+      <p><a class="btn light" href="./#groupe" target="_blank" rel="noopener">Ouvrir la liste dans l’app</a></p>
     </div>
   </details>
 
@@ -221,62 +206,9 @@ const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','
 $('#ph-gen').onclick=()=>{const r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;};const w=[];while(w.length<3){const m=MOTS[r(MOTS.length)];if(!w.includes(m))w.push(m);}$('#ph-in').value=w.join('-');$('#ph-show').checked=true;$('#ph-in').type='text';savePh();phUi();if(V)changed();};
 $('#ph-in').value=LS.get(PH_KEY(),'')||'';
 
-/* ---------- Liste du groupe : fichier groupe.json, chiffré avec la clé accompagnateur ---------- */
-const GK_KEY=()=>'editeur-cle-groupe-'+TRIP.id;
-const NIVEAUX=['','Débutant','Intermédiaire','Intermédiaire-avancé','Avancé','Expert'];
-let G=null,Gbase='',Gsha=null,GRAW=null,gOpenKey='';
-const gNow=()=>$('#g-key').value.trim();
-const gDirty=()=>!!G&&(pretty(G)!==Gbase||(gNow()&&gNow()!==gOpenKey));
-function gSave(){if($('#g-keep').checked&&gNow())LS.set(GK_KEY(),gNow());else LS.del(GK_KEY());}
-$('#g-key').value=LS.get(GK_KEY(),'')||'';
-$('#g-show').onchange=()=>{$('#g-key').type=$('#g-show').checked?'text':'password';};
-$('#g-keep').onchange=gSave;
-$('#g-key').addEventListener('input',()=>{gSave();if(G)changed();});
-$('#g-gen').onclick=()=>{const al='abcdefghjkmnpqrstuvwxyz23456789';const r=new Uint32Array(20);crypto.getRandomValues(r);const c=[...r].map(x=>al[x%al.length]).join('');$('#g-key').value=c.match(/.{5}/g).join('-');$('#g-show').checked=true;$('#g-key').type='text';gSave();if(G)changed();$('#g-msg').textContent='Clé générée. Notez-la dans votre gestionnaire de mots de passe : sans elle, la liste ne peut pas être rouverte.';};
-async function gLoad(){
-  $('#g-msg').textContent='Lecture de la liste…';
-  let txt=null;Gsha=null;
-  if(cx.repo){try{const r=await api(FILE('groupe.json')+'?ref=main',{cache:'no-store'});if(r.ok){const j=await r.json();txt=b64dec(j.content);Gsha=j.sha;}else if(r.status===404)txt='';}catch(e){}}
-  if(txt==null){try{const r=await fetch('groupe.json',{cache:'no-store'});if(r.ok)txt=await r.text();else if(r.status===404)txt='';}catch(e){}}
-  if(txt==null){$('#g-msg').textContent='Impossible de lire la liste du groupe. Vérifiez la connexion.';return;}
-  if(!txt.trim()){GRAW=null;G={voyageurs:[]};Gbase=pretty(G);gOpenKey='';$('#g-msg').textContent='Aucune liste publiée pour l’instant. Ajoutez des personnes, choisissez une clé accompagnateur, puis « Publier ».';gRender();return;}
-  try{GRAW=JSON.parse(txt);}catch(e){$('#g-msg').textContent='groupe.json est illisible.';return;}
-  const k=gNow();if(!k){G=null;$('#g-body').hidden=true;$('#g-state').textContent='🔒 clé requise';$('#g-msg').textContent='La liste est protégée. Entrez la clé accompagnateur, puis « Ouvrir la liste ».';return;}
-  try{const pt=await decryptFile(GRAW,k);G={voyageurs:Array.isArray(pt.voyageurs)?pt.voyageurs:[]};gOpenKey=k;Gbase=pretty(G);$('#g-msg').textContent='';gRender();}
-  catch(e){G=null;$('#g-body').hidden=true;$('#g-state').textContent='🔒 clé incorrecte';$('#g-msg').textContent='Clé incorrecte : impossible d’ouvrir la liste.';}
-}
-$('#g-open').onclick=()=>{gSave();gLoad();};
-function gRender(){
-  $('#g-body').hidden=false;const L=G.voyageurs;
-  $('#g-state').textContent=L.length+' pers.'+(GRAW?' · protégée':'');
-  $('#g-list').innerHTML=L.map((p,i)=>`<div class="item"><div class="hd"><b>${esc(p.nom||'Nouvelle personne')}${p.sousGroupe?' · '+esc(p.sousGroupe):''}</b><button type="button" class="mini danger" data-gdel="${i}" aria-label="Supprimer">✕</button></div><div class="bd"><div class="grid">
-    <div class="f"><label>Nom</label><input data-g="${i}" data-k="nom" value="${esc(p.nom)}"></div>
-    <div class="f"><label>Chambre</label><input data-g="${i}" data-k="chambre" value="${esc(p.chambre)}"></div>
-    <div class="f"><label>Niveau</label><select data-g="${i}" data-k="niveau">${NIVEAUX.map(n=>`<option${(p.niveau||'')===n?' selected':''}>${esc(n)}</option>`).join('')}${p.niveau&&!NIVEAUX.includes(p.niveau)?`<option selected>${esc(p.niveau)}</option>`:''}</select></div>
-    <div class="f"><label>Sous-groupe de ski</label><input data-g="${i}" data-k="sousGroupe" value="${esc(p.sousGroupe)}" placeholder="ex. Groupe A"></div>
-    <div class="f"><label>Téléphone</label><input data-g="${i}" data-k="telephone" type="tel" value="${esc(p.telephone)}"></div>
-    <div class="f full"><label>Notes</label><input data-g="${i}" data-k="notes" value="${esc(p.notes)}"></div></div></div></div>`).join('')||'<p class="help">Aucune personne dans la liste.</p>';
-}
-document.addEventListener('input',e=>{const el=e.target;if(el.dataset.g==null||!G)return;G.voyageurs[+el.dataset.g][el.dataset.k]=el.value;changed();if(el.dataset.k==='nom'||el.dataset.k==='sousGroupe'){const it=G.voyageurs[+el.dataset.g];el.closest('.item').querySelector('.hd b').textContent=(it.nom||'Nouvelle personne')+(it.sousGroupe?' · '+it.sousGroupe:'');}});
-document.addEventListener('change',e=>{if(e.target.dataset.g!=null&&e.target.tagName==='SELECT')e.target.dispatchEvent(new Event('input',{bubbles:true}));});
-document.addEventListener('click',e=>{const d=e.target.closest('[data-gdel]');if(!d)return;if(!d.dataset.sure){d.dataset.sure='1';d.textContent='Supprimer?';setTimeout(()=>{if(d.isConnected){delete d.dataset.sure;d.textContent='✕';}},3500);return;}G.voyageurs.splice(+d.dataset.gdel,1);gRender();changed();});
-$('#g-add').onclick=()=>{G.voyageurs.push({nom:'',chambre:'',niveau:'',sousGroupe:'',telephone:'',notes:''});gRender();changed();};
-$('#g-paste-t').onclick=()=>{$('#g-paste').hidden=!$('#g-paste').hidden;};
-$('#g-paste-go').onclick=()=>{const lines=$('#g-paste-in').value.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);let n=0;
-  lines.forEach(l=>{const c=(l.includes('\t')?l.split('\t'):l.split(';')).map(x=>x.trim());if(!c[0]||/^nom$/i.test(c[0]))return;G.voyageurs.push({nom:c[0],chambre:c[1]||'',niveau:c[2]||'',sousGroupe:c[3]||'',telephone:c[4]||'',notes:c[5]||''});n++;});
-  $('#g-paste-in').value='';$('#g-paste').hidden=true;gRender();changed();$('#g-msg').textContent=n+' personne(s) ajoutée(s). Vérifiez, puis « Publier ».';};
-function gValidate(){const e=[];if(!G||!gDirty())return e;const k=gNow();
-  if(k.length<16)e.push('Liste du groupe : la clé accompagnateur doit compter au moins 16 caractères (« Générer une clé forte »).');
-  if(normPhrase(k)===phNow())e.push('Liste du groupe : la clé accompagnateur doit être différente de la phrase du voyage.');
-  G.voyageurs.forEach((p,i)=>{if(!(p.nom||'').trim())e.push(`Liste du groupe, personne ${i+1} : nom requis.`);});return e;}
-async function gPublish(){
-  const file=pretty(await encryptFile({voyageurs:G.voyageurs.map(p=>Object.fromEntries(Object.entries(p).filter(([k,v])=>v!==''&&v!=null)))},gNow(),gNow()===gOpenKey&&GRAW?.chiffre?.salt?GRAW.chiffre.salt:null));
-  const pub=JSON.parse(file);PUBLIC_KEYS.forEach(k=>delete pub[k]);const out=pretty(pub);
-  const cur=await api(FILE('groupe.json')+'?ref=main',{cache:'no-store'});const cj=cur.ok?await cur.json():null;
-  const r=await api(FILE('groupe.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour de la liste du groupe (chiffrée)',content:b64enc(out),sha:cj?.sha||Gsha||undefined,branch:'main'})});
-  if(!r.ok){const t=await r.text();throw Error('liste du groupe : '+r.status+' '+t.slice(0,120));}
-  const j=await r.json();Gsha=j.content.sha;GRAW=pub;gOpenKey=gNow();Gbase=pretty(G);gRender();
-}
+/* ---------- Liste du groupe : gérée dans l’app, sur le téléphone de l’accompagnateur (rien de publié) ---------- */
+try{localStorage.removeItem('editeur-cle-groupe-'+TRIP.id);}catch(e){}
+const gDirty=()=>false;function gValidate(){return [];}
 
 /* ---------- État ---------- */
 let V=null,base='',sha=null,canWrite=false;
@@ -516,7 +448,7 @@ $('#b-pub').onclick=async()=>{
   if(!cx.token||!canWrite){msg('#m-res','Connectez-vous à GitHub avec un jeton qui permet la modification (section « Connexion à GitHub »).','err');$('#s-connexion').open=true;window.scrollTo({top:0,behavior:'smooth'});return;}
   const b=$('#b-pub');b.disabled=true;b.textContent='Publication…';
   try{
-   const doV=vDirty(),doG=gDirty();
+   const doV=vDirty();
    if(doV){
     const cur=await api(FILE('voyage.json')+'?ref=main',{cache:'no-store'});const cj=cur.ok?await cur.json():null;
     if(cj&&sha&&cj.sha!==sha&&!b.dataset.force){b.dataset.force='1';msg('#m-res','voyage.json a été modifié sur GitHub depuis l’ouverture de cette page (par vous ailleurs ou par quelqu’un d’autre). Touchez « Publier » encore une fois pour remplacer cette version par la vôtre, ou rechargez la page pour repartir de la version en ligne.','warn');window.scrollTo({top:0,behavior:'smooth'});return;}
@@ -528,14 +460,13 @@ $('#b-pub').onclick=async()=>{
     if(!r.ok){const t=await r.text();throw Error(r.status+' '+t.slice(0,140));}
     const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
    }
-    if(doG)await gPublish();
     if(doV)render();changed();
-    msg('#m-res','✓ Publié'+(doG?(doV?' (voyage et liste du groupe)':' (liste du groupe)'):'')+'. Les voyageurs verront les changements dans une à deux minutes. <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
+    msg('#m-res','✓ Publié. Les voyageurs verront les changements dans une à deux minutes. <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){msg('#m-res','La publication a échoué : '+esc(e.message)+'. Vos modifications restent enregistrées sur cet appareil; réessayez.','err');}
   finally{b.textContent='Publier';b.disabled=!dirty();}
 };
 addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
-load().then(()=>gLoad());
+load();
 
 /* ---------- Alertes du voyage (push) ---------- */
 /* Alertes du voyage — côté éditeur de l'accompagnateur.

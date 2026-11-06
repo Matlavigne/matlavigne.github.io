@@ -232,6 +232,13 @@ body.locked{overflow:hidden}
 .g-p{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--white);margin-bottom:6px}
 .g-p .n{font-weight:700}.g-p .ch{font-weight:700;text-align:right}.g-p .m{grid-column:1/-1;font-size:13px;color:var(--muted)}
 .g-p .acts{grid-column:1/-1;display:flex;gap:14px;font-size:14px;margin-top:2px}
+.g-p .ed{font-size:13px;padding:0;min-height:0;border:0;background:none;color:var(--pine);text-decoration:underline;justify-self:end}
+.g-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.g-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g-form .full{grid-column:1/-1}
+.g-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+.g-form input,.g-form select,.g-form textarea{font:inherit;font-size:16px;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+.g-imp-t{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}.g-imp-t td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}
+.g-tools{margin-top:18px}
 .pres-top{display:flex;gap:10px;align-items:center}.pres-top select{flex:1;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:0}
 .pres-new{display:flex;gap:8px;margin-top:8px}.pres-new input{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
 .pres-count{font-size:20px;font-weight:800;margin:10px 0 8px}.pres-count .ok{color:#246b3c}.pres-count .ko{color:var(--red)}
@@ -1107,16 +1114,29 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <!-- INFOS -->
 <section class="view" id="v-groupe" hidden aria-labelledby="t-groupe">
   <h2 id="t-groupe">Mon groupe</h2>
-  <p class="small">Réservé à l’accompagnateur. La liste est chiffrée avec la clé accompagnateur; les voyageurs ne peuvent pas la lire.</p>
-  <form class="card" id="g-form" autocomplete="off" hidden>
-    <label for="g-in"><b>Clé accompagnateur</b></label>
-    <input id="g-in" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="font:inherit;font-size:17px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;width:100%;box-sizing:border-box;margin:8px 0">
-    <label class="small" style="display:flex;gap:6px;align-items:center;margin-bottom:10px"><input type="checkbox" id="g-keep" checked> Garder sur ce téléphone (pour l’ouvrir hors ligne)</label>
-    <button type="submit">Ouvrir la liste</button>
-    <p class="small" id="g-msg" role="status"></p>
+  <p class="small">Réservé à l’accompagnateur. La liste reste <b>sur ce téléphone seulement</b> : elle n’est jamais envoyée sur Internet, ni au site, ni aux voyageurs.</p>
+  <div class="card" id="g-empty" hidden>
+    <h3>Aucune liste sur ce téléphone</h3>
+    <p class="small">Importez un fichier CSV (exporté d’Excel) ou ajoutez les personnes une à une. Colonnes : <b>Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre</b>. Une ligne d’en-tête est reconnue; sans en-tête, cet ordre est utilisé.</p>
+    <div class="g-acts"><button type="button" data-g-import>Importer un CSV</button><button type="button" class="light" data-g-add>Ajouter une personne</button></div>
+  </div>
+  <input type="file" id="g-file" accept=".csv,.txt,text/csv,text/plain" hidden>
+  <div class="card" id="g-imp" hidden></div>
+  <form class="card" id="g-edit" autocomplete="off" hidden>
+    <h3 id="g-edit-t">Ajouter une personne</h3>
+    <div class="g-form">
+      <label>Genre<select name="genre"><option value="">—</option><option value="F">Femme</option><option value="M">Homme</option><option value="X">Autre</option></select></label>
+      <label>Prénom<input name="prenom" autocomplete="off"></label>
+      <label>Nom<input name="nom" autocomplete="off"></label>
+      <label>Cellulaire<input name="cellulaire" type="tel" autocomplete="off" placeholder="514 555-0100"></label>
+      <label>Date de naissance<input name="naissance" type="date"></label>
+      <label class="full">Autre<textarea name="autre" rows="2"></textarea></label>
+    </div>
+    <p class="small" id="g-edit-msg" role="status"></p>
+    <div class="g-acts"><button type="submit">Enregistrer</button><button type="button" class="light" id="g-cancel">Annuler</button><button type="button" class="light" id="g-del" hidden>Supprimer</button></div>
   </form>
   <div id="g-view" hidden>
-    <div class="controls"><input id="g-q" type="search" placeholder="Chercher un nom, une chambre…" style="font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;flex:1;min-width:0"><button type="button" class="light" id="g-lock">Verrouiller</button></div>
+    <div class="controls"><input id="g-q" type="search" placeholder="Chercher un nom…" style="font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;flex:1;min-width:0"><button type="button" class="light" data-g-add>+ Ajouter</button></div>
     <p class="small" id="g-sum"></p>
     <div class="controls"><div class="seg" role="group" aria-label="Affichage"><button type="button" data-gmode="liste" aria-pressed="true">Liste</button><button type="button" data-gmode="pres" aria-pressed="false">Présences</button></div></div>
     <div id="g-list"></div>
@@ -1130,6 +1150,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <div class="row" style="gap:8px;flex-wrap:wrap;display:flex;margin:0 0 10px"><button type="button" class="light" id="p-miss" aria-pressed="false">Seulement les absents</button><button type="button" class="light" id="p-reset">Tout décocher</button><button type="button" class="light" id="p-del">Supprimer cet appel</button></div>
       <div id="p-list"></div>
       <p class="small">Les présences sont gardées sur ce téléphone seulement : chaque accompagnateur fait son propre appel.</p>
+    </div>
+    <div class="card g-tools">
+      <h3>Gérer la liste</h3>
+      <div class="g-acts"><button type="button" class="light" data-g-import>Importer un CSV</button><button type="button" class="light" id="g-export">Exporter une copie (CSV)</button><button type="button" class="light" id="g-wipe">Effacer la liste</button></div>
+      <p class="small">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. À la fin du voyage, touchez « Effacer la liste ».</p>
     </div>
   </div>
   <p class="foot"><a href="#infos">← Infos</a></p>
@@ -1528,42 +1553,114 @@ renderPasse();
 
 // Numéro WhatsApp : chiffres seulement; un numéro nord-américain à 10 chiffres reçoit l’indicatif 1
 const waNum=t=>{const raw=String(t||'');const d=raw.replace(/\D/g,'');return !raw.trim().startsWith('+')&&d.length===10?'1'+d:d;};
-/* ---------- Accès accompagnateur : liste du groupe (groupe.json, clé distincte) ---------- */
-const KEY_GRP=TRIP.id+'-cle-groupe-v1';
-let GRP=null,GRP_KEY=null;
-async function grpFetch(){const r=await fetch('groupe.json',{cache:'no-store'});if(r.status===404)return null;if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-async function grpOpen(file,key){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(file.chiffre.iv)},key,unb64(file.chiffre.data));const g=JSON.parse(new TextDecoder().decode(pt));
-  // identifiant non réversible par personne (les présences ne gardent aucun nom sur le téléphone)
-  for(const p of (g.voyageurs||[])){const h=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(normPhrase(p.nom)+'|'+String(p.chambre||''))));p._id=[...h.slice(0,6)].map(b=>b.toString(16).padStart(2,'0')).join('');}
-  return g;}
-async function grpStoredKey(c){const s0=store.get(KEY_GRP,null);if(!s0||s0.salt!==c.salt)return null;try{return await crypto.subtle.importKey('raw',unb64(s0.k),{name:'AES-GCM'},true,['decrypt']);}catch(e){return null;}}
-async function renderGroupe(){
-  const f=$('#g-form'),vw=$('#g-view'),m=$('#g-msg');
-  let file;try{file=await grpFetch();}catch(e){f.hidden=false;vw.hidden=true;m.textContent='Connectez-vous à Internet une première fois pour charger la liste.';return;}
-  if(!file||!file.chiffre){f.hidden=true;vw.hidden=false;$('#g-sum').textContent='Aucune liste publiée pour l’instant. Ajoutez-la dans la page d’édition, section « Liste du groupe ».';$('#g-list').innerHTML='';return;}
-  GRP_KEY=GRP_KEY||await grpStoredKey(file.chiffre);
-  if(GRP_KEY){try{GRP=await grpOpen(file,GRP_KEY);}catch(e){GRP=null;GRP_KEY=null;m.textContent='La clé accompagnateur a changé. Entrez la nouvelle.';}}
-  if(!GRP){f.hidden=false;vw.hidden=true;f._file=file;return;}
-  f.hidden=true;vw.hidden=false;drawGroupe();if(gMode==='pres')drawPres();
+/* ---------- Accès accompagnateur : liste du groupe, gardée sur ce téléphone seulement ----------
+   Rien n'est envoyé sur Internet : import d'un CSV ou saisie à la main, stockage local (localStorage).
+   Champs : genre, nom, prenom, cellulaire, naissance (AAAA-MM-JJ si reconnue), autre. */
+const GRP_LOCAL=TRIP.id+'-groupe-local-v1';
+try{localStorage.removeItem(TRIP.id+'-cle-groupe-v1');}catch(e){}   // ancienne clé (liste publiée), plus utilisée
+let GRP=null,gEditId=null,gPending=null;
+const gLoadLocal=()=>{const g=store.get(GRP_LOCAL,null);return g&&Array.isArray(g.voyageurs)?g:{voyageurs:[]};};
+function gSaveLocal(){GRP.maj=Date.now();store.set(GRP_LOCAL,GRP);try{navigator.storage?.persist?.();}catch(e){}}
+const gId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const gNom=p=>[p.prenom,p.nom].filter(Boolean).join(' ')||'(sans nom)';
+const gTri=(x,y)=>String(x.nom||'').localeCompare(String(y.nom||''),'fr')||String(x.prenom||'').localeCompare(String(y.prenom||''),'fr');
+const GENRE={F:'Femme',M:'Homme',X:'Autre'};
+function gGenre(v){const t=normPhrase(v).replace(/-/g,' ');if(!t)return '';if(/^(f|femme|female|feminin|fille|mme|madame)$/.test(t))return 'F';if(/^(m|h|homme|male|masculin|garcon|m\.|monsieur)$/.test(t))return 'M';if(/^(x|autre|other|non binaire)$/.test(t))return 'X';return String(v).trim();}
+function gDate(v){const t=String(v||'').trim();let m;
+  if((m=t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/)))return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  if((m=t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/))){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];if(mo>=1&&mo<=12&&d>=1&&d<=31)return `${m[3]}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+  return t;}
+function gAge(iso){if(!/^\d{4}-\d\d-\d\d$/.test(iso||''))return null;const ref=new Date();const [y,m,d]=iso.split('-').map(Number);let a=ref.getFullYear()-y;if(ref.getMonth()+1<m||(ref.getMonth()+1===m&&ref.getDate()<d))a--;return a>=0&&a<130?a:null;}
+const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
+const gTel=t=>String(t||'').replace(/[^\d+]/g,'');
+
+/* Lecture CSV : UTF-8 ou Windows-1252 (Excel), séparateur ; , ou tabulation, guillemets. */
+function gDecode(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(e){return new TextDecoder('windows-1252').decode(buf);}}
+function gParseCsv(txt){
+  txt=txt.replace(/^﻿/,'');const first=(txt.split(/\r?\n/).find(l=>l.trim())||'');
+  const cnt=c=>first.split(c).length-1;const sep=[['\t',cnt('\t')],[';',cnt(';')],[',',cnt(',')]].sort((x,y)=>y[1]-x[1])[0][0];
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;continue;}
+    if(c==='"'&&f==='')q=true;else if(c===sep){row.push(f);f='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}else f+=c;}
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(Boolean));}
+const G_COLS=[['genre',/^(genre|sexe|sex|gender)$/],['nom',/^(nom|nom de famille|last name|lastname|surname)$/],['prenom',/^(prenom|first name|firstname|given name)$/],['cellulaire',/^(cellulaire|cell|mobile|portable|telephone|tel|telephone cellulaire|no cellulaire|numero de cellulaire|phone)$/],['naissance',/^(date de naissance|naissance|date naissance|ddn|birth date|birthdate|date of birth|dob)$/],['autre',/^(autre|autres|notes?|remarques?|commentaires?|other)$/]];
+function gFromRows(rows){
+  if(!rows.length)return [];
+  const norm=h=>normPhrase(h).replace(/-/g,' ').replace(/[.:#]/g,'').trim();
+  const hdr=rows[0].map(h=>{const n=norm(h);const c=G_COLS.find(([,re])=>re.test(n));return c?c[0]:null;});
+  let map,data;
+  if(hdr.filter(Boolean).length>=2){map=hdr.map((k,i)=>k||{extra:rows[0][i]});data=rows.slice(1);}
+  else{map=['genre','nom','prenom','cellulaire','naissance','autre'];data=rows;}
+  return data.map(r=>{const p={genre:'',nom:'',prenom:'',cellulaire:'',naissance:'',autre:''};const extra=[];
+    r.forEach((v,i)=>{const k=map[i];if(!v)return;if(typeof k==='string')p[k]=p[k]?p[k]+' · '+v:v;else if(k&&k.extra)extra.push(k.extra+' : '+v);else extra.push(v);});
+    if(extra.length)p.autre=[p.autre,...extra].filter(Boolean).join(' · ');
+    p.genre=gGenre(p.genre);p.naissance=gDate(p.naissance);p._id=gId();return p;}).filter(p=>p.nom||p.prenom);}
+
+function renderGroupe(){
+  GRP=gLoadLocal();const n=GRP.voyageurs.length;
+  $('#g-empty').hidden=!!n||!$('#g-edit').hidden||!$('#g-imp').hidden;
+  $('#g-view').hidden=!n;
+  if(n){drawGroupe();if(gMode==='pres')drawPres();}
 }
 function drawGroupe(){
-  const q=normPhrase($('#g-q').value).replace(/-/g,' ');
-  const L=(GRP.voyageurs||[]).filter(p=>!q||normPhrase([p.nom,p.chambre,p.sousGroupe,p.niveau,p.notes].join(' ')).replace(/-/g,' ').includes(q));
-  const by={};L.forEach(p=>{(by[p.sousGroupe||'Sans sous-groupe']=by[p.sousGroupe||'Sans sous-groupe']||[]).push(p);});
-  const niv={};(GRP.voyageurs||[]).forEach(p=>{if(p.niveau)niv[p.niveau]=(niv[p.niveau]||0)+1;});
-  $('#g-sum').textContent=(GRP.voyageurs||[]).length+' personnes'+(Object.keys(niv).length?' · '+Object.entries(niv).map(([k,v])=>v+' '+k.toLowerCase()).join(', '):'');
-  const tel=t=>String(t||'').replace(/[^\d+]/g,'');
-  $('#g-list').innerHTML=Object.keys(by).sort((a,b)=>a.localeCompare(b,'fr',{numeric:true})).map(g=>`<p class="g-grp">${esc(g)} · ${by[g].length}</p>`+by[g].sort((a,b)=>String(a.nom).localeCompare(String(b.nom),'fr')).map(p=>`<div class="g-p"><span class="n">${esc(p.nom||'')}</span><span class="ch">${p.chambre?'Ch. '+esc(p.chambre):''}</span><span class="m">${esc([p.niveau,p.notes].filter(Boolean).join(' · '))}</span>${p.telephone?`<span class="acts"><a href="tel:${esc(tel(p.telephone))}">Appeler ${esc(p.telephone)}</a><a href="https://wa.me/${esc(waNum(p.telephone))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`).join('')).join('')||'<p class="small">Aucun résultat.</p>';
+  const all=GRP.voyageurs;const q=normPhrase($('#g-q').value).replace(/-/g,' ');
+  const L=all.filter(p=>!q||normPhrase([p.prenom,p.nom,p.cellulaire,p.autre].join(' ')).replace(/-/g,' ').includes(q)).sort(gTri);
+  const g={F:0,M:0};all.forEach(p=>{if(g[p.genre]!=null)g[p.genre]++;});
+  const ages=all.map(p=>gAge(p.naissance)).filter(a=>a!=null),mineurs=ages.filter(a=>a<18).length;
+  $('#g-sum').textContent=all.length+' personne'+(all.length>1?'s':'')+(g.F||g.M?` · ${g.F} femme${g.F>1?'s':''}, ${g.M} homme${g.M>1?'s':''}`:'')+(mineurs?` · ${mineurs} mineur${mineurs>1?'s':''}`:'')+(GRP.maj?' · modifiée le '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(GRP.maj)):'');
+  $('#g-list').innerHTML=L.map(p=>{const a=gAge(p.naissance);
+    const info=[GENRE[p.genre]||p.genre,p.naissance?gDateTxt(p.naissance)+(a!=null?` (${a} ans)`:''):''].filter(Boolean).join(' · ');
+    return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler ${esc(p.cellulaire)}</a><a href="sms:${esc(gTel(p.cellulaire))}">Texto</a><a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
 }
-$('#g-form').addEventListener('submit',async e=>{e.preventDefault();const f=$('#g-form'),m=$('#g-msg');const file=f._file;if(!file){renderGroupe();return;}
-  m.textContent='Vérification…';
-  try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase($('#g-in').value)),'PBKDF2',false,['deriveKey']);
-    const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(file.chiffre.salt),iterations:file.chiffre.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
-    GRP=await grpOpen(file,key);GRP_KEY=key;$('#g-in').value='';m.textContent='';
-    if($('#g-keep').checked)store.set(KEY_GRP,{salt:file.chiffre.salt,k:tob64(new Uint8Array(await crypto.subtle.exportKey('raw',key)))});
-    f.hidden=true;$('#g-view').hidden=false;drawGroupe();}
-  catch(err){m.textContent='Clé incorrecte.';}});
-$('#g-q').addEventListener('input',()=>{if(!GRP)return;drawGroupe();if(gMode==='pres')drawPres();});
+function gOpenEdit(id){
+  const p=id?GRP.voyageurs.find(x=>x._id===id):null;gEditId=p?p._id:null;const f=$('#g-edit');
+  ['genre','prenom','nom','cellulaire','autre'].forEach(k=>{f.elements[k].value=p?.[k]||'';});
+  const d=p?.naissance||'';f.elements.naissance.value=/^\d{4}-\d\d-\d\d$/.test(d)?d:'';
+  if(d&&!/^\d{4}-\d\d-\d\d$/.test(d)&&p)f.elements.autre.value=[p.autre,'Naissance : '+d].filter(Boolean).join(' · ');
+  $('#g-edit-t').textContent=p?'Modifier : '+gNom(p):'Ajouter une personne';$('#g-del').hidden=!p;$('#g-edit-msg').textContent='';
+  f.hidden=false;$('#g-empty').hidden=true;f.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>f.elements[p?'cellulaire':'prenom'].focus({preventScroll:true}),300);
+}
+function gCloseEdit(){$('#g-edit').hidden=true;gEditId=null;renderGroupe();}
+$('#g-edit').addEventListener('submit',e=>{e.preventDefault();const f=$('#g-edit');
+  const v=Object.fromEntries(['genre','prenom','nom','cellulaire','naissance','autre'].map(k=>[k,f.elements[k].value.trim()]));
+  if(!v.nom&&!v.prenom){$('#g-edit-msg').textContent='Entrez au moins un nom ou un prénom.';return;}
+  GRP=gLoadLocal();
+  if(gEditId){const p=GRP.voyageurs.find(x=>x._id===gEditId);if(p)Object.assign(p,v);}else GRP.voyageurs.push({...v,_id:gId()});
+  gSaveLocal();const keep=!gEditId;gCloseEdit();
+  if(keep){gOpenEdit(null);$('#g-edit-msg').textContent='✓ '+gNom(v)+' ajouté(e). Ajoutez la personne suivante ou touchez « Annuler ».';}
+});
+$('#g-cancel').addEventListener('click',gCloseEdit);
+$('#g-del').addEventListener('click',e=>arm(e.target,'Touchez encore pour supprimer',()=>{GRP=gLoadLocal();GRP.voyageurs=GRP.voyageurs.filter(x=>x._id!==gEditId);gSaveLocal();e.target.textContent='Supprimer';gCloseEdit();}));
+$('#g-file').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+  const box=$('#g-imp');let L=[];
+  try{L=gFromRows(gParseCsv(gDecode(await file.arrayBuffer())));}catch(err){L=[];}
+  gPending=L;box.hidden=false;$('#g-empty').hidden=true;$('#g-edit').hidden=true;
+  if(!L.length){box.innerHTML=`<h3>Aucune personne trouvée</h3><p class="small">Le fichier « ${esc(file.name)} » ne contient pas de nom reconnu. Vérifiez qu’il s’agit d’un CSV avec les colonnes Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre.</p><div class="g-acts"><button type="button" class="light" data-g-imp="non">Fermer</button></div>`;return;}
+  const n=gLoadLocal().voyageurs.length;
+  box.innerHTML=`<h3>${L.length} personne${L.length>1?'s':''} dans « ${esc(file.name)} »</h3><table class="g-imp-t">${L.slice(0,5).map(p=>`<tr><td><b>${esc(gNom(p))}</b></td><td>${esc(GENRE[p.genre]||p.genre)}</td><td>${esc(p.cellulaire)}</td><td>${esc(p.naissance?gDateTxt(p.naissance):'')}</td></tr>`).join('')}</table>${L.length>5?`<p class="small">… et ${L.length-5} autre${L.length-5>1?'s':''}.</p>`:''}<p class="small">Vérifiez que les colonnes sont au bon endroit avant de continuer.</p>
+  <div class="g-acts">${n?`<button type="button" data-g-imp="remplacer">Remplacer la liste (${n})</button><button type="button" class="light" data-g-imp="ajouter">Ajouter à la liste</button>`:`<button type="button" data-g-imp="remplacer">Importer</button>`}<button type="button" class="light" data-g-imp="non">Annuler</button></div>`;
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('#g-export').addEventListener('click',async()=>{
+  const q=v=>/[;"\n\r]/.test(v=String(v||''))?'"'+v.replace(/"/g,'""')+'"':v;
+  const rows=[['Genre','Nom','Prénom','Cellulaire','Date de naissance','Autre'],...GRP.voyageurs.slice().sort(gTri).map(p=>[p.genre,p.nom,p.prenom,p.cellulaire,p.naissance,p.autre])];
+  const csv='﻿'+rows.map(r=>r.map(q).join(';')).join('\r\n');
+  const name='groupe-'+TRIP.id+'.csv';const blob=new Blob([csv],{type:'text/csv'});
+  try{const f=new File([blob],name,{type:'text/csv'});if(navigator.canShare?.({files:[f]})){await navigator.share({files:[f],title:name});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+});
+$('#g-wipe').addEventListener('click',e=>arm(e.target,'Touchez encore pour tout effacer',()=>{try{localStorage.removeItem(GRP_LOCAL);localStorage.removeItem(PRES_KEY);}catch(err){}e.target.textContent='Effacer la liste';$('#g-q').value='';renderGroupe();}));
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-g-import]')){$('#g-file').click();return;}
+  if(e.target.closest('[data-g-add]')){gOpenEdit(null);return;}
+  const ed=e.target.closest('[data-g-edit]');if(ed){gOpenEdit(ed.dataset.gEdit);return;}
+  const im=e.target.closest('[data-g-imp]');if(im){const how=im.dataset.gImp;
+    if(how!=='non'&&gPending?.length){GRP=gLoadLocal();if(how==='remplacer'){GRP.voyageurs=gPending;try{localStorage.removeItem(PRES_KEY);}catch(err){}}else GRP.voyageurs.push(...gPending);gSaveLocal();}
+    gPending=null;$('#g-imp').hidden=true;$('#g-imp').innerHTML='';renderGroupe();}
+});
+$('#g-q').addEventListener('input',()=>{if(!GRP||!GRP.voyageurs.length)return;drawGroupe();if(gMode==='pres')drawPres();});
 /* Présences */
 const PRES_KEY=TRIP.id+'-presences-v1';
 let gMode='liste',pGrp='',pMiss=false;
@@ -1582,8 +1679,8 @@ function drawPres(){
   const here=scope.filter(p=>a.coches[p._id]).length,miss=scope.length-here;
   $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}`;
   const tel=t=>String(t||'').replace(/[^\d+]/g,'');
-  const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.nom,p.chambre,p.sousGroupe].join(' ')).replace(/-/g,' ').includes(q))).sort((x,y)=>String(x.nom).localeCompare(String(y.nom),'fr'));
-  $('#p-list').innerHTML=rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span><span class="n">${esc(p.nom||'')}</span><br><span class="m">${esc([p.sousGroupe,p.chambre?'ch. '+p.chambre:''].filter(Boolean).join(' · '))}</span></span>${!on&&p.telephone?`<span class="t"><a href="tel:${esc(tel(p.telephone))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.telephone))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`;
+  const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.prenom,p.nom].join(' ')).replace(/-/g,' ').includes(q))).sort(gTri);
+  $('#p-list').innerHTML=rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span><span class="n">${esc(gNom(p))}</span></span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`;
   $('#p-miss').setAttribute('aria-pressed',pMiss);$('#p-miss').textContent=pMiss?'Afficher tout le monde':'Seulement les absents';
 }
 document.addEventListener('click',e=>{
@@ -1597,7 +1694,6 @@ $('#p-miss').addEventListener('click',()=>{pMiss=!pMiss;drawPres();});
 let pArm={};const arm=(b,txt,fn)=>{if(!pArm[b.id]){pArm[b.id]=1;const o=b.textContent;b.textContent=txt;setTimeout(()=>{pArm[b.id]=0;b.textContent=o;},3500);return;}pArm[b.id]=0;fn();};
 $('#p-reset').addEventListener('click',e=>arm(e.target,'Touchez encore pour décocher',()=>{const s0=pState();const a=s0.appels.find(x=>x.id===s0.cur);if(a){a.coches={};pSave(s0);}e.target.textContent='Tout décocher';drawPres();}));
 $('#p-del').addEventListener('click',e=>arm(e.target,'Touchez encore pour supprimer',()=>{const s0=pState();s0.appels=s0.appels.filter(x=>x.id!==s0.cur);s0.cur=s0.appels[0]?.id;pSave(s0);e.target.textContent='Supprimer cet appel';drawPres();}));
-$('#g-lock').addEventListener('click',()=>{GRP=null;GRP_KEY=null;try{localStorage.removeItem(KEY_GRP);}catch(e){}$('#g-list').innerHTML='';$('#g-view').hidden=true;$('#g-form').hidden=true;renderGroupe();});
 
 /* ---------- Vols aller et retour ---------- */
 const SENS={aller:'Aller',retour:'Retour',correspondance:'Correspondance'};

@@ -10,7 +10,6 @@ _app/
   build.mjs           génère les fichiers de chaque voyage
 solden-voyage-2027/   ← dossier publié du voyage
   voyage.json         contenu du voyage (éditeur), chiffré par la phrase
-  groupe.json         liste du groupe (clé accompagnateur)
   hero.webp, og.jpg, icônes
   index.html, editeur.html, … ← GÉNÉRÉS, ne pas modifier à la main
 ```
@@ -48,7 +47,7 @@ Puis faites un commit des dossiers modifiés. Le script :
 - ne réécrit que les fichiers dont le contenu change ;
 - change le numéro de cache du service worker seulement dans ce cas, ce qui oblige les téléphones à prendre la nouvelle version.
 
-L'éditeur, lui, n'écrit que `voyage.json` et `groupe.json` : aucune génération n'est nécessaire pour publier une annonce.
+L'éditeur, lui, n'écrit que `voyage.json` : aucune génération n'est nécessaire pour publier une annonce.
 
 ## Ajouter une station
 
@@ -70,7 +69,7 @@ L'éditeur, lui, n'écrit que `voyage.json` et `groupe.json` : aucune générati
 
 ## Éditeur
 
-Tous les voyages sont dans le dépôt `Matlavigne/matlavigne.github.io`. L'éditeur écrit dans `<id>/voyage.json` et `<id>/groupe.json`. Le dépôt et le dossier sont fixés : ils ne se saisissent plus.
+Tous les voyages sont dans le dépôt `Matlavigne/matlavigne.github.io`. L'éditeur écrit dans `<id>/voyage.json`. Le dépôt et le dossier sont fixés : ils ne se saisissent plus.
 
 Le jeton GitHub doit avoir le droit *Contents : Read and write* sur `matlavigne.github.io`. Un jeton limité à l'ancien dépôt du voyage ne suffit plus.
 
@@ -83,3 +82,7 @@ Les anciens dépôts `solden-voyage-2027` et `st-anton-mars2027` publient encore
 3. Archiver les anciens dépôts (**Settings → Archive**) pour ne plus les modifier par erreur.
 
 Les adresses, les phrases du voyage, le contenu chiffré et la clé accompagnateur ne changent pas.
+
+## Liste du groupe
+
+Aucune donnée des voyageurs n'est dans le dépôt. La liste du groupe se gère dans l'app, sur le téléphone de l'accompagnateur (Infos › Accès accompagnateur) : import d'un CSV (Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre) ou saisie à la main. Elle est gardée dans le stockage local du téléphone et n'est jamais envoyée sur Internet.
