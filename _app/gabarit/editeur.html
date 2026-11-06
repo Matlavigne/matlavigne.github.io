@@ -159,9 +159,9 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
 
 /* ---------- Dépôt ---------- */
-const S=JSON.parse(document.getElementById('station-data').textContent),TRIP=JSON.parse(document.getElementById('trip-data').textContent),TZL=S.fuseau;
-const DOM_OPTS=Object.entries(S.domaines).map(([k,d])=>[k,d.long||d.nom]);
-const domNom=k=>S.domaines[k]?.nom||k||'';
+const STN=JSON.parse(document.getElementById('station-data').textContent),TRIP=JSON.parse(document.getElementById('trip-data').textContent),TZL=STN.fuseau;
+const DOM_OPTS=Object.entries(STN.domaines).map(([k,d])=>[k,d.long||d.nom]);
+const domNom=k=>STN.domaines[k]?.nom||k||'';
 /* Tous les voyages sont dans le même dépôt (TRIP.depot), chacun dans son dossier (TRIP.id) */
 const CX_KEY='editeur-connexion-v2';
 const cxOld=LS.get('editeur-connexion-v1',{});
@@ -328,7 +328,7 @@ $('#cx-forget').onclick=()=>{$('#cx-token').value='';saveCx();checkWrite();};
 
 /* ---------- Schéma des formulaires ---------- */
 const TZ=[['America/Montreal','Heure de Montréal'],['Europe/Zurich','Heure de Zurich'],['Europe/Vienna','Heure d’Autriche']];
-if(!TZ.some(z=>z[0]===S.fuseau))TZ.push([S.fuseau,S.fuseauNom.charAt(0).toUpperCase()+S.fuseauNom.slice(1)]);
+if(!TZ.some(z=>z[0]===STN.fuseau))TZ.push([STN.fuseau,STN.fuseauNom.charAt(0).toUpperCase()+STN.fuseauNom.slice(1)]);
 const ITEM=[['heure','Heure','time'],['titre','Titre','text'],['lieu','Lieu','text'],['note','Note','textarea','full'],['lien','Lien (facultatif)','url'],['lienTexte','Texte du bouton du lien','text'],['rdv','Rendez-vous (compte à rebours sur l’Accueil)','bool'],['aConfirmer','Étiquette « À confirmer »','bool']];
 const S=[
   {id:'general',titre:'Titre et dates',type:'root',fields:[['titre','Titre affiché','text'],['datesTexte','Dates affichées','text'],['debut','Premier jour','date'],['fin','Dernier jour','date'],['niveau','Niveau du groupe','text'],['sousTitre','Sous-titre','text']]},
@@ -358,12 +358,12 @@ const S=[
   {id:'infosSki',titre:'Infos ski',type:'rootlines',key:'infosSki',label:'Une info par ligne'},
   {id:'lieux',titre:'Lieux sur la carte',type:'list',key:'lieux',help:'Coordonnées : appui long sur le lieu dans Google Maps ou Plans, puis copiez les deux nombres.',label:l=>l.nom||'',newItem:()=>({id:'lieu'+Date.now().toString(36).slice(-4),nom:'',detail:'',lat:null,lng:null}),
     fields:[['nom','Nom','text'],['detail','Détail','text'],['lat','Latitude','number'],['lng','Longitude','number']]},
-  {id:'remontee',titre:'Dernière remontée',type:'list',key:'derniereRemontee',help:'Pendant le séjour, l’heure s’affiche dans l’onglet Ski, et l’après-midi un compte à rebours apparaît sur l’Accueil (en rouge 45 minutes avant). '+S.fuseauNom.charAt(0).toUpperCase()+S.fuseauNom.slice(1)+'. Vérifiez les heures sur place.',label:r=>domNom(r.domaine)+(r.heure?' · '+r.heure:''),newItem:()=>({domaine:S.domaineDefaut,heure:'',texte:''}),
+  {id:'remontee',titre:'Dernière remontée',type:'list',key:'derniereRemontee',help:'Pendant le séjour, l’heure s’affiche dans l’onglet Ski, et l’après-midi un compte à rebours apparaît sur l’Accueil (en rouge 45 minutes avant). '+STN.fuseauNom.charAt(0).toUpperCase()+STN.fuseauNom.slice(1)+'. Vérifiez les heures sur place.',label:r=>domNom(r.domaine)+(r.heure?' · '+r.heure:''),newItem:()=>({domaine:STN.domaineDefaut,heure:'',texte:''}),
     fields:[['domaine','Domaine','select',DOM_OPTS],['heure','Heure de la dernière remontée','time'],['texte','Précision (quelle remontée, vers où)','text','full']]},
   {id:'sondage',titre:'Sondage de fin de voyage',type:'obj',key:'sondage',help:'Créez un court formulaire (Google Forms, Microsoft Forms…) et collez son lien. Une carte apparaît sur l’Accueil à partir de la date choisie (par défaut le dernier jour), pendant 30 jours après le voyage.',fields:[['lien','Lien du formulaire','url','full'],['titre','Titre (facultatif)','text'],['date','À partir du (facultatif)','date'],['texte','Texte (facultatif)','textarea']]},
   {id:'adresses',titre:'Bonnes adresses : restos, après-ski, bars',type:'list',key:'adresses',help:'Affichées dans l’onglet Sortir, selon le domaine choisi par le voyageur. Les « coups de cœur » passent en premier avec une étoile. Avec une latitude et une longitude, l’adresse apparaît aussi sur la carte.',
     label:a=>(a.coupDeCoeur?'★ ':'')+(a.nom||'Nouvelle adresse')+(a.domaine?' · '+domNom(a.domaine):''),
-    newItem:()=>({nom:'',categories:['restaurant'],domaine:S.domaineDefaut,secteur:'',description:'',acces:'',infos:'',tags:[],lien:'',lienTexte:'',coupDeCoeur:false,lat:null,lng:null}),
+    newItem:()=>({nom:'',categories:['restaurant'],domaine:STN.domaineDefaut,secteur:'',description:'',acces:'',infos:'',tags:[],lien:'',lienTexte:'',coupDeCoeur:false,lat:null,lng:null}),
     fields:[['nom','Nom','text'],['domaine','Domaine','select',DOM_OPTS],
       ['categories','Catégories','multi',[['restaurant','Restaurant sur les pistes'],['apres-ski','Après-ski et bar'],['pratique','Pratique (location, pharmacie…)']],'full'],
       ['coupDeCoeur','Coup de cœur de l’accompagnateur (en premier, avec ★)','bool','full'],
