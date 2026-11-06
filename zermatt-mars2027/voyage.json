@@ -4,7 +4,7 @@
   "sousTitre": "Voyage de ski en groupe",
   "debut": "2027-03-01",
   "fin": "2027-03-31",
-  "niveau": "Intermédiaire-avancé",
+  "niveau": "Intermédiaire",
   "accompagnateur": {
     "nom": "Mathieu",
     "role": "Votre accompagnateur",
@@ -74,9 +74,11 @@
     ]
   },
   "infosSki": [
-    "Niveau du groupe : intermédiaire-avancé. Les pistes suggérées seront ajoutées avant le départ.",
-    "Le domaine Matterhorn Ski Paradise relie Zermatt (Suisse) à Breuil-Cervinia et Valtournenche (Italie) par le Matterhorn Glacier Paradise et le Plateau Rosa.",
-    "Avant de passer en Italie, vérifiez l’heure de la dernière remontée vers Zermatt : on ne peut pas revenir après la fermeture."
+    "Niveau du groupe : intermédiaire. Les pistes suggérées sont des bleues et des rouges choisies dans le carnet de montagne.",
+    "Point de départ habituel : la gare aval du Matterhorn Express, à Zermatt. Il dessert Furi, Schwarzsee, Furgg et Trockener Steg; Matterhorn Glacier Ride I continue jusqu’au Klein Matterhorn.",
+    "Premiers tours sur les bleues : par Furi et Riffelberg Express, puis le train jusqu’à Rotenboden (bleues 38, 45 et 36 au Gornergrat).",
+    "Pour skier à Cervinia, il faut le forfait international. Vérifiez la liaison et la dernière remontée vers Zermatt avant de passer en Italie.",
+    "Les pistes rouges de liaison restent des rouges : le passage vers l’Italie n’est pas un parcours bleu."
   ],
   "adresses": [],
   "organisateur": {
@@ -100,6 +102,5 @@
       "url": "https://www.voyagesgendron.com/ski/"
     }
   ],
-  "photoCredit": "Illustration : monaccompagnateur.ca",
   "datesAConfirmer": true
 }
