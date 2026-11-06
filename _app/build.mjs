@@ -120,7 +120,7 @@ function build(tripId, version) {
   // La version du cache change dès qu'un fichier généré ou un fichier du voyage change
   const h = crypto.createHash("sha256");
   for (const g of Object.keys(out).sort()) h.update(sansVersion(out[g]));
-  for (const f of ["voyage.json", "hero.webp", "og.jpg"]) if (fs.existsSync(path.join(dir, f))) h.update(fs.readFileSync(path.join(dir, f)));
+  for (const f of ["hero.webp", "og.jpg"]) if (fs.existsSync(path.join(dir, f))) h.update(fs.readFileSync(path.join(dir, f)));
   out["sw.js"] = fill(fs.readFileSync(path.join(APP, "gabarit", "sw.js"), "utf8"), { ...tokens, HASH: h.digest("hex").slice(0, 8) }, "sw.js");
 
   let changed = 0;
