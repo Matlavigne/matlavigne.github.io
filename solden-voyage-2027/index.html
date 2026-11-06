@@ -1217,7 +1217,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 07:08</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 09:47</span></p>
 </section>
 </main>
 
@@ -1796,21 +1796,26 @@ const domNom=k=>k==='autre'?'Autres secteurs':(DOMS[k].long||DOMS[k].nom);
 function renderEtat(){
   const al=$('#st-alert'),areas=domAreas(),both=areas.length>1;
   /* Un encadré par flux affiché; un flux partagé entre plusieurs domaines affichés n'en fait qu'un */
-  const groups=[];areas.forEach(a=>{const f=DOMS[a].feed;if(!f)return;const g=groups.find(g=>g.f===f);if(g)g.areas.push(a);else groups.push({f,areas:[a]});});
+  const groups=[];areas.forEach(a=>{const f=DOMS[a].feed;if(!f){groups.push({f:null,areas:[a]});return;}const g=groups.find(g=>g.f===f);if(g)g.areas.push(a);else groups.push({f,areas:[a]});});
   groups.forEach(g=>{const shared=feedDoms(g.f).length>1;g.titre=g.areas.length>1?(S.nomDomaineSkiable||g.areas.map(a=>DOMS[a].nom).join(' · ')):domNom(g.areas[0]);
     g.items=(etat[g.f]?.items||[]).filter(x=>g.areas.includes(x.dom)||(both&&x.dom==='autre'));g.split=shared&&g.areas.length===1;});
   const cnt=(l,k)=>{l=l.filter(x=>x.k===k);return[l.filter(x=>isOpen(stCode(x.st))).length,l.length];};
   const pool=groups.flatMap(g=>g.items);
-  $('#st-sum').innerHTML=groups.map(g=>{const e=etat[g.f];
-    if(!e)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">${etatLoading?'Chargement…':'État indisponible pour le moment.'}</p></div>`;
+  /* Lien vers l'état officiel (fiche station : etatLien), affiché quand l'app n'a pas l'état en direct */
+  const offLink=g=>{const l=g.areas.map(a=>DOMS[a].etatLien).find(Boolean);return l?` <a href="${esc(l)}" target="_blank" rel="noopener">État officiel des remontées ↗</a>`:'';};
+  $('#st-sum').innerHTML=groups.map(g=>{const e=g.f?etat[g.f]:null;
+    if(!g.f)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">L’app n’affiche pas l’état en direct de ce domaine.${offLink(g)}</p></div>`;
+    if(!e)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">${etatLoading?'Chargement…':'État indisponible pour le moment.'}${etatLoading?'':offLink(g)}</p></div>`;
+    if(!g.items.length)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">Le flux reçu ne contient aucune remontée de ce domaine.${offLink(g)}</p></div>`;
     const [lo,lt]=cnt(g.items,'lift'),[so,stt]=cnt(g.items,'slope');const upd=e.last?parseLocal(e.last,TZL):null;const old=upd&&NOW()-upd>36*3600e3;
     return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><div class="sum"><div><strong>${lo} / ${lt}</strong><span>remontées ouvertes</span></div><div><strong>${so} / ${stt}</strong><span>pistes ouvertes</span></div></div><p class="small">Publié le ${upd?esc(fmt(upd,TZL,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})):'—'} (${esc(S.fuseauNom)})${old?' · <b style="color:#97302b">donnée ancienne : domaine peut-être fermé pour la saison</b>':''}${g.split?' · secteur choisi selon le nom des remontées et des pistes':''}</p></div>`;}).join('');
   // Accueil
-  const so=cnt(pool,'slope')[0],known=groups.some(g=>etat[g.f]);
+  const so=cnt(pool,'slope')[0],known=groups.some(g=>g.f&&etat[g.f]&&g.items.length);
   $('#q-ski').textContent=known?so+' piste'+(so>1?'s':'')+' ouverte'+(so>1?'s':''):'Pistes ouvertes';
   $('#q-ski-sub').textContent='État en direct · '+domLabel();
-  const missing=groups.filter(g=>!etatLive[g.f]);
-  if(!known){al.hidden=false;al.textContent=etatLoading?'Chargement de l’état des domaines…':'État des domaines indisponible pour le moment. Réessayez avec « Actualiser ».';}
+  const missing=groups.filter(g=>g.f&&!etatLive[g.f]);
+  if(!groups.some(g=>g.f))al.hidden=true;
+  else if(!known){al.hidden=false;al.textContent=etatLoading?'Chargement de l’état des domaines…':'État des domaines indisponible pour le moment. Réessayez avec « Actualiser ».';}
   else if(missing.length&&!etatLoading){al.hidden=false;const f=Math.min(...missing.map(g=>etat[g.f]?.fetched||Date.now()));al.textContent=(navigator.onLine?'Le service ne répond pas pour '+missing.map(g=>g.titre).join(' et ')+'.':'Hors connexion.')+' Dernier état enregistré, consulté le '+fmt(new Date(f),TZL,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'.';}
   else al.hidden=true;
   const kind=$('#st-kind').value;

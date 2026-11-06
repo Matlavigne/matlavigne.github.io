@@ -56,6 +56,7 @@ L'éditeur, lui, n'écrit que `voyage.json` et `groupe.json` : aucune générati
 2. Remplacer les domaines. Un domaine a `nom`, `feed` (le flux Intermaps `…/data?lang=en`), `bounds` (les coins sud-ouest et nord-est de la carte), `plan` (le plan officiel intégrable) et `meteoNom`.
    - Si plusieurs domaines partagent **le même flux** (comme Ski Arlberg), chacun doit avoir une expression `secteur` : la liste des noms de remontées et de pistes qui lui appartiennent.
    - Sans flux Intermaps, laissez `feed` vide : l'onglet Ski affiche alors seulement le plan et le lien officiel.
+   - `etatLien` (facultatif) : page officielle de l'état des remontées, proposée quand l'état en direct manque.
 3. Remplacer les points météo, les webcams, la neige, l'avalanche, les urgences et les faits. Pour un autre pays, il faut aussi le fuseau, la prise électrique et les phrases utiles.
 4. Lancer `node _app/build.mjs` : les erreurs de la fiche s'affichent.
 

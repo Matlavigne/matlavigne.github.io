@@ -1,0 +1,101 @@
+{
+  "id": "zermatt",
+  "version": 1,
+  "nom": "Zermatt",
+  "lieu": "Matterhorn Ski Paradise · Suisse",
+  "pays": "Suisse",
+  "paysEn": "en Suisse et en Italie",
+  "fuseau": "Europe/Zurich",
+  "fuseauNom": "heure de Suisse",
+  "decalageTexte": "6 h de plus qu’à Montréal",
+  "prise": "type J (Suisse), F ou L (Italie)",
+  "langue": {
+    "titre": "Quelques mots d’allemand et d’italien",
+    "phrases": [
+      ["Grüezi / Hoi", "Bonjour / Salut (en Suisse alémanique)"],
+      ["Merci vielmal", "Merci beaucoup (en Suisse)"],
+      ["Die Rechnung, bitte", "L’addition, s’il vous plaît"],
+      ["Wo ist die Toilette?", "Où sont les toilettes?"],
+      ["Buongiorno / Ciao", "Bonjour / Salut (à Cervinia)"],
+      ["Grazie (mille)", "Merci (beaucoup)"],
+      ["Il conto, per favore", "L’addition, s’il vous plaît"],
+      ["Aiuto! / Hilfe!", "À l’aide!"]
+    ]
+  },
+  "alias": ["suisse", "zermatt", "zurich", "valais"],
+  "nomDomaineSkiable": "Matterhorn Ski Paradise",
+  "domaines": {
+    "zermatt": {
+      "nom": "Zermatt",
+      "long": "Zermatt · Sunnegga · Gornergrat · Glacier Paradise",
+      "feed": "https://winter.intermaps.com/zermatt/data?lang=en",
+      "bounds": [[45.92, 7.68], [46.05, 7.83]],
+      "plan": "https://winter.intermaps.com/zermatt?lang=en",
+      "meteoNom": "Zermatt village",
+      "etatLien": "https://www.matterhornparadise.ch/en/information/lifts-and-pistes",
+      "secteur": "zermatt|furi|furgg|trockener|klein matterhorn|matterhorn|glacier paradise|schwarzsee|sunnegga|blauherd|rothorn|gant|findel|riffel|gornergrat|rotenboden|hoht[aä]lli|stockhorn|kumme|triftji|hirli|stafel|blatten|tiefbach|bielti|weisse perle|schweigmatten|landtunnel|iglu|testa|gobba"
+    },
+    "cervinia": {
+      "nom": "Cervinia",
+      "long": "Breuil-Cervinia · Valtournenche",
+      "feed": "https://winter.intermaps.com/zermatt/data?lang=en",
+      "bounds": [[45.86, 7.58], [45.96, 7.74]],
+      "plan": "https://winter.intermaps.com/zermatt?lang=en",
+      "meteoNom": "Breuil-Cervinia",
+      "etatLien": "https://www.cervinia.it/en",
+      "secteur": "cervinia|breuil|plan maison|cime bianche|laghi|plateau ros|bontadini|fornet|theodul|ventina|goillet|bardoney|cr[eé]taz|campetto|torrette|pr[eé] de veau|pirovano|falliniere|vallone|vieille|furggen|giomein|gran roc|muro europa|valtournenche|salette|chamois|torgnon|cieloalto|cielo alto"
+    }
+  },
+  "domaineDefaut": "zermatt",
+  "tousNom": "Zermatt et Cervinia",
+  "tousCourt": "Les deux",
+  "meteo": {
+    "points": [
+      {"domaine": "zermatt", "nom": "Village", "lat": 46.0207, "lng": 7.7491, "altitude": 1620},
+      {"domaine": "zermatt", "nom": "Sunnegga", "lat": 46.0186, "lng": 7.7712, "altitude": 2288},
+      {"domaine": "zermatt", "nom": "Trockener Steg", "lat": 45.9690, "lng": 7.7180, "altitude": 2939},
+      {"domaine": "cervinia", "nom": "Village", "lat": 45.9336, "lng": 7.6299, "altitude": 2050},
+      {"domaine": "cervinia", "nom": "Plan Maison", "lat": 45.9425, "lng": 7.6465, "altitude": 2555},
+      {"domaine": "cervinia", "nom": "Plateau Rosa", "lat": 45.9420, "lng": 7.7080, "altitude": 3480}
+    ]
+  },
+  "webcams": [
+    {"domaine": "zermatt", "nom": "Webcams Matterhorn Paradise", "altitude": 3883, "image": "", "lien": "https://matterhornparadise.ch/en/information/webcams"},
+    {"domaine": "zermatt", "nom": "Webcams Zermatt Tourisme", "altitude": 1620, "image": "", "lien": "https://zermatt.swiss/en/info/weather"},
+    {"domaine": "cervinia", "nom": "Plateau Rosa et Plan Maison", "altitude": 3480, "image": "", "lien": "https://matterhornparadise.ch/en/information/webcams"}
+  ],
+  "pistesSuggerees": {},
+  "neige": {"titre": "Hauteurs mesurées (Matterhorn Paradise)", "url": "https://www.matterhornparadise.ch/en/information/snow-report"},
+  "avalanche": {
+    "texte": "consultez chaque matin le bulletin officiel, surtout avant de sortir des pistes balisées. Zermatt relève du bulletin suisse (SLF, aussi dans l’app White Risk); Cervinia et Valtournenche, du bulletin du Val d’Aoste.",
+    "liens": [
+      {"titre": "Bulletin suisse (SLF)", "url": "https://www.slf.ch/fr/"},
+      {"titre": "Bulletin du Val d’Aoste", "url": "https://www.regione.vda.it/bollnivometeo"}
+    ]
+  },
+  "planLien": {"titre": "Plan panoramique officiel (PDF)", "url": "https://www.matterhornparadise.ch/ZBAG/13-trade/01-downloads/03-prospekte-broschueren/Panoramic%20map_winter.pdf"},
+  "urgences": {
+    "numeros": [
+      {"nom": "Urgence générale", "detail": "Numéro européen, en Suisse et en Italie", "tel": "112", "affiche": "112"},
+      {"nom": "Ambulance (Suisse)", "tel": "144", "affiche": "144"},
+      {"nom": "Sauvetage aérien (Suisse)", "detail": "Rega", "tel": "1414", "affiche": "1414"},
+      {"nom": "Police (Suisse)", "tel": "117", "affiche": "117"},
+      {"nom": "Pompiers (Suisse)", "tel": "118", "affiche": "118"},
+      {"nom": "Ambassade du Canada à Berne", "detail": "Kirchenfeldstrasse 88, Berne", "tel": "+41313573200", "affiche": "+41 31 357 32 00", "secondaire": true},
+      {"nom": "Ambassade du Canada à Rome", "detail": "Via Zara 30, Rome · pour Cervinia", "tel": "+3906854441", "affiche": "+39 06 85444 1", "secondaire": true},
+      {"nom": "Urgence consulaire (Ottawa)", "detail": "Sans frais depuis l’étranger", "tel": "0080023266831", "affiche": "00 800 2326 6831", "secondaire": true}
+    ],
+    "note": "Côté italien (Cervinia, Valtournenche), le 112 répond à toutes les urgences. Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. Sources : <a href=\"https://voyage.gc.ca/assistance/ambassades-consulats/suisse\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca (Suisse)</a>, <a href=\"https://voyage.gc.ca/assistance/ambassades-consulats/italie\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca (Italie)</a>."
+  },
+  "faits": [
+    {"titre": "+6 h", "texte": "Décalage avec Montréal pendant le séjour"},
+    {"titre": "Franc suisse (CHF)", "texte": "Euro (€) côté Cervinia. Cartes acceptées presque partout."},
+    {"titre": "230 V · type J", "texte": "Type J en Suisse, F ou L en Italie : prenez un adaptateur universel."},
+    {"titre": "Sans voitures", "texte": "Zermatt est interdit aux voitures : on se déplace à pied, en bus ou en taxi électrique."},
+    {"titre": "Pièce d’identité", "texte": "Gardez-la sur vous pour skier jusqu’à Cervinia : on passe en Italie par les pistes."},
+    {"titre": "Altitude", "texte": "Jusqu’à 3 883 m au Matterhorn Glacier Paradise : crème solaire, lunettes et hydratation."}
+  ],
+  "casierExemple": "Matterhorn Express, casier 214",
+  "sources": {"pistes": "Intermaps", "webcams": "Zermatt Bergbahnen et Cervino", "webcamsPhrase": "des domaines (Zermatt Bergbahnen, Cervino)"},
+  "adresses": []
+}
