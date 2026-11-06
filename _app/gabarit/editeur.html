@@ -178,7 +178,7 @@ const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,''
 /* ---------- Phrase du voyage : chiffrement AES-GCM, clé PBKDF2 (le même procédé que l’app) ---------- */
 const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'];
 const ITER=600000;
-const PH_KEY=()=>'editeur-phrase-'+(cx.repo||'local');
+const PH_KEY=()=>'editeur-phrase-'+TRIP.id;
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
 const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
@@ -213,7 +213,7 @@ $('#ph-gen').onclick=()=>{const r=n=>{const a=new Uint32Array(1);crypto.getRando
 $('#ph-in').value=LS.get(PH_KEY(),'')||'';
 
 /* ---------- Liste du groupe : fichier groupe.json, chiffré avec la clé accompagnateur ---------- */
-const GK_KEY=()=>'editeur-cle-groupe-'+(cx.repo||'local');
+const GK_KEY=()=>'editeur-cle-groupe-'+TRIP.id;
 const NIVEAUX=['','Débutant','Intermédiaire','Intermédiaire-avancé','Avancé','Expert'];
 let G=null,Gbase='',Gsha=null,GRAW=null,gOpenKey='';
 const gNow=()=>$('#g-key').value.trim();
