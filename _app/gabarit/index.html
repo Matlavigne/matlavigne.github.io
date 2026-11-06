@@ -217,6 +217,7 @@ body.locked{overflow:hidden}
 .share-panel{background:var(--soft);border-radius:12px;padding:12px 14px;margin:0 0 12px}.share-panel[hidden]{display:none}
 .share-panel .coords{font-size:18px;font-weight:700;letter-spacing:.3px}.share-panel .row{gap:8px;flex-wrap:wrap;margin-top:8px}
 .perso-grid{display:flex;flex-direction:column;gap:10px;margin-top:8px}.perso-grid label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.cv{display:grid;grid-template-columns:1fr 1fr}.cv label{min-width:0}.cv input,.cv select{width:100%;min-width:0;box-sizing:border-box}.cv select{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--white)}.cv-out{margin-top:12px;display:grid;gap:6px}.cv-out div{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:8px}.cv-out b{font-size:22px}
 .perso-grid input,.perso-grid textarea{font:inherit;font-size:16px;font-weight:400;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px}
 .vol{border-left:4px solid var(--pine)}.vol-hd{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
 .vol-hd b{font-size:16px}.vol-st{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--soft);color:var(--pine)}
@@ -1170,6 +1171,15 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div class="card" id="bagages" hidden></div>
   <div class="card" id="documents" hidden></div>
   <div class="card" id="hotel"></div>
+  <div class="card" id="devises">
+    <h3>Convertisseur de devises</h3>
+    <div class="perso-grid cv">
+      <label>Montant<input id="cv-in" inputmode="decimal" autocomplete="off" value="10"></label>
+      <label>Devise<select id="cv-from"></select></label>
+    </div>
+    <div id="cv-out" class="cv-out" role="status" aria-live="polite"></div>
+    <p class="small" id="cv-note"></p>
+  </div>
   <div class="facts">
 {{FAITS}}
   </div>
@@ -1190,7 +1200,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <li><b>Aucun cookie, aucune statistique de visite, aucune publicité.</b> L’app ne demande ni compte, ni nom, ni courriel.</li>
       <li>Vos cases cochées, le domaine choisi, les annonces lues et une copie du programme, de la météo et de l’état des pistes restent <b>uniquement sur ce téléphone</b>, pour que l’app fonctionne hors ligne. Rien n’est envoyé à l’accompagnateur ni à personne d’autre.</li>
       <li>Votre <b>position GPS</b> n’est utilisée que si vous touchez « Ma position », après l’autorisation de votre téléphone. Elle sert à afficher le point bleu sur la carte et n’est transmise à personne.</li>
-      <li>Pour afficher son contenu, l’app contacte GitHub (hébergement), {{SOURCES_PISTES}} (pistes), Open-Meteo (météo), OpenStreetMap et OpenSnowMap (carte), {{SOURCES_WEBCAMS}} (webcams). Comme pour tout site, ils voient l’adresse IP de l’appareil, sans autre information.</li>
+      <li>Pour afficher son contenu, l’app contacte GitHub (hébergement), {{SOURCES_PISTES}} (pistes), Open-Meteo (météo), OpenStreetMap et OpenSnowMap (carte), {{SOURCES_WEBCAMS}} (webcams), Frankfurter (taux de change de la BCE). Comme pour tout site, ils voient l’adresse IP de l’appareil, sans autre information.</li>
       <li>Les liens externes (Gendron Ski, WhatsApp, Facebook, vues en direct) ouvrent leurs sites, avec leurs propres règles de confidentialité.</li>
     </ul>
     <p style="margin-top:10px"><button type="button" class="light" id="wipe">Effacer mes données de cet appareil</button></p>
@@ -1995,6 +2005,34 @@ function show(tab){
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function renderAll(){if(LOCKED)return;try{renderRemontee();renderSondage();}catch(e){}renderDomSeg();renderHeader();renderHome();renderProgram();renderSkiStatic();renderEtat();renderWx();renderInfos();placeMarkers();}
 
+/* ---------- Convertisseur de devises (taux de la BCE via Frankfurter, gardés pour le hors ligne) ---------- */
+(function(){
+  const DEV=[...(Array.isArray(S.devises)&&S.devises.length?S.devises:['EUR']),'CAD'].filter((c,i,a)=>a.indexOf(c)===i);
+  const NOM={CAD:'Dollar canadien',EUR:'Euro',CHF:'Franc suisse',GBP:'Livre sterling',USD:'Dollar américain',JPY:'Yen',NOK:'Couronne norvégienne',SEK:'Couronne suédoise',CZK:'Couronne tchèque',PLN:'Zloty'};
+  const SYM={CAD:'$',EUR:'€',CHF:'CHF',USD:'$ US',GBP:'£',JPY:'¥'};
+  const CV_KEY=TRIP.id+'-devises-v1';
+  let fx=store.get(CV_KEY,null);
+  const sel=$('#cv-from'),inp=$('#cv-in');if(!sel||!inp)return;
+  sel.innerHTML=DEV.map(c=>`<option value="${c}">${c} · ${esc(NOM[c]||c)}</option>`).join('');
+  const rate=(a,b)=>{if(a===b)return 1;const r=fx?.rates||{};const ra=a==='CAD'?1:r[a],rb=b==='CAD'?1:r[b];return ra&&rb?rb/ra:null;};
+  const money=(v,c)=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:c,currencyDisplay:'narrowSymbol',maximumFractionDigits:v>=100?0:2}).format(v);
+  function render(){
+    const v=parseFloat(String(inp.value).replace(/\s/g,'').replace(',','.'));const from=sel.value;
+    if(!fx){$('#cv-out').innerHTML='';$('#cv-note').textContent=navigator.onLine?'Chargement des taux…':'Taux pas encore chargés : ouvrez l’app une fois avec du réseau.';return;}
+    $('#cv-out').innerHTML=isFinite(v)?DEV.filter(c=>c!==from).map(c=>{const r=rate(from,c);return r?`<div><span>${esc(NOM[c]||c)}</span><b>${esc(money(v*r,c))}</b></div>`:'';}).join(''):'';
+    const loc=DEV.find(c=>c!=='CAD');const r1=rate(loc,'CAD');
+    $('#cv-note').textContent=(r1?'1 '+loc+' = '+r1.toLocaleString('fr-CA',{maximumFractionDigits:3})+' $ CA · ':'')+'Taux de la BCE du '+(/^\d{4}-\d\d-\d\d$/.test(fx.date)?fmt(zoned(fx.date,'12:00','UTC'),'UTC',{day:'numeric',month:'long',year:'numeric'}):fx.date)+'. Indicatif : votre carte ou le bureau de change ajoutent souvent des frais.';
+  }
+  async function load(){
+    const syms=DEV.filter(c=>c!=='CAD').join(',');
+    for(const u of ['https://api.frankfurter.dev/v1/latest?base=CAD&symbols='+syms,'https://api.frankfurter.app/latest?from=CAD&to='+syms]){
+      try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)continue;const d=await r.json();if(d&&d.rates){fx={date:d.date,rates:d.rates,fetched:Date.now()};store.set(CV_KEY,fx);render();return;}}catch(e){}
+    }
+    render();
+  }
+  inp.addEventListener('input',render);sel.addEventListener('change',render);
+  render();if(!fx||Date.now()-fx.fetched>6*3600e3)load();
+})();
 boot();
 show(location.hash.slice(1)||'accueil');
 // Charge l'état du domaine en arrière-plan pour l'accueil

@@ -9,6 +9,10 @@
   "fuseauNom": "heure de Suisse",
   "decalageTexte": "6 h de plus qu’à Montréal",
   "prise": "type J (Suisse), F ou L (Italie)",
+  "devises": [
+    "CHF",
+    "EUR"
+  ],
   "langue": {
     "titre": "Quelques mots d’allemand et d’italien",
     "phrases": [

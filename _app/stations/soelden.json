@@ -9,6 +9,9 @@
   "fuseauNom": "heure d’Autriche",
   "decalageTexte": "6 h de plus qu’à Montréal",
   "prise": "type F",
+  "devises": [
+    "EUR"
+  ],
   "langue": {
     "titre": "Quelques mots d’allemand",
     "phrases": [

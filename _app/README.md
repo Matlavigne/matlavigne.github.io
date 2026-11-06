@@ -57,8 +57,9 @@ L'éditeur, lui, n'écrit que `voyage.json` et `groupe.json` : aucune générati
    - Si plusieurs domaines partagent **le même flux** (comme Ski Arlberg), chacun doit avoir une expression `secteur` : la liste des noms de remontées et de pistes qui lui appartiennent.
    - Sans flux Intermaps, laissez `feed` vide : l'onglet Ski affiche alors seulement le plan et le lien officiel.
    - `etatLien` (facultatif) : page officielle de l'état des remontées, proposée quand l'état en direct manque.
-3. Remplacer les points météo, les webcams, la neige, l'avalanche, les urgences et les faits. Pour un autre pays, il faut aussi le fuseau, la prise électrique et les phrases utiles.
-4. Lancer `node _app/build.mjs` : les erreurs de la fiche s'affichent.
+3. Indiquer `devises` : les codes des monnaies du séjour, par exemple `["CHF", "EUR"]`. Le convertisseur de l’onglet Infos les compare au dollar canadien.
+4. Remplacer les points météo, les webcams, la neige, l'avalanche, les urgences et les faits. Pour un autre pays, il faut aussi le fuseau, la prise électrique et les phrases utiles.
+5. Lancer `node _app/build.mjs` : les erreurs de la fiche s'affichent.
 
 ## Ajouter un voyage
 
