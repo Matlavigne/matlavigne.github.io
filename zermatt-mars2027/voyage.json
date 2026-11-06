@@ -1,0 +1,105 @@
+{
+  "titre": "Gendronski Zermatt",
+  "datesTexte": "Mars 2027 · dates à confirmer",
+  "sousTitre": "Voyage de ski en groupe",
+  "debut": "2027-03-01",
+  "fin": "2027-03-31",
+  "niveau": "Intermédiaire-avancé",
+  "accompagnateur": {
+    "nom": "Mathieu",
+    "role": "Votre accompagnateur",
+    "courriel": ""
+  },
+  "annonces": [
+    {
+      "date": "2026-11-06T09:00",
+      "fuseau": "America/Montreal",
+      "texte": "Bienvenue dans l’app du voyage à Zermatt! Les dates, les vols et le programme seront ajoutés ici dès qu’ils seront confirmés."
+    }
+  ],
+  "avantDepart": [],
+  "programme": [],
+  "lieux": [],
+  "hotel": {
+    "nom": "Hotel Hemizeus",
+    "adresse": "Untere Tuftra 11, 3920 Zermatt, Suisse",
+    "points": [
+      "Accès direct à la piste Furi–Zermatt : on part et on revient skis aux pieds.",
+      "Quartier calme de Zermatt, avec vue sur le Cervin.",
+      "Spa de l’hôtel (Iremia Spa)."
+    ]
+  },
+  "bagages": {
+    "soute": [
+      {
+        "t": "Sac à skis",
+        "d": "Skis et bâtons"
+      },
+      {
+        "t": "Sac à bottes",
+        "d": "Bottes de ski et casque de ski"
+      },
+      {
+        "t": "1 bagage de 23 kg",
+        "d": "Vêtements et effets personnels"
+      }
+    ],
+    "noteSoute": "Le sac à skis et le sac à bottes sont en plus du bagage de 23 kg. Ensemble, ski et bottes, ils ne doivent pas dépasser 23 kg. Donc, c'est un bagage de 23 kg et un équipement de ski de 23 kg",
+    "cabine": [
+      {
+        "t": "1 bagage à main",
+        "d": "Format cabine, dans le compartiment au-dessus du siège"
+      },
+      {
+        "t": "1 sac personnel",
+        "d": "Sac à dos ou sac à main, sous le siège devant vous"
+      }
+    ],
+    "important": "Très important : les batteries externes et les batteries au lithium voyagent avec vous en cabine, jamais en soute.",
+    "conseils": [
+      "Gardez dans votre bagage à main : passeport, médicaments, chargeur et vos batteries.",
+      "Mettez une étiquette à votre nom sur chaque sac."
+    ]
+  },
+  "documents": {
+    "liste": [
+      "Passeport valide au moins 3 mois après la date de retour",
+      "Assurance voyage : numéro de police et téléphone d’assistance",
+      "Carte de crédit et un peu de francs suisses (et d’euros pour Cervinia)",
+      "Confirmation de vol et documents de voyage reçus de Gendron Ski"
+    ],
+    "notes": [
+      "À l’arrivée en Europe, un contrôle biométrique (empreintes et photo) est fait au premier passage à la frontière : prévoyez un peu d’attente à Zurich.",
+      "Autorisation de voyage ETIAS : son entrée en vigueur a été reportée. Vérifiez avant le départ si elle est exigée pour les Canadiens."
+    ]
+  },
+  "infosSki": [
+    "Niveau du groupe : intermédiaire-avancé. Les pistes suggérées seront ajoutées avant le départ.",
+    "Le domaine Matterhorn Ski Paradise relie Zermatt (Suisse) à Breuil-Cervinia et Valtournenche (Italie) par le Matterhorn Glacier Paradise et le Plateau Rosa.",
+    "Avant de passer en Italie, vérifiez l’heure de la dernière remontée vers Zermatt : on ne peut pas revenir après la fermeture."
+  ],
+  "adresses": [],
+  "organisateur": {
+    "nom": "Gendron Ski",
+    "site": "https://www.voyagesgendron.com/ski/"
+  },
+  "liens": [
+    {
+      "type": "whatsapp",
+      "titre": "Groupe WhatsApp du voyage",
+      "url": ""
+    },
+    {
+      "type": "facebook",
+      "titre": "Groupe Facebook du voyage",
+      "url": ""
+    },
+    {
+      "type": "site",
+      "titre": "Gendron Ski",
+      "url": "https://www.voyagesgendron.com/ski/"
+    }
+  ],
+  "photoCredit": "Illustration : monaccompagnateur.ca",
+  "datesAConfirmer": true
+}

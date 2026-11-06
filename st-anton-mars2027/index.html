@@ -1217,7 +1217,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 09:53</span></p>
+  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 09:57</span></p>
 </section>
 </main>
 
@@ -1379,7 +1379,9 @@ function renderHeader(){
 function renderHome(){if(LOCKED||!valid(V))return;try{renderVols();renderRemontee();renderSondage();}catch(e){}
   const n=NOW(),{start,end}=tripBounds();const ti=todayIndex();
   let html;
-  if(n<start){
+  if(V.datesAConfirmer&&n<start){
+    html=`<p class="overline" style="color:#ffffffc0">Avant le départ</p><div class="big">Dates à confirmer</div><p>${esc(V.datesTexte||'')}</p>`;
+  }else if(n<start){
     const days=Math.ceil((start-n)/864e5);
     html=`<p class="overline" style="color:#ffffffc0">Avant le départ</p><div class="big">${days>1?'J – '+days:until(start-n)}</div><p>Départ le ${esc(fmt(start,'America/Toronto',{weekday:'long',day:'numeric',month:'long'}))} à ${esc(fmt(start,'America/Toronto',{hour:'2-digit',minute:'2-digit'}))}, heure de Montréal.</p>`;
   }else if(n<=end){
