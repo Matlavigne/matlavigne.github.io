@@ -1,0 +1,539 @@
+{
+  "id": "soelden",
+  "version": 1,
+  "nom": "Sölden",
+  "lieu": "Ötztal · Autriche",
+  "pays": "Autriche",
+  "paysEn": "en Autriche",
+  "fuseau": "Europe/Vienna",
+  "fuseauNom": "heure d’Autriche",
+  "decalageTexte": "6 h de plus qu’à Montréal",
+  "prise": "type F",
+  "langue": {
+    "titre": "Quelques mots d’allemand",
+    "phrases": [
+      [
+        "Grüß Gott / Servus",
+        "Bonjour / Salut (en Autriche)"
+      ],
+      [
+        "Danke (schön)",
+        "Merci (beaucoup)"
+      ],
+      [
+        "Bitte",
+        "S’il vous plaît / de rien"
+      ],
+      [
+        "Die Rechnung, bitte",
+        "L’addition, s’il vous plaît"
+      ],
+      [
+        "Ein Wasser / ein Bier, bitte",
+        "Une eau / une bière, s’il vous plaît"
+      ],
+      [
+        "Wo ist die Toilette?",
+        "Où sont les toilettes?"
+      ],
+      [
+        "Entschuldigung",
+        "Pardon / excusez-moi"
+      ],
+      [
+        "Hilfe!",
+        "À l’aide!"
+      ]
+    ]
+  },
+  "alias": [
+    "autriche",
+    "solden",
+    "sölden",
+    "vienne"
+  ],
+  "domaines": {
+    "soelden": {
+      "nom": "Sölden",
+      "feed": "https://winter.intermaps.com/soelden/data?lang=en",
+      "bounds": [
+        [
+          46.895,
+          10.86
+        ],
+        [
+          47.005,
+          11.07
+        ]
+      ],
+      "plan": "https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/?disableScrollZoom=true&hideCookieConsent=true",
+      "planSansWebgl": "https://winter.intermaps.com/soelden?lang=en",
+      "meteoNom": "Sölden village"
+    },
+    "gurgl": {
+      "nom": "Gurgl",
+      "feed": "https://winter.intermaps.com/obergurgl_hochgurgl/data?lang=en",
+      "bounds": [
+        [
+          46.835,
+          10.98
+        ],
+        [
+          46.925,
+          11.1
+        ]
+      ],
+      "plan": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en",
+      "meteoNom": "Obergurgl"
+    }
+  },
+  "domaineDefaut": "soelden",
+  "tousNom": "Sölden et Gurgl",
+  "tousCourt": "Les deux",
+  "meteo": {
+    "points": [
+      {
+        "domaine": "soelden",
+        "nom": "Village",
+        "lat": 46.9655,
+        "lng": 11.0076,
+        "altitude": 1370
+      },
+      {
+        "domaine": "soelden",
+        "nom": "Mi-station",
+        "lat": 46.95,
+        "lng": 10.986,
+        "altitude": 2174
+      },
+      {
+        "domaine": "soelden",
+        "nom": "Sommets",
+        "lat": 46.937,
+        "lng": 10.965,
+        "altitude": 3040
+      },
+      {
+        "domaine": "gurgl",
+        "nom": "Village",
+        "lat": 46.8705,
+        "lng": 11.0272,
+        "altitude": 1910
+      },
+      {
+        "domaine": "gurgl",
+        "nom": "Sommets",
+        "lat": 46.8807,
+        "lng": 11.0858,
+        "altitude": 3000
+      }
+    ]
+  },
+  "webcams": [
+    {
+      "domaine": "soelden",
+      "nom": "Village",
+      "altitude": 1377,
+      "image": "https://panodata.panomax.com/cams/5572/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/ort-winter"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Gaislachkogl · mi-station",
+      "altitude": 2174,
+      "image": "https://panodata.panomax.com/cams/6657/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/gaislachkogl-mittelstation"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Gaislachkogl · sommet",
+      "altitude": 3048,
+      "image": "https://wtvpict.feratel.com/picture/37/5761.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?cam=5761&design=v4&c2=0&c8=0"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Hochsölden",
+      "altitude": 2077,
+      "image": "https://panodata.panomax.com/cams/501/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/hochsoelden"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Giggijoch",
+      "altitude": 2290,
+      "image": "https://wtvpict.feratel.com/picture/37/5762.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?cam=5762&design=v4&c2=0&c8=0"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Schwarzkogl · gare aval",
+      "altitude": 2580,
+      "image": "https://panodata.panomax.com/cams/6666/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/schwarzkogl-talstation"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Seekogl",
+      "altitude": 2662,
+      "image": "https://wtvpict.feratel.com/picture/37/5760.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?cam=5760&design=v4&c2=0&c8=0"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Glacier de Rettenbach",
+      "altitude": 2680,
+      "image": "https://panodata.panomax.com/cams/196/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/rettenbach"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Schwarze Schneid · mi-station",
+      "altitude": 3000,
+      "image": "https://panodata.panomax.com/cams/216/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/schwarzeschneid"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Glacier de Tiefenbach · gare aval",
+      "altitude": 2800,
+      "image": "https://panodata.panomax.com/cams/195/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/tiefenbach"
+    },
+    {
+      "domaine": "soelden",
+      "nom": "Glacier de Tiefenbach · sommet",
+      "altitude": 3250,
+      "image": "https://panodata.panomax.com/cams/6660/mobile_800x600.jpg",
+      "lien": "https://soelden.panomax.com/tiefenbachkogl-felssteg"
+    },
+    {
+      "domaine": "gurgl",
+      "nom": "Hochgurgl",
+      "altitude": 2410,
+      "image": "https://wtvpict.feratel.com/picture/37/5570.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?design=v5&cam=5570&c2=0&c8=0"
+    },
+    {
+      "domaine": "gurgl",
+      "nom": "Crosspoint",
+      "altitude": 2157,
+      "image": "https://wtvpict.feratel.com/picture/37/5571.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?design=v5&cam=5571&c2=0&c8=0"
+    },
+    {
+      "domaine": "gurgl",
+      "nom": "Hohe Mut",
+      "altitude": 2670,
+      "image": "https://wtvpict.feratel.com/picture/37/5650.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?design=v5&cam=5650&c2=0&c8=0"
+    },
+    {
+      "domaine": "gurgl",
+      "nom": "Festkogl",
+      "altitude": 2670,
+      "image": "https://wtvpict.feratel.com/picture/37/5651.jpeg?dcsdesign=feratel4",
+      "lien": "https://webtv.feratel.com/webtv/?design=v5&cam=5651&c2=0&c8=0"
+    }
+  ],
+  "pistesSuggerees": {
+    "soelden": [
+      {
+        "num": "1",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Gaislachkogl",
+        "length": 3000,
+        "title": "La signature Gaislachkogl",
+        "text": "Descente rouge du secteur Gaislachkogl; associer la sortie au panorama du sommet et à l’univers James Bond.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079989/?disableScrollZoom=true&lang=en",
+        "mapFocus": "R_69461_group",
+        "feedId": "R_69461"
+      },
+      {
+        "num": "11",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Giggijoch",
+        "length": 9000,
+        "title": "La rouge et la bonne table",
+        "text": "Rouge du Giggijoch; Gampe Thaya annonce directement un accès par la piste nº 11. Prévoir cette pause avant de quitter le secteur.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080004?lang=en",
+        "mapFocus": "R_69463_group",
+        "feedId": "R_69463"
+      },
+      {
+        "num": "18",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Giggijoch",
+        "length": 1500,
+        "title": "Varier au Giggijoch",
+        "text": "Rouge du catalogue Giggijoch. Le lien de l’ancien plan a été remplacé par son objet Intermaps vérifié.",
+        "mapUrl": "https://winter.intermaps.com/soelden?lang=en&focus=R_69443_group",
+        "mapFocus": "R_69443_group",
+        "feedId": "R_69443"
+      },
+      {
+        "num": "4",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Gaislachkogl",
+        "length": 5500,
+        "title": "Une rouge au Gaislachkogl",
+        "text": "La nº 4 figure dans le catalogue du Gaislachkogl. La situer sur le plan pour bâtir une boucle depuis votre secteur de départ.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079996?lang=en",
+        "mapFocus": "R_69487_group",
+        "feedId": "R_69487"
+      },
+      {
+        "num": "5",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Gaislachkogl",
+        "length": 1600,
+        "title": "Varier les rouges du Gaislachkogl",
+        "text": "Rouge nº 5 du catalogue, distincte de la variante 5a; les mesures de pente individuelles restent non publiées.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079997?lang=en",
+        "mapFocus": "R_69490_group",
+        "feedId": "R_69490"
+      },
+      {
+        "num": "12",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Giggijoch",
+        "length": 4100,
+        "title": "Le Giggijoch en rouge",
+        "text": "Rouge nº 12 du catalogue Giggijoch, pour compléter les propositions de ce secteur sans changer sa difficulté officielle.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080005?lang=en",
+        "mapFocus": "R_69464_group",
+        "feedId": "R_69464"
+      },
+      {
+        "num": "38",
+        "level": "blue",
+        "levelLabel": "Bleue · facile",
+        "sector": "Glaciers",
+        "length": 8400,
+        "title": "L’horizon du Tiefenbach",
+        "text": "Repère de la liaison des deux glaciers dans le parcours BIG3 : nº 32 puis tunnel et nº 38, selon le descriptif officiel.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080025?lang=en",
+        "mapFocus": "R_69483_group",
+        "feedId": "R_69483"
+      },
+      {
+        "num": "32",
+        "level": "blue",
+        "levelLabel": "Bleue · facile",
+        "sector": "Glaciers",
+        "length": 6300,
+        "title": "Le passage vers le tunnel",
+        "text": "Repère de la liaison des deux glaciers dans le parcours BIG3 : nº 32 puis tunnel et nº 38, selon le descriptif officiel.",
+        "mapUrl": "https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080020?lang=en",
+        "mapFocus": "R_69481_group",
+        "feedId": "R_69481"
+      }
+    ],
+    "gurgl": [
+      {
+        "num": "7",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Obergurgl",
+        "length": 6750,
+        "title": "Le Plattach",
+        "text": "Rouge Plattach, à distinguer de sa variante 7a et des noires 8/8a du même secteur.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84686_group",
+        "mapFocus": "R_84686_group",
+        "feedId": "R_84686"
+      },
+      {
+        "num": "12",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Obergurgl",
+        "length": 4980,
+        "title": "La rouge Festkogl",
+        "text": "Choisissez la Talabfahrt nº 12 : elle possède un identifiant distinct de l’autre rouge nº 12 Festkogl.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84728_group",
+        "mapFocus": "R_84728_group",
+        "feedId": "R_84728"
+      },
+      {
+        "num": "30",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Hochgurgl",
+        "length": 5990,
+        "title": "Le versant Schermer",
+        "text": "Rouge recommandée par la station pour les skieurs ayant de la pratique du carving. Le titre Schermer est descriptif, pas le nom du catalogue.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84757_group",
+        "mapFocus": "R_84757_group",
+        "feedId": "R_84757"
+      },
+      {
+        "num": "1",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Obergurgl",
+        "length": 1620,
+        "title": "La rouge Hohe Mut",
+        "text": "Rouge Hohe Mut selon le catalogue. La page de conseils insiste sur son caractère soutenu; une couleur ne résume pas les conditions.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84724_group",
+        "mapFocus": "R_84724_group",
+        "feedId": "R_84724"
+      },
+      {
+        "num": "5",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Obergurgl",
+        "length": 3250,
+        "title": "Le Steinmann en rouge",
+        "text": "Rouge Steinmann, distincte des bleues 4 et 4a du même secteur. Vérifier la boucle sur le plan avant de partir.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84751_group",
+        "mapFocus": "R_84751_group",
+        "feedId": "R_84751"
+      },
+      {
+        "num": "42",
+        "level": "red",
+        "levelLabel": "Rouge · moyenne",
+        "sector": "Hochgurgl",
+        "length": 1200,
+        "title": "Une rouge à Kirchenkar",
+        "text": "La nº 42 est classée rouge dans le catalogue Hochgurgl. Repérage local et conditions du jour restent nécessaires.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84747_group",
+        "mapFocus": "R_84747_group",
+        "feedId": "R_84747"
+      },
+      {
+        "num": "6",
+        "level": "blue",
+        "levelLabel": "Bleue · facile",
+        "sector": "Obergurgl",
+        "length": 10980,
+        "title": "La Familienabfahrt",
+        "text": "L’entrée bleue Familienabfahrt est distincte de la petite nº 6 Wiesenlift. Suivre le nom complet sur le plan.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84752_group",
+        "mapFocus": "R_84752_group",
+        "feedId": "R_84752"
+      },
+      {
+        "num": "29",
+        "level": "blue",
+        "levelLabel": "Bleue · facile",
+        "sector": "Hochgurgl",
+        "length": 1390,
+        "title": "La bleue du Wurmkogl",
+        "text": "La nº 29 est l’une des pistes de l’enchaînement Wurmkogl–Pill publié par la station. La longueur du parcours complet ne lui est pas attribuée.",
+        "mapUrl": "https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84712_group",
+        "mapFocus": "R_84712_group",
+        "feedId": "R_84712"
+      }
+    ]
+  },
+  "neige": {
+    "titre": "Hauteurs mesurées",
+    "url": "https://tyrol.com/travel-service/snow-depths/snow-depths-in-soelden"
+  },
+  "avalanche": {
+    "texte": "consultez chaque matin le bulletin officiel du Tyrol, surtout avant de sortir des pistes balisées.",
+    "liens": [
+      {
+        "titre": "Bulletin d’avalanche officiel",
+        "url": "https://avalanche.report"
+      }
+    ]
+  },
+  "planLien": {
+    "titre": "Plan officiel des pistes",
+    "url": "https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/"
+  },
+  "urgences": {
+    "numeros": [
+      {
+        "nom": "Urgence générale",
+        "tel": "112",
+        "affiche": "112",
+        "detail": "Numéro européen, depuis tout téléphone"
+      },
+      {
+        "nom": "Ambulance",
+        "tel": "144",
+        "affiche": "144"
+      },
+      {
+        "nom": "Secours en montagne",
+        "tel": "140",
+        "affiche": "140",
+        "detail": "Bergrettung"
+      },
+      {
+        "nom": "Police",
+        "tel": "133",
+        "affiche": "133"
+      },
+      {
+        "nom": "Pompiers",
+        "tel": "122",
+        "affiche": "122"
+      },
+      {
+        "nom": "Médecin de garde",
+        "tel": "141",
+        "affiche": "141",
+        "secondaire": true
+      },
+      {
+        "nom": "Ambassade du Canada à Vienne",
+        "tel": "+431531383000",
+        "affiche": "+43 1 531 38 3000",
+        "detail": "Laurenzerberg 2, Vienne",
+        "secondaire": true
+      },
+      {
+        "nom": "Urgence consulaire (Ottawa)",
+        "tel": "0080023266831",
+        "affiche": "00 800 2326 6831",
+        "detail": "Sans frais depuis l’étranger",
+        "secondaire": true
+      }
+    ],
+    "note": "Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. Sources : <a href=\"https://www.oesterreich.gv.at/de/themen/notfaelle_unfaelle_und_kriminalitaet/notrufnummern\" target=\"_blank\" rel=\"noopener\">oesterreich.gv.at</a>, <a href=\"https://travel.gc.ca/assistance/embassies-consulates/austria\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca</a>."
+  },
+  "faits": [
+    {
+      "titre": "+6 h",
+      "texte": "Décalage avec Montréal pendant le séjour"
+    },
+    {
+      "titre": "Euro (€)",
+      "texte": "Cartes acceptées presque partout; gardez un peu d’argent comptant."
+    },
+    {
+      "titre": "230 V · type F",
+      "texte": "Adaptateur nécessaire pour les fiches nord-américaines."
+    },
+    {
+      "titre": "Pourboire",
+      "texte": "On arrondit l’addition, environ 5 à 10 % au restaurant."
+    },
+    {
+      "titre": "Eau du robinet",
+      "texte": "Potable partout en Autriche."
+    },
+    {
+      "titre": "Altitude",
+      "texte": "Jusqu’à plus de 3 000 m : crème solaire, lunettes et hydratation."
+    }
+  ],
+  "casierExemple": "Giggijoch, casier 214",
+  "sources": {
+    "pistes": "Intermaps",
+    "webcams": "Panomax et Feratel",
+    "webcamsPhrase": "des domaines (Panomax, Feratel)"
+  },
+  "adresses": []
+}
