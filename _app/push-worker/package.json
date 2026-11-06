@@ -1,0 +1,15 @@
+{
+  "name": "monaccompagnateur-push",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "keys": "node scripts/generate-keys.mjs",
+    "dev": "wrangler dev --test-scheduled",
+    "db:init": "wrangler d1 execute monaccompagnateur-push --remote --file=schema.sql",
+    "deploy": "wrangler deploy",
+    "test": "node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

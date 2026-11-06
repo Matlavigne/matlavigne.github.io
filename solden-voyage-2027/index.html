@@ -271,6 +271,7 @@ body.locked{overflow:hidden}
 .verif{background:#f5e6e4;color:#97302b;border:1px solid #e3b7b2;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 12px;white-space:pre-wrap}
 @media(max-width:420px){.hero h1{font-size:36px}.hero .h-dates{font-size:21px}.facts{grid-template-columns:1fr}}
 @media print{nav.tabs,.mapbox,.mapbar{display:none!important}.view[hidden]{display:block!important}body{padding:0}}
+.voyage-push-msg{font-size:14px;color:var(--muted);margin:8px 0 0}
 </style>
 <style id="leaflet-css">
 /* required styles */
@@ -1161,6 +1162,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <label>Notes<textarea data-perso="notes" rows="3" placeholder="Taille des bottes, code du cadenas…"></textarea></label>
     </div>
   </div>
+  <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
   <div class="card"><h3>Installer ou partager l’app</h3><p>Page avec le code QR et les étapes pour iPhone et Android, à envoyer aux autres voyageurs.</p><p><a class="btn light" href="installer.html">Comment installer l’app</a></p></div>
   <div class="card">
     <h3>Urgences en Autriche</h3>
@@ -1227,14 +1229,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 12:28</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 14:26</span></p>
 </section>
 </main>
 
 <script id="voyage-defaut" type="application/json">{"titre":"Gendronski Sölden","datesTexte":"5 au 13 mars 2027","sousTitre":"Voyage de ski en groupe","debut":"2027-03-05","fin":"2027-03-13","meteo":{"points":[{"domaine":"soelden","nom":"Village","lat":46.9655,"lng":11.0076,"altitude":1370},{"domaine":"soelden","nom":"Mi-station","lat":46.95,"lng":10.986,"altitude":2174},{"domaine":"soelden","nom":"Sommets","lat":46.937,"lng":10.965,"altitude":3040},{"domaine":"gurgl","nom":"Village","lat":46.8705,"lng":11.0272,"altitude":1910},{"domaine":"gurgl","nom":"Sommets","lat":46.8807,"lng":11.0858,"altitude":3000}]},"webcams":[{"domaine":"soelden","nom":"Village","altitude":1377,"image":"https://panodata.panomax.com/cams/5572/mobile_800x600.jpg","lien":"https://soelden.panomax.com/ort-winter"},{"domaine":"soelden","nom":"Gaislachkogl · mi-station","altitude":2174,"image":"https://panodata.panomax.com/cams/6657/mobile_800x600.jpg","lien":"https://soelden.panomax.com/gaislachkogl-mittelstation"},{"domaine":"soelden","nom":"Gaislachkogl · sommet","altitude":3048,"image":"https://wtvpict.feratel.com/picture/37/5761.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5761&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Hochsölden","altitude":2077,"image":"https://panodata.panomax.com/cams/501/mobile_800x600.jpg","lien":"https://soelden.panomax.com/hochsoelden"},{"domaine":"soelden","nom":"Giggijoch","altitude":2290,"image":"https://wtvpict.feratel.com/picture/37/5762.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5762&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Schwarzkogl · gare aval","altitude":2580,"image":"https://panodata.panomax.com/cams/6666/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzkogl-talstation"},{"domaine":"soelden","nom":"Seekogl","altitude":2662,"image":"https://wtvpict.feratel.com/picture/37/5760.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5760&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Glacier de Rettenbach","altitude":2680,"image":"https://panodata.panomax.com/cams/196/mobile_800x600.jpg","lien":"https://soelden.panomax.com/rettenbach"},{"domaine":"soelden","nom":"Schwarze Schneid · mi-station","altitude":3000,"image":"https://panodata.panomax.com/cams/216/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzeschneid"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · gare aval","altitude":2800,"image":"https://panodata.panomax.com/cams/195/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbach"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · sommet","altitude":3250,"image":"https://panodata.panomax.com/cams/6660/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbachkogl-felssteg"},{"domaine":"gurgl","nom":"Hochgurgl","altitude":2410,"image":"https://wtvpict.feratel.com/picture/37/5570.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5570&c2=0&c8=0"},{"domaine":"gurgl","nom":"Crosspoint","altitude":2157,"image":"https://wtvpict.feratel.com/picture/37/5571.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5571&c2=0&c8=0"},{"domaine":"gurgl","nom":"Hohe Mut","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5650.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5650&c2=0&c8=0"},{"domaine":"gurgl","nom":"Festkogl","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5651.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5651&c2=0&c8=0"}]}</script>
 <script id="ski-data" type="application/json">{"picks":{"soelden":[{"num":"1","level":"red","levelLabel":"Rouge · moyenne","sector":"Gaislachkogl","length":3000,"title":"La signature Gaislachkogl","text":"Descente rouge du secteur Gaislachkogl; associer la sortie au panorama du sommet et à l’univers James Bond.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079989/?disableScrollZoom=true&lang=en","mapFocus":"R_69461_group","feedId":"R_69461"},{"num":"11","level":"red","levelLabel":"Rouge · moyenne","sector":"Giggijoch","length":9000,"title":"La rouge et la bonne table","text":"Rouge du Giggijoch; Gampe Thaya annonce directement un accès par la piste nº 11. Prévoir cette pause avant de quitter le secteur.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080004?lang=en","mapFocus":"R_69463_group","feedId":"R_69463"},{"num":"18","level":"red","levelLabel":"Rouge · moyenne","sector":"Giggijoch","length":1500,"title":"Varier au Giggijoch","text":"Rouge du catalogue Giggijoch. Le lien de l’ancien plan a été remplacé par son objet Intermaps vérifié.","mapUrl":"https://winter.intermaps.com/soelden?lang=en&focus=R_69443_group","mapFocus":"R_69443_group","feedId":"R_69443"},{"num":"4","level":"red","levelLabel":"Rouge · moyenne","sector":"Gaislachkogl","length":5500,"title":"Une rouge au Gaislachkogl","text":"La nº 4 figure dans le catalogue du Gaislachkogl. La situer sur le plan pour bâtir une boucle depuis votre secteur de départ.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079996?lang=en","mapFocus":"R_69487_group","feedId":"R_69487"},{"num":"5","level":"red","levelLabel":"Rouge · moyenne","sector":"Gaislachkogl","length":1600,"title":"Varier les rouges du Gaislachkogl","text":"Rouge nº 5 du catalogue, distincte de la variante 5a; les mesures de pente individuelles restent non publiées.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122079997?lang=en","mapFocus":"R_69490_group","feedId":"R_69490"},{"num":"12","level":"red","levelLabel":"Rouge · moyenne","sector":"Giggijoch","length":4100,"title":"Le Giggijoch en rouge","text":"Rouge nº 12 du catalogue Giggijoch, pour compléter les propositions de ce secteur sans changer sa difficulté officielle.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080005?lang=en","mapFocus":"R_69464_group","feedId":"R_69464"},{"num":"38","level":"blue","levelLabel":"Bleue · facile","sector":"Glaciers","length":8400,"title":"L’horizon du Tiefenbach","text":"Repère de la liaison des deux glaciers dans le parcours BIG3 : nº 32 puis tunnel et nº 38, selon le descriptif officiel.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080025?lang=en","mapFocus":"R_69483_group","feedId":"R_69483"},{"num":"32","level":"blue","levelLabel":"Bleue · facile","sector":"Glaciers","length":6300,"title":"Le passage vers le tunnel","text":"Repère de la liaison des deux glaciers dans le parcours BIG3 : nº 32 puis tunnel et nº 38, selon le descriptif officiel.","mapUrl":"https://maps.oetztal.com/panorama/de/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/detail/-1/-1/-1/26361,26360/122080020?lang=en","mapFocus":"R_69481_group","feedId":"R_69481"}],"gurgl":[{"num":"7","level":"red","levelLabel":"Rouge · moyenne","sector":"Obergurgl","length":6750,"title":"Le Plattach","text":"Rouge Plattach, à distinguer de sa variante 7a et des noires 8/8a du même secteur.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84686_group","mapFocus":"R_84686_group","feedId":"R_84686"},{"num":"12","level":"red","levelLabel":"Rouge · moyenne","sector":"Obergurgl","length":4980,"title":"La rouge Festkogl","text":"Choisissez la Talabfahrt nº 12 : elle possède un identifiant distinct de l’autre rouge nº 12 Festkogl.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84728_group","mapFocus":"R_84728_group","feedId":"R_84728"},{"num":"30","level":"red","levelLabel":"Rouge · moyenne","sector":"Hochgurgl","length":5990,"title":"Le versant Schermer","text":"Rouge recommandée par la station pour les skieurs ayant de la pratique du carving. Le titre Schermer est descriptif, pas le nom du catalogue.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84757_group","mapFocus":"R_84757_group","feedId":"R_84757"},{"num":"1","level":"red","levelLabel":"Rouge · moyenne","sector":"Obergurgl","length":1620,"title":"La rouge Hohe Mut","text":"Rouge Hohe Mut selon le catalogue. La page de conseils insiste sur son caractère soutenu; une couleur ne résume pas les conditions.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84724_group","mapFocus":"R_84724_group","feedId":"R_84724"},{"num":"5","level":"red","levelLabel":"Rouge · moyenne","sector":"Obergurgl","length":3250,"title":"Le Steinmann en rouge","text":"Rouge Steinmann, distincte des bleues 4 et 4a du même secteur. Vérifier la boucle sur le plan avant de partir.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84751_group","mapFocus":"R_84751_group","feedId":"R_84751"},{"num":"42","level":"red","levelLabel":"Rouge · moyenne","sector":"Hochgurgl","length":1200,"title":"Une rouge à Kirchenkar","text":"La nº 42 est classée rouge dans le catalogue Hochgurgl. Repérage local et conditions du jour restent nécessaires.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84747_group","mapFocus":"R_84747_group","feedId":"R_84747"},{"num":"6","level":"blue","levelLabel":"Bleue · facile","sector":"Obergurgl","length":10980,"title":"La Familienabfahrt","text":"L’entrée bleue Familienabfahrt est distincte de la petite nº 6 Wiesenlift. Suivre le nom complet sur le plan.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84752_group","mapFocus":"R_84752_group","feedId":"R_84752"},{"num":"29","level":"blue","levelLabel":"Bleue · facile","sector":"Hochgurgl","length":1390,"title":"La bleue du Wurmkogl","text":"La nº 29 est l’une des pistes de l’enchaînement Wurmkogl–Pill publié par la station. La longueur du parcours complet ne lui est pas attribuée.","mapUrl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en&focus=R_84712_group","mapFocus":"R_84712_group","feedId":"R_84712"}]},"plans":{"soelden":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/?disableScrollZoom=true&hideCookieConsent=true","gurgl":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en"}}</script>
 <script id="station-data" type="application/json">{"id":"soelden","version":1,"nom":"Sölden","lieu":"Ötztal · Autriche","pays":"Autriche","paysEn":"en Autriche","fuseau":"Europe/Vienna","fuseauNom":"heure d’Autriche","decalageTexte":"6 h de plus qu’à Montréal","prise":"type F","devises":["EUR"],"langue":{"titre":"Quelques mots d’allemand","phrases":[["Grüß Gott / Servus","Bonjour / Salut (en Autriche)"],["Danke (schön)","Merci (beaucoup)"],["Bitte","S’il vous plaît / de rien"],["Die Rechnung, bitte","L’addition, s’il vous plaît"],["Ein Wasser / ein Bier, bitte","Une eau / une bière, s’il vous plaît"],["Wo ist die Toilette?","Où sont les toilettes?"],["Entschuldigung","Pardon / excusez-moi"],["Hilfe!","À l’aide!"]]},"alias":["autriche","solden","sölden","vienne"],"domaines":{"soelden":{"nom":"Sölden","feed":"https://winter.intermaps.com/soelden/data?lang=en","bounds":[[46.895,10.86],[47.005,11.07]],"plan":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/?disableScrollZoom=true&hideCookieConsent=true","planSansWebgl":"https://winter.intermaps.com/soelden?lang=en","meteoNom":"Sölden village"},"gurgl":{"nom":"Gurgl","feed":"https://winter.intermaps.com/obergurgl_hochgurgl/data?lang=en","bounds":[[46.835,10.98],[46.925,11.1]],"plan":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en","meteoNom":"Obergurgl"}},"domaineDefaut":"soelden","tousNom":"Sölden et Gurgl","tousCourt":"Les deux","meteo":{"points":[{"domaine":"soelden","nom":"Village","lat":46.9655,"lng":11.0076,"altitude":1370},{"domaine":"soelden","nom":"Mi-station","lat":46.95,"lng":10.986,"altitude":2174},{"domaine":"soelden","nom":"Sommets","lat":46.937,"lng":10.965,"altitude":3040},{"domaine":"gurgl","nom":"Village","lat":46.8705,"lng":11.0272,"altitude":1910},{"domaine":"gurgl","nom":"Sommets","lat":46.8807,"lng":11.0858,"altitude":3000}]},"webcams":[{"domaine":"soelden","nom":"Village","altitude":1377,"image":"https://panodata.panomax.com/cams/5572/mobile_800x600.jpg","lien":"https://soelden.panomax.com/ort-winter"},{"domaine":"soelden","nom":"Gaislachkogl · mi-station","altitude":2174,"image":"https://panodata.panomax.com/cams/6657/mobile_800x600.jpg","lien":"https://soelden.panomax.com/gaislachkogl-mittelstation"},{"domaine":"soelden","nom":"Gaislachkogl · sommet","altitude":3048,"image":"https://wtvpict.feratel.com/picture/37/5761.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5761&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Hochsölden","altitude":2077,"image":"https://panodata.panomax.com/cams/501/mobile_800x600.jpg","lien":"https://soelden.panomax.com/hochsoelden"},{"domaine":"soelden","nom":"Giggijoch","altitude":2290,"image":"https://wtvpict.feratel.com/picture/37/5762.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5762&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Schwarzkogl · gare aval","altitude":2580,"image":"https://panodata.panomax.com/cams/6666/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzkogl-talstation"},{"domaine":"soelden","nom":"Seekogl","altitude":2662,"image":"https://wtvpict.feratel.com/picture/37/5760.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5760&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Glacier de Rettenbach","altitude":2680,"image":"https://panodata.panomax.com/cams/196/mobile_800x600.jpg","lien":"https://soelden.panomax.com/rettenbach"},{"domaine":"soelden","nom":"Schwarze Schneid · mi-station","altitude":3000,"image":"https://panodata.panomax.com/cams/216/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzeschneid"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · gare aval","altitude":2800,"image":"https://panodata.panomax.com/cams/195/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbach"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · sommet","altitude":3250,"image":"https://panodata.panomax.com/cams/6660/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbachkogl-felssteg"},{"domaine":"gurgl","nom":"Hochgurgl","altitude":2410,"image":"https://wtvpict.feratel.com/picture/37/5570.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5570&c2=0&c8=0"},{"domaine":"gurgl","nom":"Crosspoint","altitude":2157,"image":"https://wtvpict.feratel.com/picture/37/5571.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5571&c2=0&c8=0"},{"domaine":"gurgl","nom":"Hohe Mut","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5650.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5650&c2=0&c8=0"},{"domaine":"gurgl","nom":"Festkogl","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5651.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5651&c2=0&c8=0"}],"neige":{"titre":"Hauteurs mesurées","url":"https://tyrol.com/travel-service/snow-depths/snow-depths-in-soelden"},"avalanche":{"texte":"consultez chaque matin le bulletin officiel du Tyrol, surtout avant de sortir des pistes balisées.","liens":[{"titre":"Bulletin d’avalanche officiel","url":"https://avalanche.report"}]},"planLien":{"titre":"Plan officiel des pistes","url":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/"},"urgences":{"numeros":[{"nom":"Urgence générale","tel":"112","affiche":"112","detail":"Numéro européen, depuis tout téléphone"},{"nom":"Ambulance","tel":"144","affiche":"144"},{"nom":"Secours en montagne","tel":"140","affiche":"140","detail":"Bergrettung"},{"nom":"Police","tel":"133","affiche":"133"},{"nom":"Pompiers","tel":"122","affiche":"122"},{"nom":"Médecin de garde","tel":"141","affiche":"141","secondaire":true},{"nom":"Ambassade du Canada à Vienne","tel":"+431531383000","affiche":"+43 1 531 38 3000","detail":"Laurenzerberg 2, Vienne","secondaire":true},{"nom":"Urgence consulaire (Ottawa)","tel":"0080023266831","affiche":"00 800 2326 6831","detail":"Sans frais depuis l’étranger","secondaire":true}],"note":"Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. Sources : \u003ca href=\"https://www.oesterreich.gv.at/de/themen/notfaelle_unfaelle_und_kriminalitaet/notrufnummern\" target=\"_blank\" rel=\"noopener\">oesterreich.gv.at\u003c/a>, \u003ca href=\"https://travel.gc.ca/assistance/embassies-consulates/austria\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca\u003c/a>."},"faits":[{"titre":"+6 h","texte":"Décalage avec Montréal pendant le séjour"},{"titre":"Euro (€)","texte":"Cartes acceptées presque partout; gardez un peu d’argent comptant."},{"titre":"230 V · type F","texte":"Adaptateur nécessaire pour les fiches nord-américaines."},{"titre":"Pourboire","texte":"On arrondit l’addition, environ 5 à 10 % au restaurant."},{"titre":"Eau du robinet","texte":"Potable partout en Autriche."},{"titre":"Altitude","texte":"Jusqu’à plus de 3 000 m : crème solaire, lunettes et hydratation."}],"casierExemple":"Giggijoch, casier 214","sources":{"pistes":"Intermaps","webcams":"Panomax et Feratel","webcamsPhrase":"des domaines (Panomax, Feratel)"},"adresses":[]}</script>
-<script id="trip-data" type="application/json">{"id":"solden-voyage-2027","titre":"Gendronski Sölden","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"}}</script>
+<script id="trip-data" type="application/json">{"id":"solden-voyage-2027","titre":"Gendronski Sölden","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"},"push":""}</script>
 <script id="leaflet-js">
 /* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -2025,6 +2027,193 @@ function show(tab){
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function renderAll(){if(LOCKED)return;try{renderRemontee();renderSondage();}catch(e){}renderDomSeg();renderHeader();renderHome();renderProgram();renderSkiStatic();renderEtat();renderWx();renderInfos();placeMarkers();}
 
+/* ---------- Alertes du voyage (push) ---------- */
+/* Alertes du voyage — côté app du voyageur.
+ *
+ * <script src="push-client.js"><\/script>
+ * <div id="alertes"></div>
+ * <script>
+ *   VoyagePush.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
+ *   VoyagePush.mountButton(document.getElementById("alertes"));
+ * <\/script>
+ *
+ * enable() doit être appelé depuis un toucher (exigence d'iOS); mountButton() s'en occupe.
+ */
+(function () {
+  "use strict";
+
+  var conf = null;
+
+  function b64ToBytes(b64) {
+    var s = b64.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+      window.navigator.standalone === true;
+  }
+
+  function supported() {
+    return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  }
+
+  function api(path, body) {
+    return fetch(conf.worker.replace(/\/+$/, "") + path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.erreur || ("Erreur " + r.status));
+        return j;
+      });
+    });
+  }
+
+  function publicKey() {
+    if (conf.publicKey) return Promise.resolve(conf.publicKey);
+    return api("/api/vapid").then(function (j) { conf.publicKey = j.publicKey; return j.publicKey; });
+  }
+
+  // Le service worker peut ne jamais être prêt (navigation privée, erreur) : on n'attend pas plus de 5 s
+  function registration() {
+    return Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(function (_, no) { setTimeout(function () { no(new Error("Service worker indisponible")); }, 5000); }),
+    ]);
+  }
+
+  function sendSubscription(sub) {
+    var j = sub.toJSON();
+    return api("/api/subscribe", { trip: conf.trip, subscription: { endpoint: j.endpoint, keys: j.keys } });
+  }
+
+  var VoyagePush = {
+    init: function (options) {
+      conf = Object.assign({}, options);
+      if (!conf.worker || !conf.trip) throw new Error("VoyagePush.init : worker et trip sont requis");
+      // Renvoie l'abonnement au Worker à chaque ouverture (rattrape une base effacée ou une clé renouvelée)
+      VoyagePush.refresh().catch(function () {});
+      return VoyagePush;
+    },
+
+    /** 'unsupported' | 'ios-install' | 'denied' | 'off' | 'on' */
+    state: function () {
+      if (isIOS() && !isStandalone()) return Promise.resolve("ios-install");
+      if (!supported()) return Promise.resolve("unsupported");
+      if (Notification.permission === "denied") return Promise.resolve("denied");
+      return registration().then(function (reg) {
+        return reg.pushManager.getSubscription();
+      }).then(function (sub) {
+        return sub && Notification.permission === "granted" ? "on" : "off";
+      });
+    },
+
+    enable: function () {
+      if (!supported()) return Promise.reject(new Error("Ce navigateur ne reçoit pas d'alertes."));
+      // requestPermission doit partir immédiatement après le toucher, avant tout autre await
+      var perm = Notification.requestPermission();
+      return Promise.resolve(perm).then(function (p) {
+        if (p !== "granted") throw new Error(p === "denied" ? "denied" : "dismissed");
+        return Promise.all([registration(), publicKey()]);
+      }).then(function (r) {
+        var reg = r[0], key = r[1];
+        return reg.pushManager.getSubscription().then(function (existing) {
+          return existing || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
+        });
+      }).then(sendSubscription).then(function () { return "on"; });
+    },
+
+    disable: function () {
+      return registration().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (!sub) return "off";
+        var endpoint = sub.endpoint;
+        return sub.unsubscribe().then(function () {
+          return api("/api/unsubscribe", { trip: conf.trip, endpoint: endpoint }).catch(function () {});
+        }).then(function () { return "off"; });
+      });
+    },
+
+    refresh: function () {
+      if (!supported() || Notification.permission !== "granted") return Promise.resolve();
+      return registration().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (sub) return sendSubscription(sub);
+      });
+    },
+
+    /** Petit bloc prêt à l'emploi : un bouton et une ligne d'état, en français. */
+    mountButton: function (el) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "voyage-push-btn";
+      var msg = document.createElement("p");
+      msg.className = "voyage-push-msg";
+      el.innerHTML = "";
+      el.appendChild(btn);
+      el.appendChild(msg);
+
+      function render(state, extra) {
+        btn.hidden = false;
+        btn.disabled = false;
+        switch (state) {
+          case "on":
+            btn.textContent = "Désactiver les alertes";
+            msg.textContent = "Alertes activées : vous serez averti des annonces et des rappels.";
+            break;
+          case "off":
+            btn.textContent = "Activer les alertes";
+            msg.textContent = "Recevez les annonces du groupe même quand l'app est fermée.";
+            break;
+          case "ios-install":
+            btn.hidden = true;
+            msg.textContent = "Sur iPhone, ajoutez d'abord l'app à l'écran d'accueil (Partager, puis Sur l'écran d'accueil), puis ouvrez-la depuis son icône pour activer les alertes.";
+            break;
+          case "denied":
+            btn.hidden = true;
+            msg.textContent = "Les alertes sont bloquées pour cette app. Réactivez-les dans les réglages du téléphone (Notifications), puis rouvrez l'app.";
+            break;
+          case "unsupported":
+            btn.hidden = true;
+            msg.textContent = "Ce navigateur ne reçoit pas d'alertes. Les annonces restent visibles dans l'app.";
+            break;
+          default:
+            btn.textContent = "Activer les alertes";
+            msg.textContent = extra || "";
+        }
+      }
+
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        VoyagePush.state().then(function (s) {
+          return s === "on" ? VoyagePush.disable() : VoyagePush.enable();
+        }).then(function (s) { render(s); }).catch(function (e) {
+          if (e && e.message === "denied") return render("denied");
+          if (e && e.message === "dismissed") return render("off");
+          render("error", "Impossible d'activer les alertes pour l'instant. Réessayez avec du réseau.");
+        });
+      });
+
+      VoyagePush.state().then(render).catch(function () { render("unsupported"); });
+    },
+  };
+
+  window.VoyagePush = VoyagePush;
+})();
+
+if(TRIP.push&&window.VoyagePush){
+  try{VoyagePush.init({worker:TRIP.push,trip:TRIP.id});$('#alertes-card').hidden=false;VoyagePush.mountButton($('#alertes'));}catch(e){}
+  /* Alerte reçue ou touchée : recharger le contenu (réseau d'abord) et montrer les annonces */
+  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};if(d.type!=='voyage-push')return;refreshVoyage();if(d.event==='opened')location.hash='#accueil';});
+}
 /* ---------- Convertisseur de devises (taux de la BCE via Frankfurter, gardés pour le hors ligne) ---------- */
 (function(){
   const DEV=[...(Array.isArray(S.devises)&&S.devises.length?S.devises:['EUR']),'CAD'].filter((c,i,a)=>a.indexOf(c)===i);

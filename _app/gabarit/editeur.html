@@ -73,6 +73,15 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
   <div id="m-draft" class="msg warn" hidden></div>
   <div id="m-res" class="msg" hidden></div>
 
+  <details class="sec" id="s-alertes" hidden>
+    <summary><h2>Alertes sur les téléphones</h2><span class="n" id="al-state">…</span></summary>
+    <div class="body">
+      <p class="small">À chaque publication, les annonces sont programmées : les voyageurs qui ont activé les alertes reçoivent « Nouvelle annonce du groupe » à l’heure de l’annonce (au plus tôt 3 minutes après la publication). Le texte de l’annonce n’est jamais envoyé au service d’alertes.</p>
+      <p><button type="button" class="light" id="al-test">Envoyer une alerte de test</button> <button type="button" class="light" id="al-status">Voir les abonnés et les envois</button> <button type="button" class="light" id="al-token">Changer le jeton des alertes</button></p>
+      <div id="al-msg" class="small"></div>
+    </div>
+  </details>
+
   <details class="sec" id="s-connexion">
     <summary><h2>Connexion à GitHub</h2><span class="n" id="cx-state">non connecté</span></summary>
     <div class="body">
@@ -517,7 +526,7 @@ $('#b-pub').onclick=async()=>{
     const file=ph?pretty(await encryptFile(JSON.parse(out),ph,ph===openPhrase?encSalt:null)):out;
     const r=await api(FILE('voyage.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour du voyage depuis l’éditeur',content:b64enc(file),sha:cj?.sha||sha||undefined,branch:'main'})});
     if(!r.ok){const t=await r.text();throw Error(r.status+' '+t.slice(0,140));}
-    const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();
+    const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
    }
     if(doG)await gPublish();
     if(doV)render();changed();
@@ -527,6 +536,103 @@ $('#b-pub').onclick=async()=>{
 };
 addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
 load().then(()=>gLoad());
+
+/* ---------- Alertes du voyage (push) ---------- */
+/* Alertes du voyage — côté éditeur de l'accompagnateur.
+ *
+ * <script src="editor-push.js"><\/script>
+ * VoyagePushEditor.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
+ *
+ * Après chaque publication réussie :
+ *   VoyagePushEditor.sync(annonces.map(a => ({ id: a.id, at: a.afficherA, kind: "annonce" })))
+ *
+ *   - id   : identifiant stable de l'annonce (ne change pas si on corrige le texte)
+ *   - at   : heure d'affichage ISO avec fuseau, ex. "2027-03-07T08:00:00+01:00"
+ *            (pour une annonce immédiate : l'heure de publication)
+ *   - kind : "annonce" ou "rappel"
+ *
+ * Envoyez toujours la liste complète : une annonce retirée de la liste est déprogrammée.
+ * Le texte des annonces n'est jamais transmis au Worker.
+ */
+(function () {
+  "use strict";
+
+  var conf = null;
+  var KEY = "voyage-push-jeton:";
+
+  function token(ask) {
+    var t = null;
+    try { t = localStorage.getItem(KEY + conf.trip); } catch (e) {}
+    if (!t && ask !== false) {
+      t = window.prompt("Jeton des alertes pour " + conf.trip + " (fourni à la création du Worker) :");
+      if (t) { t = t.trim(); try { localStorage.setItem(KEY + conf.trip, t); } catch (e) {} }
+    }
+    return t;
+  }
+
+  function call(method, path, body) {
+    var t = token();
+    if (!t) return Promise.reject(new Error("Jeton des alertes manquant"));
+    return fetch(conf.worker.replace(/\/+$/, "") + path, {
+      method: method,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (r.status === 401 || r.status === 403) {
+          try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
+        }
+        if (!r.ok) throw new Error(j.erreur || ("Erreur " + r.status));
+        return j;
+      });
+    });
+  }
+
+  window.VoyagePushEditor = {
+    init: function (options) {
+      conf = Object.assign({}, options);
+      if (!conf.worker || !conf.trip) throw new Error("VoyagePushEditor.init : worker et trip sont requis");
+      return this;
+    },
+    /** Remplace le calendrier des alertes. Renvoie { programmees, ignorees_deja_envoyees, ignorees_passees, retirees }. */
+    sync: function (items) {
+      return call("POST", "/api/schedule", { trip: conf.trip, items: items });
+    },
+    /** Envoie « Les alertes fonctionnent » à tous les téléphones abonnés, dans la minute. */
+    test: function () {
+      return call("POST", "/api/test", { trip: conf.trip });
+    },
+    /** Nombre de téléphones abonnés et dernières alertes envoyées. */
+    status: function () {
+      return call("GET", "/api/status?trip=" + encodeURIComponent(conf.trip));
+    },
+    /** Efface tous les abonnements et le calendrier du voyage (après le retour). */
+    purge: function () {
+      return call("POST", "/api/purge", { trip: conf.trip });
+    },
+    forgetToken: function () {
+      try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
+    },
+  };
+})();
+
+const PUSH_ON=!!TRIP.push&&!!window.VoyagePushEditor;
+if(PUSH_ON){VoyagePushEditor.init({worker:TRIP.push,trip:TRIP.id});$('#s-alertes').hidden=false;$('#al-state').textContent='actives';}
+/* Heure ISO d'une annonce (date locale + fuseau) */
+function pushIso(date,tz){const m=String(date||'').match(/^(\d{4})-(\d\d)-(\d\d)(?:T(\d\d):(\d\d))?/);if(!m)return null;
+  const g=Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0));
+  const off=d=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(d).map(x=>[x.type,x.value]));return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)-d.getTime();};
+  const t=g-off(new Date(g));return new Date(g-off(new Date(t))).toISOString();}
+/* Identifiant stable d'une annonce : son heure et son fuseau (corriger le texte ne la renvoie pas) */
+function pushItems(v){const seen={};return(v.annonces||[]).map(a=>{const tz=a.fuseau||STN.fuseau;const at=pushIso(a.date,tz);if(!at)return null;
+  let id=('a-'+String(a.date).replace(/[^0-9T]/g,'')+'-'+tz.replace(/[^A-Za-z]/g,'').slice(0,12)).slice(0,60);seen[id]=(seen[id]||0)+1;if(seen[id]>1)id+='-'+seen[id];
+  return{id,at,kind:'annonce'};}).filter(Boolean);}
+function pushSync(v){if(!PUSH_ON)return;VoyagePushEditor.sync(pushItems(v)).then(r=>{$('#al-msg').textContent='Alertes : '+r.programmees+' annonce(s) programmée(s)'+(r.retirees?', '+r.retirees+' retirée(s)':'')+'.';}).catch(e=>{$('#al-msg').textContent='Alertes non programmées : '+e.message;$('#s-alertes').open=true;});}
+if(PUSH_ON){
+  $('#al-test').onclick=()=>VoyagePushEditor.test().then(()=>{$('#al-msg').textContent='Alerte de test envoyée : elle arrive sur les téléphones abonnés d’ici une minute.';}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
+  $('#al-status').onclick=()=>VoyagePushEditor.status().then(r=>{$('#al-msg').innerHTML='<b>'+r.abonnements+'</b> téléphone(s) abonné(s).<br>'+(r.annonces||[]).slice(0,8).map(a=>esc(a.kind)+' · '+esc(new Date(a.envoi).toLocaleString('fr-CA',{timeZone:STN.fuseau,dateStyle:'medium',timeStyle:'short'}))+' · '+(a.termine?a.livrees+' reçue(s)'+(a.echecs?', '+a.echecs+' échec(s)':''):'en attente')).join('<br>');}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
+  $('#al-token').onclick=()=>{VoyagePushEditor.forgetToken();$('#al-msg').textContent='Jeton oublié : il sera redemandé à la prochaine action.';};
+}
 </script>
 </body>
 </html>

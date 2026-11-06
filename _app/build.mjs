@@ -16,6 +16,9 @@ const APP = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(APP, "..");
 const SITE = "https://monaccompagnateur.ca";
 const DEPOT = { owner: "Matlavigne", repo: "matlavigne.github.io" };
+// Réglages du site : adresse du Worker des alertes (vide = alertes désactivées)
+const CONFIG = fs.existsSync(path.join(APP, "config.json")) ? JSON.parse(fs.readFileSync(path.join(APP, "config.json"), "utf8")) : {};
+const PUSH = String(CONFIG.pushWorker || "").replace(/\/+$/, "");
 const GABARITS = ["index.html", "editeur.html", "installer.html", "affiche-bagages.html", "manifest.webmanifest", "sw.js"];
 
 const readJson = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
@@ -102,7 +105,7 @@ function build(tripId, version) {
 
   const { pistesSuggerees, ...stationPublic } = S;
   const ski = { picks: pistesSuggerees || {}, plans: Object.fromEntries(Object.entries(S.domaines).map(([k, d]) => [k, d.plan || ""])) };
-  const trip = { id: T.id, titre: T.titre, depot: DEPOT };
+  const trip = { id: T.id, titre: T.titre, depot: DEPOT, push: PUSH };
 
   const tokens = {
     ...blocs(S),
@@ -113,6 +116,7 @@ function build(tripId, version) {
     DEFAUT_JSON: embed(defaut), SKI_JSON: embed(ski), STATION_JSON: embed(stationPublic), TRIP_JSON: embed(trip),
     AFFICHE_JSON: embed(T.affiche || { titre: T.titre, sousDates: T.dates }),
     CACHE: T.cache || `voyage-${T.id}`,
+    PUSH_WORKER: jsStr(PUSH),
   };
 
   const out = {};

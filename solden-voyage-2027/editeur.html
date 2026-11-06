@@ -73,6 +73,15 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
   <div id="m-draft" class="msg warn" hidden></div>
   <div id="m-res" class="msg" hidden></div>
 
+  <details class="sec" id="s-alertes" hidden>
+    <summary><h2>Alertes sur les téléphones</h2><span class="n" id="al-state">…</span></summary>
+    <div class="body">
+      <p class="small">À chaque publication, les annonces sont programmées : les voyageurs qui ont activé les alertes reçoivent « Nouvelle annonce du groupe » à l’heure de l’annonce (au plus tôt 3 minutes après la publication). Le texte de l’annonce n’est jamais envoyé au service d’alertes.</p>
+      <p><button type="button" class="light" id="al-test">Envoyer une alerte de test</button> <button type="button" class="light" id="al-status">Voir les abonnés et les envois</button> <button type="button" class="light" id="al-token">Changer le jeton des alertes</button></p>
+      <div id="al-msg" class="small"></div>
+    </div>
+  </details>
+
   <details class="sec" id="s-connexion">
     <summary><h2>Connexion à GitHub</h2><span class="n" id="cx-state">non connecté</span></summary>
     <div class="body">
@@ -151,7 +160,7 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
 </div></div>
 
 <script id="station-data" type="application/json">{"id":"soelden","version":1,"nom":"Sölden","lieu":"Ötztal · Autriche","pays":"Autriche","paysEn":"en Autriche","fuseau":"Europe/Vienna","fuseauNom":"heure d’Autriche","decalageTexte":"6 h de plus qu’à Montréal","prise":"type F","devises":["EUR"],"langue":{"titre":"Quelques mots d’allemand","phrases":[["Grüß Gott / Servus","Bonjour / Salut (en Autriche)"],["Danke (schön)","Merci (beaucoup)"],["Bitte","S’il vous plaît / de rien"],["Die Rechnung, bitte","L’addition, s’il vous plaît"],["Ein Wasser / ein Bier, bitte","Une eau / une bière, s’il vous plaît"],["Wo ist die Toilette?","Où sont les toilettes?"],["Entschuldigung","Pardon / excusez-moi"],["Hilfe!","À l’aide!"]]},"alias":["autriche","solden","sölden","vienne"],"domaines":{"soelden":{"nom":"Sölden","feed":"https://winter.intermaps.com/soelden/data?lang=en","bounds":[[46.895,10.86],[47.005,11.07]],"plan":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/?disableScrollZoom=true&hideCookieConsent=true","planSansWebgl":"https://winter.intermaps.com/soelden?lang=en","meteoNom":"Sölden village"},"gurgl":{"nom":"Gurgl","feed":"https://winter.intermaps.com/obergurgl_hochgurgl/data?lang=en","bounds":[[46.835,10.98],[46.925,11.1]],"plan":"https://winter.intermaps.com/obergurgl_hochgurgl?lang=en","meteoNom":"Obergurgl"}},"domaineDefaut":"soelden","tousNom":"Sölden et Gurgl","tousCourt":"Les deux","meteo":{"points":[{"domaine":"soelden","nom":"Village","lat":46.9655,"lng":11.0076,"altitude":1370},{"domaine":"soelden","nom":"Mi-station","lat":46.95,"lng":10.986,"altitude":2174},{"domaine":"soelden","nom":"Sommets","lat":46.937,"lng":10.965,"altitude":3040},{"domaine":"gurgl","nom":"Village","lat":46.8705,"lng":11.0272,"altitude":1910},{"domaine":"gurgl","nom":"Sommets","lat":46.8807,"lng":11.0858,"altitude":3000}]},"webcams":[{"domaine":"soelden","nom":"Village","altitude":1377,"image":"https://panodata.panomax.com/cams/5572/mobile_800x600.jpg","lien":"https://soelden.panomax.com/ort-winter"},{"domaine":"soelden","nom":"Gaislachkogl · mi-station","altitude":2174,"image":"https://panodata.panomax.com/cams/6657/mobile_800x600.jpg","lien":"https://soelden.panomax.com/gaislachkogl-mittelstation"},{"domaine":"soelden","nom":"Gaislachkogl · sommet","altitude":3048,"image":"https://wtvpict.feratel.com/picture/37/5761.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5761&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Hochsölden","altitude":2077,"image":"https://panodata.panomax.com/cams/501/mobile_800x600.jpg","lien":"https://soelden.panomax.com/hochsoelden"},{"domaine":"soelden","nom":"Giggijoch","altitude":2290,"image":"https://wtvpict.feratel.com/picture/37/5762.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5762&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Schwarzkogl · gare aval","altitude":2580,"image":"https://panodata.panomax.com/cams/6666/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzkogl-talstation"},{"domaine":"soelden","nom":"Seekogl","altitude":2662,"image":"https://wtvpict.feratel.com/picture/37/5760.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5760&design=v4&c2=0&c8=0"},{"domaine":"soelden","nom":"Glacier de Rettenbach","altitude":2680,"image":"https://panodata.panomax.com/cams/196/mobile_800x600.jpg","lien":"https://soelden.panomax.com/rettenbach"},{"domaine":"soelden","nom":"Schwarze Schneid · mi-station","altitude":3000,"image":"https://panodata.panomax.com/cams/216/mobile_800x600.jpg","lien":"https://soelden.panomax.com/schwarzeschneid"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · gare aval","altitude":2800,"image":"https://panodata.panomax.com/cams/195/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbach"},{"domaine":"soelden","nom":"Glacier de Tiefenbach · sommet","altitude":3250,"image":"https://panodata.panomax.com/cams/6660/mobile_800x600.jpg","lien":"https://soelden.panomax.com/tiefenbachkogl-felssteg"},{"domaine":"gurgl","nom":"Hochgurgl","altitude":2410,"image":"https://wtvpict.feratel.com/picture/37/5570.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5570&c2=0&c8=0"},{"domaine":"gurgl","nom":"Crosspoint","altitude":2157,"image":"https://wtvpict.feratel.com/picture/37/5571.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5571&c2=0&c8=0"},{"domaine":"gurgl","nom":"Hohe Mut","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5650.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5650&c2=0&c8=0"},{"domaine":"gurgl","nom":"Festkogl","altitude":2670,"image":"https://wtvpict.feratel.com/picture/37/5651.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?design=v5&cam=5651&c2=0&c8=0"}],"neige":{"titre":"Hauteurs mesurées","url":"https://tyrol.com/travel-service/snow-depths/snow-depths-in-soelden"},"avalanche":{"texte":"consultez chaque matin le bulletin officiel du Tyrol, surtout avant de sortir des pistes balisées.","liens":[{"titre":"Bulletin d’avalanche officiel","url":"https://avalanche.report"}]},"planLien":{"titre":"Plan officiel des pistes","url":"https://maps.oetztal.com/panorama/en/S%C3%B6lden%20Winterpanorama/2d/pano_soelden/default/-1/-1/-1/26360,26361/-1/"},"urgences":{"numeros":[{"nom":"Urgence générale","tel":"112","affiche":"112","detail":"Numéro européen, depuis tout téléphone"},{"nom":"Ambulance","tel":"144","affiche":"144"},{"nom":"Secours en montagne","tel":"140","affiche":"140","detail":"Bergrettung"},{"nom":"Police","tel":"133","affiche":"133"},{"nom":"Pompiers","tel":"122","affiche":"122"},{"nom":"Médecin de garde","tel":"141","affiche":"141","secondaire":true},{"nom":"Ambassade du Canada à Vienne","tel":"+431531383000","affiche":"+43 1 531 38 3000","detail":"Laurenzerberg 2, Vienne","secondaire":true},{"nom":"Urgence consulaire (Ottawa)","tel":"0080023266831","affiche":"00 800 2326 6831","detail":"Sans frais depuis l’étranger","secondaire":true}],"note":"Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. Sources : \u003ca href=\"https://www.oesterreich.gv.at/de/themen/notfaelle_unfaelle_und_kriminalitaet/notrufnummern\" target=\"_blank\" rel=\"noopener\">oesterreich.gv.at\u003c/a>, \u003ca href=\"https://travel.gc.ca/assistance/embassies-consulates/austria\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca\u003c/a>."},"faits":[{"titre":"+6 h","texte":"Décalage avec Montréal pendant le séjour"},{"titre":"Euro (€)","texte":"Cartes acceptées presque partout; gardez un peu d’argent comptant."},{"titre":"230 V · type F","texte":"Adaptateur nécessaire pour les fiches nord-américaines."},{"titre":"Pourboire","texte":"On arrondit l’addition, environ 5 à 10 % au restaurant."},{"titre":"Eau du robinet","texte":"Potable partout en Autriche."},{"titre":"Altitude","texte":"Jusqu’à plus de 3 000 m : crème solaire, lunettes et hydratation."}],"casierExemple":"Giggijoch, casier 214","sources":{"pistes":"Intermaps","webcams":"Panomax et Feratel","webcamsPhrase":"des domaines (Panomax, Feratel)"},"adresses":[]}</script>
-<script id="trip-data" type="application/json">{"id":"solden-voyage-2027","titre":"Gendronski Sölden","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"}}</script>
+<script id="trip-data" type="application/json">{"id":"solden-voyage-2027","titre":"Gendronski Sölden","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"},"push":""}</script>
 <script>
 'use strict';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
@@ -517,7 +526,7 @@ $('#b-pub').onclick=async()=>{
     const file=ph?pretty(await encryptFile(JSON.parse(out),ph,ph===openPhrase?encSalt:null)):out;
     const r=await api(FILE('voyage.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour du voyage depuis l’éditeur',content:b64enc(file),sha:cj?.sha||sha||undefined,branch:'main'})});
     if(!r.ok){const t=await r.text();throw Error(r.status+' '+t.slice(0,140));}
-    const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();
+    const j=await r.json();sha=j.content.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
    }
     if(doG)await gPublish();
     if(doV)render();changed();
@@ -527,6 +536,103 @@ $('#b-pub').onclick=async()=>{
 };
 addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
 load().then(()=>gLoad());
+
+/* ---------- Alertes du voyage (push) ---------- */
+/* Alertes du voyage — côté éditeur de l'accompagnateur.
+ *
+ * <script src="editor-push.js"><\/script>
+ * VoyagePushEditor.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
+ *
+ * Après chaque publication réussie :
+ *   VoyagePushEditor.sync(annonces.map(a => ({ id: a.id, at: a.afficherA, kind: "annonce" })))
+ *
+ *   - id   : identifiant stable de l'annonce (ne change pas si on corrige le texte)
+ *   - at   : heure d'affichage ISO avec fuseau, ex. "2027-03-07T08:00:00+01:00"
+ *            (pour une annonce immédiate : l'heure de publication)
+ *   - kind : "annonce" ou "rappel"
+ *
+ * Envoyez toujours la liste complète : une annonce retirée de la liste est déprogrammée.
+ * Le texte des annonces n'est jamais transmis au Worker.
+ */
+(function () {
+  "use strict";
+
+  var conf = null;
+  var KEY = "voyage-push-jeton:";
+
+  function token(ask) {
+    var t = null;
+    try { t = localStorage.getItem(KEY + conf.trip); } catch (e) {}
+    if (!t && ask !== false) {
+      t = window.prompt("Jeton des alertes pour " + conf.trip + " (fourni à la création du Worker) :");
+      if (t) { t = t.trim(); try { localStorage.setItem(KEY + conf.trip, t); } catch (e) {} }
+    }
+    return t;
+  }
+
+  function call(method, path, body) {
+    var t = token();
+    if (!t) return Promise.reject(new Error("Jeton des alertes manquant"));
+    return fetch(conf.worker.replace(/\/+$/, "") + path, {
+      method: method,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (r.status === 401 || r.status === 403) {
+          try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
+        }
+        if (!r.ok) throw new Error(j.erreur || ("Erreur " + r.status));
+        return j;
+      });
+    });
+  }
+
+  window.VoyagePushEditor = {
+    init: function (options) {
+      conf = Object.assign({}, options);
+      if (!conf.worker || !conf.trip) throw new Error("VoyagePushEditor.init : worker et trip sont requis");
+      return this;
+    },
+    /** Remplace le calendrier des alertes. Renvoie { programmees, ignorees_deja_envoyees, ignorees_passees, retirees }. */
+    sync: function (items) {
+      return call("POST", "/api/schedule", { trip: conf.trip, items: items });
+    },
+    /** Envoie « Les alertes fonctionnent » à tous les téléphones abonnés, dans la minute. */
+    test: function () {
+      return call("POST", "/api/test", { trip: conf.trip });
+    },
+    /** Nombre de téléphones abonnés et dernières alertes envoyées. */
+    status: function () {
+      return call("GET", "/api/status?trip=" + encodeURIComponent(conf.trip));
+    },
+    /** Efface tous les abonnements et le calendrier du voyage (après le retour). */
+    purge: function () {
+      return call("POST", "/api/purge", { trip: conf.trip });
+    },
+    forgetToken: function () {
+      try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
+    },
+  };
+})();
+
+const PUSH_ON=!!TRIP.push&&!!window.VoyagePushEditor;
+if(PUSH_ON){VoyagePushEditor.init({worker:TRIP.push,trip:TRIP.id});$('#s-alertes').hidden=false;$('#al-state').textContent='actives';}
+/* Heure ISO d'une annonce (date locale + fuseau) */
+function pushIso(date,tz){const m=String(date||'').match(/^(\d{4})-(\d\d)-(\d\d)(?:T(\d\d):(\d\d))?/);if(!m)return null;
+  const g=Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0));
+  const off=d=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(d).map(x=>[x.type,x.value]));return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)-d.getTime();};
+  const t=g-off(new Date(g));return new Date(g-off(new Date(t))).toISOString();}
+/* Identifiant stable d'une annonce : son heure et son fuseau (corriger le texte ne la renvoie pas) */
+function pushItems(v){const seen={};return(v.annonces||[]).map(a=>{const tz=a.fuseau||STN.fuseau;const at=pushIso(a.date,tz);if(!at)return null;
+  let id=('a-'+String(a.date).replace(/[^0-9T]/g,'')+'-'+tz.replace(/[^A-Za-z]/g,'').slice(0,12)).slice(0,60);seen[id]=(seen[id]||0)+1;if(seen[id]>1)id+='-'+seen[id];
+  return{id,at,kind:'annonce'};}).filter(Boolean);}
+function pushSync(v){if(!PUSH_ON)return;VoyagePushEditor.sync(pushItems(v)).then(r=>{$('#al-msg').textContent='Alertes : '+r.programmees+' annonce(s) programmée(s)'+(r.retirees?', '+r.retirees+' retirée(s)':'')+'.';}).catch(e=>{$('#al-msg').textContent='Alertes non programmées : '+e.message;$('#s-alertes').open=true;});}
+if(PUSH_ON){
+  $('#al-test').onclick=()=>VoyagePushEditor.test().then(()=>{$('#al-msg').textContent='Alerte de test envoyée : elle arrive sur les téléphones abonnés d’ici une minute.';}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
+  $('#al-status').onclick=()=>VoyagePushEditor.status().then(r=>{$('#al-msg').innerHTML='<b>'+r.abonnements+'</b> téléphone(s) abonné(s).<br>'+(r.annonces||[]).slice(0,8).map(a=>esc(a.kind)+' · '+esc(new Date(a.envoi).toLocaleString('fr-CA',{timeZone:STN.fuseau,dateStyle:'medium',timeStyle:'short'}))+' · '+(a.termine?a.livrees+' reçue(s)'+(a.echecs?', '+a.echecs+' échec(s)':''):'en attente')).join('<br>');}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
+  $('#al-token').onclick=()=>{VoyagePushEditor.forgetToken();$('#al-msg').textContent='Jeton oublié : il sera redemandé à la prochaine action.';};
+}
 </script>
 </body>
 </html>

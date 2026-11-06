@@ -1,0 +1,54 @@
+name = "monaccompagnateur-push"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# Vérifie chaque minute les annonces à envoyer
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "monaccompagnateur-push"
+database_id = "REMPLACER-PAR-L-ID-DONNE-PAR-WRANGLER"
+
+[vars]
+# Sites autorisés à abonner un téléphone et à appeler l'API (séparés par des virgules)
+ALLOWED_ORIGINS = "https://monaccompagnateur.ca"
+# Contact VAPID transmis à Apple et Google (une URL https: ou une adresse mailto:)
+VAPID_SUBJECT = "https://monaccompagnateur.ca"
+# Clé publique produite par scripts/generate-keys.mjs
+VAPID_PUBLIC_KEY = "REMPLACER-PAR-LA-CLE-PUBLIQUE"
+# Envois par passage du cron (le forfait gratuit permet 50 requêtes sortantes par passage)
+MAX_PUSH_PER_RUN = "40"
+# Délai minimal entre la publication et l'envoi, le temps que GitHub Pages mette le site à jour
+PUBLISH_DELAY_SECONDS = "180"
+# Une annonce nouvelle plus vieille que ça n'est pas envoyée (évite de renvoyer l'historique)
+MAX_PAST_SECONDS = "900"
+# Durée pendant laquelle Apple / Google gardent un message pour un téléphone sans réseau
+PUSH_TTL_SECONDS = "43200"
+# Effacement automatique des abonnements N jours après la fin du voyage
+PURGE_AFTER_DAYS = "7"
+
+# Un bloc par voyage. Le nom doit correspondre au dossier de l'app sur monaccompagnateur.ca.
+# end : date de retour (les abonnements sont effacés 7 jours après).
+[vars.TRIPS.solden-voyage-2027]
+title = "Sölden 2027"
+url = "/solden-voyage-2027/"
+end = "2027-03-13"
+maxSubs = 300
+
+[vars.TRIPS.st-anton-mars2027]
+title = "St. Anton 2027"
+url = "/st-anton-mars2027/"
+end = "2027-03-14"
+maxSubs = 300
+
+[vars.TRIPS.zermatt-mars2027]
+title = "Zermatt 2027"
+url = "/zermatt-mars2027/"
+end = "2027-03-31"
+maxSubs = 300
+
+# Secrets (jamais dans ce fichier) :
+#   npx wrangler secret put VAPID_PRIVATE_JWK
+#   npx wrangler secret put EDITOR_TOKENS

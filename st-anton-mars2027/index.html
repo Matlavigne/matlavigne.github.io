@@ -271,6 +271,7 @@ body.locked{overflow:hidden}
 .verif{background:#f5e6e4;color:#97302b;border:1px solid #e3b7b2;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 12px;white-space:pre-wrap}
 @media(max-width:420px){.hero h1{font-size:36px}.hero .h-dates{font-size:21px}.facts{grid-template-columns:1fr}}
 @media print{nav.tabs,.mapbox,.mapbar{display:none!important}.view[hidden]{display:block!important}body{padding:0}}
+.voyage-push-msg{font-size:14px;color:var(--muted);margin:8px 0 0}
 </style>
 <style id="leaflet-css">
 /* required styles */
@@ -1161,6 +1162,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <label>Notes<textarea data-perso="notes" rows="3" placeholder="Taille des bottes, code du cadenas…"></textarea></label>
     </div>
   </div>
+  <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
   <div class="card"><h3>Installer ou partager l’app</h3><p>Page avec le code QR et les étapes pour iPhone et Android, à envoyer aux autres voyageurs.</p><p><a class="btn light" href="installer.html">Comment installer l’app</a></p></div>
   <div class="card">
     <h3>Urgences en Autriche</h3>
@@ -1227,14 +1229,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 12:28</span></p>
+  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 14:26</span></p>
 </section>
 </main>
 
 <script id="voyage-defaut" type="application/json">{"titre":"Gendronski St. Anton","datesTexte":"6 au 14 mars 2027","sousTitre":"Voyage de ski en groupe","debut":"2027-03-06","fin":"2027-03-14","meteo":{"points":[{"domaine":"stanton","nom":"Village","lat":47.1295,"lng":10.2683,"altitude":1304},{"domaine":"stanton","nom":"Galzig","lat":47.1362,"lng":10.235,"altitude":2085},{"domaine":"stanton","nom":"Valluga","lat":47.1578,"lng":10.2129,"altitude":2811},{"domaine":"lech","nom":"Lech","lat":47.2077,"lng":10.1418,"altitude":1444},{"domaine":"lech","nom":"Zürs","lat":47.17,"lng":10.1665,"altitude":1717},{"domaine":"lech","nom":"Rüfikopf","lat":47.198,"lng":10.1585,"altitude":2362}]},"webcams":[{"domaine":"stanton","nom":"Village · Skicenter","altitude":1300,"image":"https://wtvpict.feratel.com/picture/37/5693.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5693&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Galzig","altitude":2085,"image":"https://wtvpict.feratel.com/picture/37/5691.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5691&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Gampen","altitude":1850,"image":"https://wtvpict.feratel.com/picture/37/5692.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5692&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Rendl","altitude":2030,"image":"https://wtvpict.feratel.com/picture/37/5694.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5694&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"St. Christoph","altitude":1800,"image":"https://wtvpict.feratel.com/picture/37/5695.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5695&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Valluga","altitude":2811,"image":"https://wtvpict.feratel.com/picture/37/5690.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5690&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Lech · Flühen","altitude":1480,"image":"https://wtvpict.feratel.com/picture/37/5810.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5810&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Oberlech","altitude":1660,"image":"https://wtvpict.feratel.com/picture/37/5812.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5812&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zug","altitude":1576,"image":"https://wtvpict.feratel.com/picture/37/5814.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5814&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zürs · Trittkopf","altitude":2423,"image":"https://wtvpict.feratel.com/picture/37/5811.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5811&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zürs · Seekopf","altitude":2210,"image":"https://wtvpict.feratel.com/picture/37/5813.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5813&design=v4&c2=0&c8=0"}]}</script>
 <script id="ski-data" type="application/json">{"picks":{"stanton":[{"level":"red","levelLabel":"Rouge puis bleue","sector":"Schindlergrat → Alpe Rauz → Stuben","liftKw":"schindler","title":"La grande descente vers Stuben","text":"Du sommet du Schindlergrat, une longue descente de plus de 1 000 m de dénivelé vers Alpe Rauz, puis une bleue large et tranquille jusqu’à Stuben. Belle journée en boucle : retour par l’Albona et l’Alpe Rauz."},{"level":"red","levelLabel":"Rouge","sector":"Albona · Stuben","liftKw":"albona","title":"Albona, le côté tranquille","text":"Une rouge large et soutenue au-dessus de Stuben, souvent moins achalandée que Galzig. Superbe après une chute de neige; à faire avec les jambes fraîches."},{"level":"red","levelLabel":"Rouge","sector":"Kapall → Gampen","liftKw":"kapall","title":"Kapall jusqu’au Gampen","text":"Du sommet du Kapall, une rouge panoramique qui rejoint le Gampen, avec terrasses pour la pause. Le bon terrain pour enchaîner les rouges en matinée."},{"level":"red","levelLabel":"Rouge","sector":"Rendl","liftKw":"gampberg","title":"Gampberg et le retour du Rendl","text":"De l’autre côté de la vallée, le Rendl est ensoleillé l’après-midi et plus calme. La rouge du Gampberg rejoint la descente de retour vers la gare du Rendl, en bordure du village."},{"level":"blue","levelLabel":"Bleue","sector":"Kapall → Gampen","liftKw":"kapall","title":"La bleue du Kapall pour souffler","text":"Longue bleue roulante avec vue sur la vallée, pratique par mauvaise visibilité ou pour une descente détente entre deux rouges."},{"level":"blue","levelLabel":"Bleue","sector":"Alpe Rauz → Stuben","liftKw":"valfagehr","title":"Vers Stuben en mode croisière","text":"La bleue qui descend d’Alpe Rauz vers Stuben est large et peu fréquentée : idéale pour travailler ses virages carvés."}],"lech":[{"level":"red","levelLabel":"Rouge et bleue","sector":"Lech · Zürs · Zug · Oberlech","liftKw":"rüfikopf","title":"Le Weißer Ring","text":"La boucle mythique de l’Arlberg : environ 22 km de pistes reliant Lech, Zürs, Zug et Oberlech, surtout des rouges et des bleues. Partez tôt dans le sens indiqué par les panneaux « Der Weiße Ring »; comptez la journée avec la pause du midi."},{"level":"red","levelLabel":"Rouge","sector":"Muggengrat → Zürs","liftKw":"muggengrat","title":"Muggengrat et le vallon du Täli","text":"Une longue rouge tranquille autour de la Hasenfluh qui revient vers Zürs. Courte poussée à plat à la fin, surtout en planche."},{"level":"blue","levelLabel":"Bleue","sector":"Rüfikopf → Zürs","liftKw":"rüfikopf","title":"Monzabon, de Lech vers Zürs","text":"Du Rüfikopf, une longue bleue vallonnée vers Zürs, qui fait partie du Weißer Ring. Agréable pour souffler sans perdre de terrain."},{"level":"red","levelLabel":"Rouge","sector":"Warth-Schröcken","liftKw":"auenfeld","title":"Escapade à Warth-Schröcken","text":"Par le télécabine Auenfeldjet depuis Lech, on rejoint Warth-Schröcken, réputé pour son enneigement. Vérifiez l’heure du dernier retour vers Lech avant de partir."}]},"plans":{"stanton":"https://winter.intermaps.com/skiarlberg?lang=en","lech":"https://winter.intermaps.com/skiarlberg?lang=en"}}</script>
 <script id="station-data" type="application/json">{"id":"stanton","version":1,"nom":"St. Anton","lieu":"Ski Arlberg · Autriche","pays":"Autriche","paysEn":"en Autriche","fuseau":"Europe/Vienna","fuseauNom":"heure d’Autriche","decalageTexte":"6 h de plus qu’à Montréal","prise":"type F","devises":["EUR"],"langue":{"titre":"Quelques mots d’allemand","phrases":[["Grüß Gott / Servus","Bonjour / Salut (en Autriche)"],["Danke (schön)","Merci (beaucoup)"],["Bitte","S’il vous plaît / de rien"],["Die Rechnung, bitte","L’addition, s’il vous plaît"],["Ein Wasser / ein Bier, bitte","Une eau / une bière, s’il vous plaît"],["Wo ist die Toilette?","Où sont les toilettes?"],["Entschuldigung","Pardon / excusez-moi"],["Hilfe!","À l’aide!"]]},"alias":["autriche","st. anton","st anton","arlberg","lech","vienne"],"nomDomaineSkiable":"Ski Arlberg","domaines":{"stanton":{"nom":"St. Anton","long":"St. Anton · St. Christoph · Stuben","feed":"https://winter.intermaps.com/skiarlberg/data?lang=en","bounds":[[47.105,10.13],[47.17,10.36]],"plan":"https://winter.intermaps.com/skiarlberg?lang=en","meteoNom":"St. Anton","secteur":"anton|christoph|stuben|galzig|valluga|vallug|gampen|kapall|nasserein|fang|zammermoos|rendl|riffel|gampberg|maass|mass|schindler|arlenm|tanzb|mattun|osthang|steissbach|albona|rauz|valfagehr|sonnenkopf|kl[oö]sterle|muttj|salzbo|tanzboden|dengert|galzigbahn|moos"},"lech":{"nom":"Lech Zürs","long":"Lech · Zürs · Warth-Schröcken","feed":"https://winter.intermaps.com/skiarlberg/data?lang=en","bounds":[[47.16,10.03],[47.29,10.22]],"plan":"https://winter.intermaps.com/skiarlberg?lang=en","meteoNom":"Lech","secteur":"lech|z[uü]rs|oberlech|\\bzug|r[uü]fi|trittkopf|trittalp|seekopf|muggengrat|madloch|z[uü]rsersee|hexenboden|schlegelkopf|petersboden|kriegerhorn|mohnenfluh|weibermahd|steinm[aä]hder|hasensprung|sch[uü]ttboden|balmen|t[aä]li|monzabon|zugerberg|auenfeld|warth|schr[oö]cken|salober|steffisalp|wartherhorn|j[aä]geralp|hochalp|karhorn|hochtannberg|k[oö]rbersee|falkenkopf|flexen|palmen|flühen|fl[uü]hen|schafberg|bodenalpe|omesberg|gaisb[uü]hel|kriegeralpe|stierlochbahn|sonnenend"}},"domaineDefaut":"stanton","tousNom":"tout l’Arlberg","tousCourt":"Tout l’Arlberg","meteo":{"points":[{"domaine":"stanton","nom":"Village","lat":47.1295,"lng":10.2683,"altitude":1304},{"domaine":"stanton","nom":"Galzig","lat":47.1362,"lng":10.235,"altitude":2085},{"domaine":"stanton","nom":"Valluga","lat":47.1578,"lng":10.2129,"altitude":2811},{"domaine":"lech","nom":"Lech","lat":47.2077,"lng":10.1418,"altitude":1444},{"domaine":"lech","nom":"Zürs","lat":47.17,"lng":10.1665,"altitude":1717},{"domaine":"lech","nom":"Rüfikopf","lat":47.198,"lng":10.1585,"altitude":2362}]},"webcams":[{"domaine":"stanton","nom":"Village · Skicenter","altitude":1300,"image":"https://wtvpict.feratel.com/picture/37/5693.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5693&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Galzig","altitude":2085,"image":"https://wtvpict.feratel.com/picture/37/5691.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5691&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Gampen","altitude":1850,"image":"https://wtvpict.feratel.com/picture/37/5692.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5692&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Rendl","altitude":2030,"image":"https://wtvpict.feratel.com/picture/37/5694.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5694&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"St. Christoph","altitude":1800,"image":"https://wtvpict.feratel.com/picture/37/5695.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5695&design=v4&c2=0&c8=0"},{"domaine":"stanton","nom":"Valluga","altitude":2811,"image":"https://wtvpict.feratel.com/picture/37/5690.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5690&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Lech · Flühen","altitude":1480,"image":"https://wtvpict.feratel.com/picture/37/5810.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5810&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Oberlech","altitude":1660,"image":"https://wtvpict.feratel.com/picture/37/5812.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5812&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zug","altitude":1576,"image":"https://wtvpict.feratel.com/picture/37/5814.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5814&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zürs · Trittkopf","altitude":2423,"image":"https://wtvpict.feratel.com/picture/37/5811.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5811&design=v4&c2=0&c8=0"},{"domaine":"lech","nom":"Zürs · Seekopf","altitude":2210,"image":"https://wtvpict.feratel.com/picture/37/5813.jpeg?dcsdesign=feratel4","lien":"https://webtv.feratel.com/webtv/?cam=5813&design=v4&c2=0&c8=0"}],"neige":{"titre":"Hauteurs mesurées (Ski Arlberg)","url":"https://www.skiarlberg.at/en/st-anton/live-info/snow-avalanche-report"},"avalanche":{"texte":"consultez chaque matin le bulletin officiel, surtout avant de sortir des pistes balisées. St. Anton, St. Christoph et Stuben relèvent du bulletin du Tyrol; Lech, Zürs et Warth-Schröcken, de celui du Vorarlberg.","liens":[{"titre":"Bulletin du Tyrol","url":"https://avalanche.report"},{"titre":"Neige et avalanches · Ski Arlberg","url":"https://www.skiarlberg.at/en/st-anton/live-info/snow-avalanche-report"}]},"planLien":{"titre":"Plan officiel Ski Arlberg","url":"https://winter.intermaps.com/skiarlberg?lang=en"},"urgences":{"numeros":[{"nom":"Urgence générale","tel":"112","affiche":"112","detail":"Numéro européen, depuis tout téléphone"},{"nom":"Ambulance","tel":"144","affiche":"144"},{"nom":"Secours en montagne","tel":"140","affiche":"140","detail":"Bergrettung"},{"nom":"Police","tel":"133","affiche":"133"},{"nom":"Pompiers","tel":"122","affiche":"122"},{"nom":"Médecin de garde","tel":"141","affiche":"141","secondaire":true},{"nom":"Ambassade du Canada à Vienne","tel":"+431531383000","affiche":"+43 1 531 38 3000","detail":"Laurenzerberg 2, Vienne","secondaire":true},{"nom":"Urgence consulaire (Ottawa)","tel":"0080023266831","affiche":"00 800 2326 6831","detail":"Sans frais depuis l’étranger","secondaire":true}],"note":"Sur les pistes : notez le numéro de la piste ou de la remontée la plus proche pour indiquer où vous êtes. St. Anton est au Tyrol, Lech-Zürs et Warth au Vorarlberg : mêmes numéros d’urgence partout. Sources : \u003ca href=\"https://www.oesterreich.gv.at/de/themen/notfaelle_unfaelle_und_kriminalitaet/notrufnummern\" target=\"_blank\" rel=\"noopener\">oesterreich.gv.at\u003c/a>, \u003ca href=\"https://travel.gc.ca/assistance/embassies-consulates/austria\" target=\"_blank\" rel=\"noopener\">voyage.gc.ca\u003c/a>."},"faits":[{"titre":"+6 h","texte":"Décalage avec Montréal pendant le séjour"},{"titre":"Euro (€)","texte":"Cartes acceptées presque partout; gardez un peu d’argent comptant."},{"titre":"230 V · type F","texte":"Adaptateur nécessaire pour les fiches nord-américaines."},{"titre":"Pourboire","texte":"On arrondit l’addition, environ 5 à 10 % au restaurant."},{"titre":"Eau du robinet","texte":"Potable partout en Autriche."},{"titre":"Altitude","texte":"Jusqu’à 2 811 m à la Valluga : crème solaire, lunettes et hydratation."}],"casierExemple":"Galzig, casier 214","sources":{"pistes":"Intermaps","webcams":"Feratel","webcamsPhrase":"du domaine (Feratel)"},"adresses":[]}</script>
-<script id="trip-data" type="application/json">{"id":"st-anton-mars2027","titre":"Gendronski St. Anton","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"}}</script>
+<script id="trip-data" type="application/json">{"id":"st-anton-mars2027","titre":"Gendronski St. Anton","depot":{"owner":"Matlavigne","repo":"matlavigne.github.io"},"push":""}</script>
 <script id="leaflet-js">
 /* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -2025,6 +2027,193 @@ function show(tab){
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
 function renderAll(){if(LOCKED)return;try{renderRemontee();renderSondage();}catch(e){}renderDomSeg();renderHeader();renderHome();renderProgram();renderSkiStatic();renderEtat();renderWx();renderInfos();placeMarkers();}
 
+/* ---------- Alertes du voyage (push) ---------- */
+/* Alertes du voyage — côté app du voyageur.
+ *
+ * <script src="push-client.js"><\/script>
+ * <div id="alertes"></div>
+ * <script>
+ *   VoyagePush.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
+ *   VoyagePush.mountButton(document.getElementById("alertes"));
+ * <\/script>
+ *
+ * enable() doit être appelé depuis un toucher (exigence d'iOS); mountButton() s'en occupe.
+ */
+(function () {
+  "use strict";
+
+  var conf = null;
+
+  function b64ToBytes(b64) {
+    var s = b64.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function isStandalone() {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+      window.navigator.standalone === true;
+  }
+
+  function supported() {
+    return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  }
+
+  function api(path, body) {
+    return fetch(conf.worker.replace(/\/+$/, "") + path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.erreur || ("Erreur " + r.status));
+        return j;
+      });
+    });
+  }
+
+  function publicKey() {
+    if (conf.publicKey) return Promise.resolve(conf.publicKey);
+    return api("/api/vapid").then(function (j) { conf.publicKey = j.publicKey; return j.publicKey; });
+  }
+
+  // Le service worker peut ne jamais être prêt (navigation privée, erreur) : on n'attend pas plus de 5 s
+  function registration() {
+    return Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(function (_, no) { setTimeout(function () { no(new Error("Service worker indisponible")); }, 5000); }),
+    ]);
+  }
+
+  function sendSubscription(sub) {
+    var j = sub.toJSON();
+    return api("/api/subscribe", { trip: conf.trip, subscription: { endpoint: j.endpoint, keys: j.keys } });
+  }
+
+  var VoyagePush = {
+    init: function (options) {
+      conf = Object.assign({}, options);
+      if (!conf.worker || !conf.trip) throw new Error("VoyagePush.init : worker et trip sont requis");
+      // Renvoie l'abonnement au Worker à chaque ouverture (rattrape une base effacée ou une clé renouvelée)
+      VoyagePush.refresh().catch(function () {});
+      return VoyagePush;
+    },
+
+    /** 'unsupported' | 'ios-install' | 'denied' | 'off' | 'on' */
+    state: function () {
+      if (isIOS() && !isStandalone()) return Promise.resolve("ios-install");
+      if (!supported()) return Promise.resolve("unsupported");
+      if (Notification.permission === "denied") return Promise.resolve("denied");
+      return registration().then(function (reg) {
+        return reg.pushManager.getSubscription();
+      }).then(function (sub) {
+        return sub && Notification.permission === "granted" ? "on" : "off";
+      });
+    },
+
+    enable: function () {
+      if (!supported()) return Promise.reject(new Error("Ce navigateur ne reçoit pas d'alertes."));
+      // requestPermission doit partir immédiatement après le toucher, avant tout autre await
+      var perm = Notification.requestPermission();
+      return Promise.resolve(perm).then(function (p) {
+        if (p !== "granted") throw new Error(p === "denied" ? "denied" : "dismissed");
+        return Promise.all([registration(), publicKey()]);
+      }).then(function (r) {
+        var reg = r[0], key = r[1];
+        return reg.pushManager.getSubscription().then(function (existing) {
+          return existing || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
+        });
+      }).then(sendSubscription).then(function () { return "on"; });
+    },
+
+    disable: function () {
+      return registration().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (!sub) return "off";
+        var endpoint = sub.endpoint;
+        return sub.unsubscribe().then(function () {
+          return api("/api/unsubscribe", { trip: conf.trip, endpoint: endpoint }).catch(function () {});
+        }).then(function () { return "off"; });
+      });
+    },
+
+    refresh: function () {
+      if (!supported() || Notification.permission !== "granted") return Promise.resolve();
+      return registration().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (sub) return sendSubscription(sub);
+      });
+    },
+
+    /** Petit bloc prêt à l'emploi : un bouton et une ligne d'état, en français. */
+    mountButton: function (el) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "voyage-push-btn";
+      var msg = document.createElement("p");
+      msg.className = "voyage-push-msg";
+      el.innerHTML = "";
+      el.appendChild(btn);
+      el.appendChild(msg);
+
+      function render(state, extra) {
+        btn.hidden = false;
+        btn.disabled = false;
+        switch (state) {
+          case "on":
+            btn.textContent = "Désactiver les alertes";
+            msg.textContent = "Alertes activées : vous serez averti des annonces et des rappels.";
+            break;
+          case "off":
+            btn.textContent = "Activer les alertes";
+            msg.textContent = "Recevez les annonces du groupe même quand l'app est fermée.";
+            break;
+          case "ios-install":
+            btn.hidden = true;
+            msg.textContent = "Sur iPhone, ajoutez d'abord l'app à l'écran d'accueil (Partager, puis Sur l'écran d'accueil), puis ouvrez-la depuis son icône pour activer les alertes.";
+            break;
+          case "denied":
+            btn.hidden = true;
+            msg.textContent = "Les alertes sont bloquées pour cette app. Réactivez-les dans les réglages du téléphone (Notifications), puis rouvrez l'app.";
+            break;
+          case "unsupported":
+            btn.hidden = true;
+            msg.textContent = "Ce navigateur ne reçoit pas d'alertes. Les annonces restent visibles dans l'app.";
+            break;
+          default:
+            btn.textContent = "Activer les alertes";
+            msg.textContent = extra || "";
+        }
+      }
+
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        VoyagePush.state().then(function (s) {
+          return s === "on" ? VoyagePush.disable() : VoyagePush.enable();
+        }).then(function (s) { render(s); }).catch(function (e) {
+          if (e && e.message === "denied") return render("denied");
+          if (e && e.message === "dismissed") return render("off");
+          render("error", "Impossible d'activer les alertes pour l'instant. Réessayez avec du réseau.");
+        });
+      });
+
+      VoyagePush.state().then(render).catch(function () { render("unsupported"); });
+    },
+  };
+
+  window.VoyagePush = VoyagePush;
+})();
+
+if(TRIP.push&&window.VoyagePush){
+  try{VoyagePush.init({worker:TRIP.push,trip:TRIP.id});$('#alertes-card').hidden=false;VoyagePush.mountButton($('#alertes'));}catch(e){}
+  /* Alerte reçue ou touchée : recharger le contenu (réseau d'abord) et montrer les annonces */
+  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};if(d.type!=='voyage-push')return;refreshVoyage();if(d.event==='opened')location.hash='#accueil';});
+}
 /* ---------- Convertisseur de devises (taux de la BCE via Frankfurter, gardés pour le hors ligne) ---------- */
 (function(){
   const DEV=[...(Array.isArray(S.devises)&&S.devises.length?S.devises:['EUR']),'CAD'].filter((c,i,a)=>a.indexOf(c)===i);
