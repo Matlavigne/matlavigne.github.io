@@ -239,6 +239,7 @@ body.locked{overflow:hidden}
 .g-form input,.g-form select,.g-form textarea{font:inherit;font-size:16px;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
 .g-imp-t{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}.g-imp-t td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}
 .g-tools{margin-top:18px}
+.fete{background:#ffe8a3;color:#5c4300;font-weight:700;border-radius:6px;padding:1px 7px}.age{color:var(--muted)}
 .pres-top{display:flex;gap:10px;align-items:center}.pres-top select{flex:1;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:0}
 .pres-new{display:flex;gap:8px;margin-top:8px}.pres-new input{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
 .pres-count{font-size:20px;font-weight:800;margin:10px 0 8px}.pres-count .ok{color:#246b3c}.pres-count .ko{color:var(--red)}
@@ -1571,6 +1572,15 @@ function gDate(v){const t=String(v||'').trim();let m;
   if((m=t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/))){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];if(mo>=1&&mo<=12&&d>=1&&d<=31)return `${m[3]}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
   return t;}
 function gAge(iso){if(!/^\d{4}-\d\d-\d\d$/.test(iso||''))return null;const ref=new Date();const [y,m,d]=iso.split('-').map(Number);let a=ref.getFullYear()-y;if(ref.getMonth()+1<m||(ref.getMonth()+1===m&&ref.getDate()<d))a--;return a>=0&&a<130?a:null;}
+/* Fête pendant le voyage, à ± 10 jours près : {date, age} (âge atteint ce jour-là), sinon null. */
+function gFete(iso){if(!/^\d{4}-\d\d-\d\d$/.test(iso||'')||!V||!V.debut||!V.fin)return null;
+  const [by,bm,bd]=iso.split('-').map(Number),J=864e5;
+  const a=Date.parse(V.debut+'T00:00:00Z')-10*J,b=Date.parse(V.fin+'T00:00:00Z')+10*J;if(isNaN(a)||isNaN(b))return null;
+  for(let y=new Date(a).getUTCFullYear();y<=new Date(b).getUTCFullYear();y++){const t=Date.UTC(y,bm-1,bd);if(t>=a&&t<=b&&y>by)return {date:new Date(t),age:y-by};}
+  return null;}
+const gFeteTxt=f=>f.age+' ans le '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',timeZone:'UTC'}).format(f.date);
+function gAgeHtml(p){const a=gAge(p.naissance),f=gFete(p.naissance);if(a==null&&!f)return '';
+  return f?`<span class="fete">${a!=null?esc(a+' ans · '):''}${esc(gFeteTxt(f))}</span>`:`<span class="age">${a} ans</span>`;}
 const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
 const gTel=t=>String(t||'').replace(/[^\d+]/g,'');
 
@@ -1612,7 +1622,7 @@ function drawGroupe(){
   $('#g-sum').textContent=all.length+' personne'+(all.length>1?'s':'')+(g.F||g.M?` · ${g.F} femme${g.F>1?'s':''}, ${g.M} homme${g.M>1?'s':''}`:'')+(mineurs?` · ${mineurs} mineur${mineurs>1?'s':''}`:'')+(GRP.maj?' · modifiée le '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(GRP.maj)):'');
   $('#g-list').innerHTML=L.map(p=>{const a=gAge(p.naissance);
     const info=[GENRE[p.genre]||p.genre,p.naissance?gDateTxt(p.naissance)+(a!=null?` (${a} ans)`:''):''].filter(Boolean).join(' · ');
-    return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler ${esc(p.cellulaire)}</a><a href="sms:${esc(gTel(p.cellulaire))}">Texto</a><a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
+    return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${gFete(p.naissance)?`<span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler ${esc(p.cellulaire)}</a><a href="sms:${esc(gTel(p.cellulaire))}">Texto</a><a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
 }
 function gOpenEdit(id){
   const p=id?GRP.voyageurs.find(x=>x._id===id):null;gEditId=p?p._id:null;const f=$('#g-edit');
@@ -1680,7 +1690,7 @@ function drawPres(){
   $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}`;
   const tel=t=>String(t||'').replace(/[^\d+]/g,'');
   const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.prenom,p.nom].join(' ')).replace(/-/g,' ').includes(q))).sort(gTri);
-  $('#p-list').innerHTML=rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span><span class="n">${esc(gNom(p))}</span></span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`;
+  $('#p-list').innerHTML=rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}</span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`;
   $('#p-miss').setAttribute('aria-pressed',pMiss);$('#p-miss').textContent=pMiss?'Afficher tout le monde':'Seulement les absents';
 }
 document.addEventListener('click',e=>{
