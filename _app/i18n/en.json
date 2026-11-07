@@ -465,7 +465,13 @@
 "Voyage organisé par Gendron Ski · app préparée par votre accompagnateur": "Trip organized by Gendron Ski · app prepared by your trip leader",
 "Programme jour par jour, annonces du groupe, pistes ouvertes en direct et carte GPS, directement dans votre téléphone. Gratuite, sans compte ni App Store.": "Day-by-day schedule, group announcements, live open runs and GPS map, right on your phone. Free, no account, no App Store.",
 "Code QR vers l’app du voyage": "QR code to the trip app",
-"Mars 2027": "March 2027"
+"Mars 2027": "March 2027",
+"Roue dentée ⚙ en haut à droite › « Alertes du voyage »": "Gear ⚙ at the top right › “Trip alerts”",
+"Réglages": "Settings",
+"← Retour": "← Back",
+"Propres à ce téléphone.": "For this phone only.",
+"Alertes du voyage et langue de l’app : touchez la roue dentée en haut à droite.": "Trip alerts and app language: tap the gear at the top right.",
+"Ouvrir les réglages": "Open settings"
 },
 "regex": [
 [

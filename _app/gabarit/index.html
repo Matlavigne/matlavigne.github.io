@@ -44,6 +44,11 @@ body:not(.on-accueil) .hero{min-height:118px}body:not(.on-accueil) .hero h1{font
 .hero h1{font-size:44px;letter-spacing:-1px}
 .hero p{margin:6px 0 0;font-size:15px;color:#ffffffe0}
 .hero .h-dates{margin:4px 0 0;font-size:24px;font-weight:700;letter-spacing:-.3px;color:#fff}
+.gear{position:absolute;z-index:2;top:calc(10px + env(safe-area-inset-top));right:10px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:#00000038;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);text-decoration:none}
+.gear svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gear[aria-current]{background:#ffffff40}
+body.is-offline .gear{top:10px}
+.back{display:inline-block;margin:6px 0 4px;font-weight:600;text-decoration:none}
 .credit{font-size:9px;color:var(--muted);padding:5px 16px;text-align:right}
 .credit a{color:inherit}
 /* Onglets */
@@ -980,6 +985,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 </div>
 <div id="offline" class="offline" role="status" hidden></div>
 <header class="hero" style="background-image:url('hero.webp')">
+  <a class="gear" href="#reglages" id="gear" aria-label="Réglages" title="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
   <div class="wrap">
     <p class="overline" id="h-sub">{{LIEU}}</p>
     <h1 id="h-title">{{TITRE}}</h1>
@@ -1197,7 +1203,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <label>Notes<textarea data-perso="notes" rows="3" placeholder="Taille des bottes, code du cadenas…"></textarea></label>
     </div>
   </div>
-  <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
   <div class="card"><h3>Installer ou partager l’app</h3><p>Page avec le code QR et les étapes pour iPhone et Android, à envoyer aux autres voyageurs.</p><p><a class="btn light" href="installer.html">Comment installer l’app</a></p></div>
   <div class="card">
     <h3>Urgences {{PAYS_EN}}</h3>
@@ -1245,13 +1250,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p style="margin-top:10px"><button type="button" class="light" id="wipe">Effacer mes données de cet appareil</button></p>
     <p class="small" id="wipe-msg"></p>
   </div>
+  <div class="card"><h3>Réglages</h3><p>Alertes du voyage et langue de l’app : touchez la roue dentée en haut à droite.</p><p><a class="btn light" href="#reglages">Ouvrir les réglages</a></p></div>
+  <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
+  <p class="foot">{{PIED}} · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : {{VERSION}}</span></p>
+</section>
+<section class="view" id="v-reglages" hidden aria-labelledby="t-reglages">
+  <a class="back" href="#accueil" id="reg-back">← Retour</a>
+  <h2 id="t-reglages">Réglages</h2>
+  <p class="small">Propres à ce téléphone.</p>
+  <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
   <div class="card" id="langue" data-no-i18n>
     <h3>Langue · Language</h3>
     <div class="seg" role="group" aria-label="Langue · Language"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
     <p class="small" style="margin-top:8px">Auto : langue du téléphone · Auto: phone language</p>
   </div>
-  <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">{{PIED}} · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : {{VERSION}}</span></p>
 </section>
 </main>
 
@@ -2148,12 +2160,13 @@ $('#wipe').addEventListener('click',async()=>{
 });
 
 /* ---------- Navigation ---------- */
-let current='accueil';
+let current='accueil',prevTab='accueil';
 function show(tab){
   if(!document.getElementById('v-'+tab))tab='accueil';
   current=tab;document.body.classList.toggle('on-accueil',tab==='accueil');
   $$('.view').forEach(v=>v.hidden=v.id!=='v-'+tab);
   $$('nav.tabs a').forEach(a=>{if(a.dataset.tab===tab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  if(tab==='reglages'){$('#gear').setAttribute('aria-current','page');$('#reg-back').href='#'+(prevTab||'accueil');}else{$('#gear').removeAttribute('aria-current');prevTab=tab;}
   if(tab==='carte'){initMap();setTimeout(()=>map&&map.invalidateSize(),30);}else stopGps();
   if(tab==='groupe')renderGroupe();
   if(tab==='ski'){renderPlan(true);renderRemontee();if(!wx||Date.now()-wx.fetched>30*60e3||!(wx.data?.[0]?.hourly?.snow_depth))loadWx();else renderNeige();}
