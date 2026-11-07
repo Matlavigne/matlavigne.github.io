@@ -245,7 +245,7 @@ function carte(v){
     <div class="acts">
       <a class="btn" href="${base}">${IC.app}${T('App du voyage')}</a>
       <a class="btn light" href="${base}editeur.html">${IC.ed}${T('Éditeur')}</a>
-      <a class="btn light" href="${base}#groupe">${IC.grp}${T('Mon groupe')}</a>
+      <a class="btn light" href="groupe.html?v=${encodeURIComponent(v.id)}">${IC.grp}${T('Mon groupe')}</a>
       <button type="button" class="light" data-share="${esc(v.id)}">${IC.inst}${T('Partager l’app')}</button>
     </div></article>`;
 }

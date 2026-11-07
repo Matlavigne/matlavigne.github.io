@@ -200,7 +200,8 @@ Tests : `npm test` (alertes, publication, administration, comptes).
 Page installable (icône « Accompagnateur » sur l'écran d'accueil) où chaque accompagnateur retrouve, après connexion avec son compte, tous les voyages qui lui sont confiés (l'administrateur les voit tous) :
 
 - voyages à venir et en cours d'abord, avec les dates et un compte à rebours (« Départ dans 12 jours », « En cours · jour 3 sur 9 »), puis les voyages passés;
-- boutons App du voyage, Éditeur, Mon groupe (liste de présence, gardée sur le téléphone) et Partager l'app (lien de la page d'installation);
+- boutons App du voyage, Éditeur, Mon groupe et Partager l'app (lien de la page d'installation);
+- « Mon groupe » (`/accompagnateur/groupe.html?v=<voyage>`) : liste du groupe (import CSV ou saisie) et présences, gardées dans cette app sur le téléphone. L'app du voyage n'a plus aucune page d'accompagnateur; une ancienne liste qui y serait restée s'exporte depuis ses Réglages.
 - nombre de téléphones abonnés aux alertes;
 - réglages : apparence (auto, clair, sombre) et langue, partagés avec les apps des voyages.
 

@@ -485,7 +485,11 @@
 "L’app": "The",
 "regroupe tous vos voyages accompagnés sous une seule icône. Déjà installée? Ce bouton y ajoute ce voyage.": "app gathers all your guided trips under a single icon. Already installed? This button adds this trip to it.",
 "Mes voyages": "My trips",
-"Ajouter à l’app Mes voyages": "Add to the My trips app"
+"Ajouter à l’app Mes voyages": "Add to the My trips app",
+"Liste du groupe sur ce téléphone": "Group list on this phone",
+"Alertes du voyage, installation de l’app, apparence et langue : touchez la roue dentée en haut à droite.": "Trip alerts, app installation, appearance and language: tap the gear at the top right.",
+"Exporter la liste (CSV)": "Export the list (CSV)",
+"Effacer de ce téléphone": "Erase from this phone"
 },
 "regex": [
 [
