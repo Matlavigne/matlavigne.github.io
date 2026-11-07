@@ -6,6 +6,13 @@
 <title>{{TITRE}} · {{DATES}}</title>
 <meta name="description" content="{{DESCRIPTION}}">
 <meta name="theme-color" content="#13509f">
+<script>/* Thème : auto (suit le téléphone), clair ou sombre. Appliqué avant l’affichage pour éviter un éclair blanc. */
+(function(){var K='monaccompagnateur-theme',p=null;try{p=localStorage.getItem(K);}catch(e){}
+var m=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+function ap(){var d=p==='dark'||(p!=='light'&&!!(m&&m.matches));document.documentElement.setAttribute('data-theme',d?'dark':'light');}
+ap();if(m){if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);}
+window.setTheme=function(v){p=v==='dark'||v==='light'?v:null;try{if(p)localStorage.setItem(K,p);else localStorage.removeItem(K);}catch(e){}ap();};
+window.themePref=function(){return p||'auto';};})();</script>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mon accompagnateur">
 <meta property="og:locale" content="fr_CA">
@@ -17,15 +24,16 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <style>
-:root{/* Couleurs Gendron Ski : bleu #13509f */--ink:#16263a;--pine:#13509f;--pine-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#ffffff;--gold:#e08a2e;--blue:#216aa7;--red:#ae3933;--soft:#e7eef8;--radius:14px;--tab:64px;--head:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+:root{/* Couleurs Gendron Ski : bleu #13509f */--ink:#16263a;--pine:#13509f;--pine-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#ffffff;--gold:#e08a2e;--blue:#216aa7;--red:#ae3933;--soft:#e7eef8;--pbg:#13509f;--radius:14px;--tab:64px;--head:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom))}
 h1,h2,h3{font-family:var(--head);font-weight:700;letter-spacing:-.4px;line-height:1.15;margin:0}
 a{color:var(--pine)}
-button,.btn{font:inherit;font-size:14px;border:1px solid var(--pine);background:var(--pine);color:#fff;border-radius:10px;padding:9px 14px;min-height:42px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+button,.btn{font:inherit;font-size:14px;border:1px solid var(--pbg);background:var(--pbg);color:#fff;border-radius:10px;padding:9px 14px;min-height:42px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 button.light,.btn.light{background:var(--white);color:var(--pine)}
 button:disabled{opacity:.55}
+button[hidden],.btn[hidden]{display:none!important}
 .wrap{max-width:760px;margin:0 auto;padding:0 16px}
 .overline{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .small{font-size:12px;color:var(--muted)}
@@ -62,7 +70,7 @@ nav.tabs a[aria-current="page"]{color:var(--pine);font-weight:600}
 nav.tabs a .dot{position:absolute;top:10px;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid var(--white)}
 @media(min-width:900px){body{padding-bottom:0}nav.tabs{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line);justify-content:center}nav.tabs a{flex:0 0 108px;flex-direction:row;height:52px;font-size:13px}nav.tabs a svg{width:19px;height:19px}nav.tabs a .dot{top:14px;left:auto;right:18px}}
 /* Accueil */
-.status-banner{background:var(--pine);color:#fff;border-radius:var(--radius);padding:18px;margin:0 0 12px}
+.status-banner{background:var(--pbg);color:#fff;border-radius:var(--radius);padding:18px;margin:0 0 12px}
 .status-banner .big{font-family:var(--head);font-size:34px;line-height:1.1}
 .status-banner p{margin:6px 0 0;color:#ffffffd8}
 .next{border-left:4px solid var(--blue)}
@@ -77,7 +85,7 @@ nav.tabs a .dot{position:absolute;top:10px;left:calc(50% + 8px);width:9px;height
 /* Liens du groupe */
 .links{display:grid;gap:8px}
 .links a{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);background:var(--white)}
-.links a .ic{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--pine)}
+.links a .ic{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--pbg)}
 .links a .ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .links a.whatsapp .ic{background:#1f9d55}.links a.facebook .ic{background:#1d5fd1}
 .links a b{display:block;font-size:15px}.links a small{color:var(--muted);font-size:12px}
@@ -91,7 +99,7 @@ nav.tabs a .dot{position:absolute;top:10px;left:calc(50% + 8px);width:9px;height
 .day .dnum b{display:block;font-family:var(--head);font-weight:normal;font-size:23px;color:var(--pine)}
 .day .dnum small{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
 .day.today{border-color:var(--pine);box-shadow:inset 0 0 0 1px var(--pine)}
-.day.today .dnum{background:var(--pine)}.day.today .dnum b,.day.today .dnum small{color:#fff}
+.day.today .dnum{background:var(--pbg)}.day.today .dnum b,.day.today .dnum small{color:#fff}
 .day.past{opacity:.62}
 .day h3{font-size:19px}
 .day .sub{font-size:12px;color:var(--muted)}
@@ -109,7 +117,7 @@ nav.tabs a .dot{position:absolute;top:10px;left:calc(50% + 8px);width:9px;height
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--white)}
 .seg button{border:0;border-radius:0;min-height:36px;padding:6px 13px;font-size:13px;background:transparent;color:var(--pine)}
 .seg button+button{border-left:1px solid var(--line)}
-.seg button[aria-pressed="true"]{background:var(--pine);color:#fff}
+.seg button[aria-pressed="true"]{background:var(--pbg);color:#fff}
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
 select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--white);color:var(--ink);min-height:38px}
 .sum{display:flex;gap:22px;flex-wrap:wrap;margin:6px 0 4px}
@@ -159,7 +167,7 @@ details.more summary{cursor:pointer;color:var(--pine);font-size:13px;margin-top:
 .sumgrid .card{margin:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{min-height:36px;padding:6px 12px;font-size:13px;border-radius:999px;background:var(--white);color:var(--pine);border:1px solid var(--line)}
-.chips button[aria-pressed="true"]{background:var(--pine);color:#fff;border-color:var(--pine)}
+.chips button[aria-pressed="true"]{background:var(--pbg);color:#fff;border-color:var(--pbg)}
 .chips button small{opacity:.75;font-size:11px;margin-left:2px}
 .area-tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 /* Météo */
@@ -261,7 +269,7 @@ body.locked{overflow:hidden}
 .mapbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .gps-info{font-size:13px;color:var(--muted);margin:0 0 10px;min-height:20px}
 .gps-me span{position:absolute;inset:0;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 1px 5px #0006}
-.pin{background:var(--pine);color:#fff;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px #0005;width:28px!important;height:28px!important;display:flex;align-items:center;justify-content:center}
+.pin{background:var(--pbg);color:#fff;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px #0005;width:28px!important;height:28px!important;display:flex;align-items:center;justify-content:center}
 .pin b{transform:rotate(45deg);font-size:12px}
 .leaflet-container{font:inherit}
 /* Infos */
@@ -291,6 +299,32 @@ body.apercu .hero .wrap{padding-top:22px}
 .verif{background:#f5e6e4;color:#97302b;border:1px solid #e3b7b2;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 12px;white-space:pre-wrap}
 @media(max-width:420px){.hero h1{font-size:36px}.hero .h-dates{font-size:21px}.facts{grid-template-columns:1fr}}
 @media print{nav.tabs,.mapbox,.mapbar{display:none!important}.view[hidden]{display:block!important}body{padding:0}}
+:root[data-theme=dark]{color-scheme:dark;--ink:#e3e9f1;--pine:#86b6f2;--pine-d:#0a1d3a;--muted:#9babbd;--paper:#0d141e;--line:#2a3747;--white:#172130;--gold:#e9a04f;--blue:#72aee6;--red:#f0847b;--soft:#223041;--pbg:#2c69bd}
+/* Mode sombre : couleurs fixes du mode clair */
+[data-theme=dark] .tag{color:#c3d0df}[data-theme=dark] .tag.warn{background:#3a2a12;color:#f2c27a}[data-theme=dark] .tag.rdv{background:#17314c;color:#9cc8f0}
+[data-theme=dark] .alert{background:#2e2312;border-color:#5a4520;color:#f0d29a}
+[data-theme=dark] .list li.grp{background:#1c2735}
+[data-theme=dark] .num.route{background:transparent;color:#e7b56a;border-color:#e7b56a}[data-theme=dark] .nm .w{color:#f0b866}
+[data-theme=dark] .num.difficult,[data-theme=dark] .num.black{background:#05080c;box-shadow:inset 0 0 0 1px #3b4757}
+[data-theme=dark] .b-open{background:#173523;color:#8fd6a2}[data-theme=dark] .b-partial{background:#3a2a12;color:#f2c27a}[data-theme=dark] .b-prep{background:#203041;color:#a9c1d8}[data-theme=dark] .b-closed{background:#3d1c1a;color:#f39b93}[data-theme=dark] .b-unknown{background:#223041}
+[data-theme=dark] .bag .warn{background:#3a1b19;border-color:#6e2f2a;color:#f6b1aa}
+[data-theme=dark] .cam .im{background-color:#223041}
+[data-theme=dark] .fav-tag{background:#3a2e10;color:#f3cd6b}
+[data-theme=dark] .lock-card{background:var(--white)}
+[data-theme=dark] .remontee.soon,[data-theme=dark] .vol-st.soon{background:#3a1d1b}
+[data-theme=dark] .vol-st.air{background:#1b3456;color:#9cc8f0}[data-theme=dark] .vol-st.done{background:#173523;color:#8fd6a2}
+[data-theme=dark] .ck.open{background:#352a10;border-color:#8a6a1f}
+[data-theme=dark] .fete{background:#5a4510;color:#ffe39a}
+[data-theme=dark] .p-row.on{background:#16301f;border-color:#2f6b41}[data-theme=dark] .pres-count .ok{color:#7fd39a}
+[data-theme=dark] .mapbox{background:#1c2630}
+[data-theme=dark] .tel a{background:#3d1c1a;color:#f6a49c}[data-theme=dark] .tel a.soft{background:var(--soft);color:var(--pine)}
+[data-theme=dark] .verif{background:#3d1c1a;color:#f6a49c;border-color:#6e2f2a}
+[data-theme=dark] .hero:after{background:linear-gradient(0deg,#050d1bf5 0%,#081c3ad0 45%,#0b3a7850 100%)}
+[data-theme=dark] .leaflet-container{background:#1c2630}[data-theme=dark] .leaflet-tile-pane{filter:brightness(.82) contrast(1.05)}
+[data-theme=dark] .leaflet-bar a,[data-theme=dark] .leaflet-control-attribution{background:#172130;color:#c3d0df}
+[data-theme=dark] .passe-img img{background:#0d141e}
+[data-theme=dark] input:not([type=checkbox]):not([type=radio]),[data-theme=dark] textarea,[data-theme=dark] select{background-color:#0f1824;color:var(--ink);border-color:var(--line)}
+[data-theme=dark] img.map-img,[data-theme=dark] .planbox{background:#1c2630}
 .voyage-push-msg{font-size:14px;color:var(--muted);margin:8px 0 0}
 </style>
 <style id="leaflet-css">
@@ -1173,7 +1207,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <p class="small">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. Après le retour (au plus tard 30 jours), touchez « Effacer la liste » et supprimez aussi vos copies du fichier, comme le prévoit la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
     </div>
   </div>
-  <p class="foot"><a href="#infos">← Infos</a></p>
+  <p class="foot"><a href="#reglages">← Réglages</a></p>
 </section>
 
 <section class="view" id="v-infos" hidden aria-labelledby="t-infos">
@@ -1250,8 +1284,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p style="margin-top:10px"><button type="button" class="light" id="wipe">Effacer mes données de cet appareil</button></p>
     <p class="small" id="wipe-msg"></p>
   </div>
-  <div class="card"><h3>Réglages</h3><p>Alertes du voyage et langue de l’app : touchez la roue dentée en haut à droite.</p><p><a class="btn light" href="#reglages">Ouvrir les réglages</a></p></div>
-  <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
+  <div class="card"><h3>Réglages</h3><p>Alertes du voyage, langue de l’app et accès accompagnateur : touchez la roue dentée en haut à droite.</p><p><a class="btn light" href="#reglages">Ouvrir les réglages</a></p></div>
   <p class="foot">{{PIED}} · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : {{VERSION}}</span></p>
 </section>
 <section class="view" id="v-reglages" hidden aria-labelledby="t-reglages">
@@ -1259,11 +1292,17 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <h2 id="t-reglages">Réglages</h2>
   <p class="small">Propres à ce téléphone.</p>
   <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
+  <div class="card" id="apparence">
+    <h3>Apparence</h3>
+    <div class="seg" role="group" aria-label="Apparence"><button type="button" data-theme-set="auto">Auto</button><button type="button" data-theme-set="light">Clair</button><button type="button" data-theme-set="dark">Sombre</button></div>
+    <p class="small" style="margin-top:8px">Auto : suit le mode clair ou sombre du téléphone.</p>
+  </div>
   <div class="card" id="langue" data-no-i18n>
     <h3>Langue · Language</h3>
     <div class="seg" role="group" aria-label="Langue · Language"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
     <p class="small" style="margin-top:8px">Auto : langue du téléphone · Auto: phone language</p>
   </div>
+  <div class="card"><h3>Accès accompagnateur</h3><p class="small">Réservé à l’accompagnateur : liste du groupe et éditeur du voyage.</p><p><a class="btn light" href="#groupe" id="acc-link">Ouvrir l’accès accompagnateur</a></p></div>
 </section>
 </main>
 
@@ -1431,6 +1470,9 @@ function renderHeader(){
 }
 
 /* ---------- Rendu : accueil ---------- */
+/* ---------- Apparence (mode sombre) ---------- */
+(function(){const mark=()=>{const c=window.themePref?themePref():'auto';$$('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.themeSet===c));};
+  $$('[data-theme-set]').forEach(b=>b.addEventListener('click',()=>{if(window.setTheme)setTheme(b.dataset.themeSet);mark();}));mark();})();
 /* ---------- Langue ---------- */
 (function(){let p=null;try{p=localStorage.getItem(LANG_KEY);}catch(e){}const cur=p==='fr'||p==='en'?p:'auto';
   $$('[data-lang]').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.lang===cur);b.addEventListener('click',()=>setLang(b.dataset.lang==='auto'?null:b.dataset.lang));});
@@ -1973,7 +2015,7 @@ function renderEtat(){
     if(!e)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">${etatLoading?'Chargement…':'État indisponible pour le moment.'}${etatLoading?'':offLink(g)}</p></div>`;
     if(!g.items.length)return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><p class="small">Le flux reçu ne contient aucune remontée de ce domaine.${offLink(g)}</p></div>`;
     const [lo,lt]=cnt(g.items,'lift'),[so,stt]=cnt(g.items,'slope');const upd=e.last?parseLocal(e.last,TZL):null;const old=upd&&NOW()-upd>36*3600e3;
-    return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><div class="sum"><div><strong>${lo} / ${lt}</strong><span>remontées ouvertes</span></div><div><strong>${so} / ${stt}</strong><span>pistes ouvertes</span></div></div><p class="small">Publié le ${upd?esc(fmt(upd,TZL,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})):'—'} (${esc(S.fuseauNom)})${old?' · <b style="color:#97302b">donnée ancienne : domaine peut-être fermé pour la saison</b>':''}${g.split?' · secteur choisi selon le nom des remontées et des pistes':''}</p></div>`;}).join('');
+    return`<div class="card"><p class="overline">En direct · ${esc(g.titre)}</p><div class="sum"><div><strong>${lo} / ${lt}</strong><span>remontées ouvertes</span></div><div><strong>${so} / ${stt}</strong><span>pistes ouvertes</span></div></div><p class="small">Publié le ${upd?esc(fmt(upd,TZL,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})):'—'} (${esc(S.fuseauNom)})${old?' · <b style="color:var(--red)">donnée ancienne : domaine peut-être fermé pour la saison</b>':''}${g.split?' · secteur choisi selon le nom des remontées et des pistes':''}</p></div>`;}).join('');
   // Accueil
   const so=cnt(pool,'slope')[0],known=groups.some(g=>g.f&&etat[g.f]&&g.items.length);
   $('#q-ski').textContent=known?so+' piste'+(so>1?'s':'')+' ouverte'+(so>1?'s':''):'Pistes ouvertes';
@@ -2166,7 +2208,7 @@ function show(tab){
   current=tab;document.body.classList.toggle('on-accueil',tab==='accueil');
   $$('.view').forEach(v=>v.hidden=v.id!=='v-'+tab);
   $$('nav.tabs a').forEach(a=>{if(a.dataset.tab===tab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-  if(tab==='reglages'){$('#gear').setAttribute('aria-current','page');$('#reg-back').href='#'+(prevTab||'accueil');}else{$('#gear').removeAttribute('aria-current');prevTab=tab;}
+  if(tab==='reglages'){$('#gear').setAttribute('aria-current','page');$('#reg-back').href='#'+(prevTab||'accueil');}else{$('#gear').removeAttribute('aria-current');if(tab!=='groupe')prevTab=tab;}
   if(tab==='carte'){initMap();setTimeout(()=>map&&map.invalidateSize(),30);}else stopGps();
   if(tab==='groupe')renderGroupe();
   if(tab==='ski'){renderPlan(true);renderRemontee();if(!wx||Date.now()-wx.fetched>30*60e3||!(wx.data?.[0]?.hourly?.snow_depth))loadWx();else renderNeige();}

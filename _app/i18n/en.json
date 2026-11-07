@@ -470,8 +470,15 @@
 "Réglages": "Settings",
 "← Retour": "← Back",
 "Propres à ce téléphone.": "For this phone only.",
-"Alertes du voyage et langue de l’app : touchez la roue dentée en haut à droite.": "Trip alerts and app language: tap the gear at the top right.",
-"Ouvrir les réglages": "Open settings"
+"Ouvrir les réglages": "Open settings",
+"Alertes du voyage, langue de l’app et accès accompagnateur : touchez la roue dentée en haut à droite.": "Trip alerts, app language and trip leader access: tap the gear at the top right.",
+"← Réglages": "← Settings",
+"Réservé à l’accompagnateur : liste du groupe et éditeur du voyage.": "For the trip leader only: group list and trip editor.",
+"Ouvrir l’accès accompagnateur": "Open trip leader access",
+"Apparence": "Appearance",
+"Clair": "Light",
+"Sombre": "Dark",
+"Auto : suit le mode clair ou sombre du téléphone.": "Auto: follows the phone’s light or dark mode."
 },
 "regex": [
 [
