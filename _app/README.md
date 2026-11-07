@@ -86,3 +86,7 @@ Les adresses, les phrases du voyage, le contenu chiffré et la clé accompagnate
 ## Liste du groupe
 
 Aucune donnée des voyageurs n'est dans le dépôt. La liste du groupe se gère dans l'app, sur le téléphone de l'accompagnateur (Infos › Accès accompagnateur) : import d'un CSV (Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre) ou saisie à la main. Elle est gardée dans le stockage local du téléphone et n'est jamais envoyée sur Internet.
+
+## Icônes
+
+Les icônes d'écran d'accueil de chaque voyage (montagne de la station, nom, année) se génèrent avec `python3 _app/icones/icones.py` (Chrome et la police Inter requis), puis `node _app/build.mjs` pour que les apps les rechargent. Pour une nouvelle station, ajoutez sa silhouette dans `MONTAGNES` du script. Champs facultatifs du voyage : `iconeNom`, `iconeAnnee`.

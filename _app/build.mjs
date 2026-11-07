@@ -117,6 +117,7 @@ function build(tripId, version) {
     AFFICHE_JSON: embed(T.affiche || { titre: T.titre, sousDates: T.dates }),
     CACHE: T.cache || `voyage-${T.id}`,
     PUSH_WORKER: jsStr(PUSH),
+    ICONES_V: (() => { const hi = crypto.createHash("sha256"); for (const f of ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) if (fs.existsSync(path.join(dir, f))) hi.update(fs.readFileSync(path.join(dir, f))); return hi.digest("hex").slice(0, 8); })(),
   };
 
   const out = {};
@@ -124,7 +125,7 @@ function build(tripId, version) {
   // La version du cache change dès qu'un fichier généré ou un fichier du voyage change
   const h = crypto.createHash("sha256");
   for (const g of Object.keys(out).sort()) h.update(sansVersion(out[g]));
-  for (const f of ["hero.webp", "og.jpg"]) if (fs.existsSync(path.join(dir, f))) h.update(fs.readFileSync(path.join(dir, f)));
+  for (const f of ["hero.webp", "og.jpg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) if (fs.existsSync(path.join(dir, f))) h.update(fs.readFileSync(path.join(dir, f)));
   out["sw.js"] = fill(fs.readFileSync(path.join(APP, "gabarit", "sw.js"), "utf8"), { ...tokens, HASH: h.digest("hex").slice(0, 8) }, "sw.js");
 
   let changed = 0;
