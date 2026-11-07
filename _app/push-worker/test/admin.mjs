@@ -11,7 +11,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GH_PORT = 9914, WORKER_PORT = 8796;
 const W = `http://127.0.0.1:${WORKER_PORT}`;
 const ORIGIN = "https://monaccompagnateur.ca";
-const ADMIN = "adm-" + crypto.randomBytes(8).toString("hex");
+const ADMIN_TOKEN = "adm-" + crypto.randomBytes(8).toString("hex");
+let ADMIN = null; // session administrateur (créée après le démarrage)
 const GH_TOKEN = "github_pat_test";
 const REPO = "Matlavigne/matlavigne.github.io";
 
@@ -61,7 +62,7 @@ await new Promise((r) => gh.listen(GH_PORT, "127.0.0.1", r));
 
 // ---------- Worker ----------
 fs.writeFileSync(path.join(root, ".dev.vars"), [
-  "VAPID_PUBLIC_KEY=x", ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN}`, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`, `EDITOR_TOKENS={}`,
+  "VAPID_PUBLIC_KEY=x", ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN_TOKEN}`, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`, `EDITOR_TOKENS={}`,
 ].join("\n") + "\n");
 fs.rmSync(path.join(root, ".wrangler"), { recursive: true, force: true });
 const env = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "1" };
@@ -78,14 +79,23 @@ const photo = "data:image/jpeg;base64," + Buffer.from("faux jpeg").toString("bas
 const nv = { id: "st-anton-fevrier2028", station: "stanton", titre: "Gendronski St. Anton", appCourt: "St. Anton 2028", dates: "5 au 12 février 2028", debut: "2028-02-05", fin: "2028-02-12", contenu: chiffre, photo, credit: "Photo : <b>moi</b>", accueil: true };
 
 if (process.env.SERVIR) {
-  console.log("PRET " + ADMIN + " " + W);
+  console.log("PRET " + ADMIN_TOKEN + " " + W);
   process.on("SIGTERM", () => { wr.kill("SIGINT"); gh.close(); fs.rmSync(path.join(root, ".dev.vars"), { force: true }); process.exit(0); });
   await new Promise(() => {});
 }
+{ // administrateur avec double authentification
+  const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const dec = (s) => { let bits = 0, v = 0; const o = []; for (const c of s) { v = (v << 5) | B32.indexOf(c); bits += 5; if (bits >= 8) { o.push((v >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(o); };
+  const totp = (sec) => { const m = Buffer.alloc(8); m.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000))); const h = crypto.createHmac("sha1", dec(sec)).update(m).digest(); const o = h[19] & 15; return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, "0"); };
+  let r = await call("POST", "/api/auth/premier-admin", { jeton: ADMIN_TOKEN, username: "admin", password: "mot-de-passe-test" });
+  ADMIN = r.json.session;
+  r = await call("POST", "/api/auth/2fa/debut", {}, ADMIN);
+  await call("POST", "/api/auth/2fa/activer", { code: totp(r.json.secret) }, ADMIN);
+}
 try {
   console.log("\nAccès");
-  check((await call("GET", "/api/admin/etat")).status === 403, "sans clé : refusé");
-  check((await call("GET", "/api/admin/etat", null, "mauvaise")).status === 403, "mauvaise clé : refusée");
+  check([401, 403].includes((await call("GET", "/api/admin/etat")).status), "sans session : refusé");
+  check([401, 403].includes((await call("GET", "/api/admin/etat", null, "s.mauvaise")).status), "mauvaise session : refusée");
   let r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(r.status === 200 && r.json.stations[0].id === "stanton" && r.json.voyages[0].id === "st-anton-mars2027", `état : stations et voyages lus (${r.status} ${r.json.erreur || ""})`);
 

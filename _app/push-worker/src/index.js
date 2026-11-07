@@ -9,6 +9,7 @@
 // L'app déchiffre l'annonce elle-même quand le voyageur touche la notification.
 
 import { sendPush, b64urlDecode } from "./webpush.js";
+import { handleAuth, handleComptes, sessionUser, userCanEdit, requireAdminSession, purgeSessions, ensureAuthSchema } from "./auth.js";
 
 const KINDS = {
   annonce: "Nouvelle annonce du groupe. Touchez pour la lire.",
@@ -188,9 +189,16 @@ async function requireEditor(env, req, trip) {
   const auth = req.headers.get("Authorization") || "";
   const m = auth.match(/^Bearer\s+(.+)$/);
   if (!m) throw new HttpError(401, "Jeton manquant");
+  // Compte (nom d'usager + mot de passe) : session « s.… »
+  if (m[1].startsWith("s.")) {
+    const u = await sessionUser(env, req);
+    if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
+    if (userCanEdit(u, trip)) return;
+    throw new HttpError(403, "Ce compte n'a pas accès à ce voyage");
+  }
   let tokens = {};
   try { tokens = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch { tokens = {}; }
-  const candidates = [tokens[trip], tokens["*"], env.ADMIN_TOKEN].filter(Boolean);
+  const candidates = [tokens[trip], tokens["*"]].filter(Boolean);
   for (const t of candidates) if (await safeEqual(m[1], t)) return;
   try {
     await ensureSchema(env);
@@ -229,11 +237,8 @@ function validKey(b64, len, first) {
 
 const MAX_ADMIN_BYTES = 8 * 1024 * 1024;
 
-async function requireAdmin(env, req) {
-  const m = (req.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/);
-  if (!env.ADMIN_TOKEN) throw new HttpError(503, "Administration non configurée (secret ADMIN_TOKEN)");
-  if (!m || !(await safeEqual(m[1], env.ADMIN_TOKEN))) throw new HttpError(403, "Clé d'administration refusée");
-}
+// Administrateur : session d'un compte « admin », mot de passe changé et double authentification active
+async function requireAdmin(env, req) { return requireAdminSession(env, req); }
 
 async function ghJson(env, path, opt = {}) {
   const g = github(env);
@@ -297,12 +302,15 @@ async function adminEtat(env) {
   const keys = await env.DB.prepare("SELECT trip, created_at FROM editor_keys").all();
   const kSet = Object.fromEntries((keys.results || []).map((r) => [r.trip, r.created_at]));
   let toml = {}; try { toml = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch {}
+  await ensureAuthSchema(env);
+  const us = (await env.DB.prepare("SELECT username, nom, trips, role, actif FROM users").all()).results || [];
+  const acces = (id) => us.filter((u) => u.actif && u.role !== "admin" && JSON.parse(u.trips || "[]").includes(id)).map((u) => u.nom || u.username);
   const voyages = [];
   for (const f of vFiles.filter((f) => f.name.endsWith(".json"))) {
     const j = await ghFile(env, `_app/voyages/${f.name}`);
     let v; try { v = JSON.parse(j.text); } catch { continue; }
     const t = all[v.id] || {};
-    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, clos: !!t.clos });
+    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, acces: acces(v.id), clos: !!t.clos });
   }
   voyages.sort((a, b) => String(b.fin || "").localeCompare(String(a.fin || "")));
   return { stations, voyages };
@@ -360,7 +368,13 @@ async function adminCreer(env, b) {
     env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0)").bind(id, station, appCourt, `/${id}/`, b.fin, now),
     env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(id, await hashKey(cle), now),
   ]);
-  return { ok: true, id, cle, commit, url: `https://monaccompagnateur.ca/${id}/` };
+  let compte = null;
+  if (b.compte) {
+    await ensureAuthSchema(env);
+    const u = await env.DB.prepare("SELECT username, trips FROM users WHERE username = ?").bind(String(b.compte).toLowerCase()).first();
+    if (u) { const t = JSON.parse(u.trips || "[]"); if (!t.includes(id)) t.push(id); await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(t), u.username).run(); compte = u.username; }
+  }
+  return { ok: true, id, cle, compte, commit, url: `https://monaccompagnateur.ca/${id}/` };
 }
 
 async function adminNouvelleCle(env, trip) {
@@ -372,7 +386,11 @@ async function adminNouvelleCle(env, trip) {
 }
 
 async function handleAdmin(req, env, path, url) {
-  await requireAdmin(env, req);
+  const me = await requireAdmin(env, req);
+  if (path.startsWith("/api/admin/comptes")) {
+    const r = await handleComptes(env, path, req.method === "POST" ? await readJson(req) : {}, req.method, me);
+    if (r) return r;
+  }
   if (req.method === "GET" && path === "/api/admin/etat") return adminEtat(env);
   if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
@@ -395,6 +413,7 @@ async function handle(req, env) {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
+  if (path.startsWith("/api/auth/")) return json(env, req, await handleAuth(req, env, path, readJson));
   if (path.startsWith("/api/admin/")) return json(env, req, await handleAdmin(req, env, path, url));
 
   if (req.method === "GET" && path === "/api/vapid") {
@@ -675,7 +694,7 @@ export default {
     try {
       return await handle(req, env);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 500;
+      const status = typeof err.status === "number" ? err.status : 500;
       if (status === 500) console.error(err);
       return json(env, req, { ok: false, erreur: status === 500 ? "Erreur interne" : err.message, ...(err.extra || {}) }, status);
     }
@@ -685,6 +704,6 @@ export default {
     const now = event.scheduledTime || Date.now();
     const log = await runDue(env, now);
     if (log.envoyees || log.echecs || log.expirees) console.log(JSON.stringify(log));
-    if (new Date(now).getUTCMinutes() === 0) await purgeFinishedTrips(env, now);
+    if (new Date(now).getUTCMinutes() === 0) { await purgeFinishedTrips(env, now); await purgeSessions(env).catch(() => {}); }
   },
 };

@@ -164,9 +164,32 @@ Tests : `npm test` (alertes et publication, avec un faux GitHub local).
 
 Créer un voyage sans coder, remettre ou remplacer la clé d'un accompagnateur, clore un voyage après le retour.
 
-- La page `admin/index.html` appelle le Worker avec la **clé d'administration** (secret `ADMIN_TOKEN`, créé par `npm run cle-admin`).
+- La page `admin/index.html` se connecte avec un **compte** (voir « Comptes » plus bas). Seul un administrateur avec double authentification peut créer ou clore un voyage.
 - À la création, le navigateur chiffre le contenu de départ avec la phrase du voyage; le Worker écrit en **un seul commit** la fiche `_app/voyages/<id>.json`, le contenu chiffré `<id>/voyage.json`, la photo éventuelle (`_app/voyages/photos/<id>.jpg`) et, au choix, l'entrée de la page d'accueil (`voyages.json`). Il enregistre le voyage et sa clé d'éditeur (hachée) dans la base D1 : pas besoin de modifier `wrangler.toml` ni de redéployer.
 - Le robot GitHub (`.github/workflows/generer-apps.yml`) prépare ensuite les images (photo recadrée ou illustration, icônes) et génère l'app. Essai à blanc possible depuis l'onglet Actions (« Run workflow », case « Essai à blanc »).
 - Clore un voyage efface ses abonnements aux alertes et sa clé d'éditeur; l'app reste en ligne.
 
 Les nouvelles stations se préparent encore à la main (fiche `_app/stations/<id>.json`, dictionnaire anglais, silhouette de l'icône); elles apparaissent ensuite dans le menu de l'administration.
+
+## Comptes : nom d'usager, mot de passe et double authentification
+
+Chaque accompagnateur a son compte; l'administrateur lui confie un ou plusieurs voyages. La même connexion sert à `/admin` et à l'éditeur de chaque voyage (session partagée sur monaccompagnateur.ca).
+
+- **Administrateur** : double authentification obligatoire (app d'authentification : Google Authenticator, 1Password, Authy…). Session de 12 h.
+- **Accompagnateur** : publie seulement les voyages qui lui sont confiés. Double authentification facultative (« Mon compte »). Session de 30 jours.
+- Mot de passe temporaire à la création ou à la réinitialisation : la personne le remplace à sa première connexion (10 caractères minimum).
+- 5 essais ratés : compte bloqué 15 minutes. Codes de secours (8, à usage unique) remis à l'activation de la double authentification.
+- Rien n'est stocké en clair : mots de passe (PBKDF2), sessions et codes de secours (SHA-256) dans la base D1.
+
+Première configuration (une fois) :
+
+1. `npm run cle-config` : crée la clé de première configuration (secret `ADMIN_TOKEN`). Gardez-la dans votre gestionnaire de mots de passe.
+2. `npm run deploy`.
+3. Sur `monaccompagnateur.ca/admin` › « Première configuration » : collez la clé, choisissez votre nom d'usager et votre mot de passe, puis activez la double authentification et conservez les codes de secours. La clé ne sert plus ensuite (elle est refusée dès qu'un administrateur existe).
+4. Onglet « Comptes » : créez les comptes des accompagnateurs et cochez leurs voyages. Transmettez le message affiché par un canal privé.
+
+Téléphone perdu et plus de codes de secours : `npm run secours-admin -- <nom d'usager>` réinitialise le mot de passe et retire la double authentification de ce compte (directement dans la base, depuis votre ordinateur).
+
+Les anciennes **clés d'éditeur** par voyage (`npm run cle`) fonctionnent encore (« Ancienne méthode » dans l'éditeur). Le jeton GitHub personnel reste disponible en mode administrateur.
+
+Tests : `npm test` (alertes, publication, administration, comptes).

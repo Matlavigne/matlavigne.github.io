@@ -69,6 +69,8 @@ L'éditeur, lui, n'écrit que `voyage.json` : aucune génération n'est nécessa
 
 ## Éditeur
 
+Les accompagnateurs se connectent dans « Connexion pour publier » avec leur compte (nom d'usager, mot de passe, code de double authentification au besoin); voir `push-worker/README.md`, section « Comptes ».
+
 Tous les voyages sont dans le dépôt `Matlavigne/matlavigne.github.io`. L'éditeur écrit dans `<id>/voyage.json`. Le dépôt et le dossier sont fixés : ils ne se saisissent plus.
 
 Le jeton GitHub doit avoir le droit *Contents : Read and write* sur `matlavigne.github.io`. Un jeton limité à l'ancien dépôt du voyage ne suffit plus.
