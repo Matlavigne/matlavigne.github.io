@@ -126,6 +126,12 @@ ol.steps b{display:block}
     <p class="small-note">Pas de demande d’autorisation, ou alertes bloquées? <b>iPhone :</b> Réglages › Notifications › {{APP_COURT}} › Autoriser les notifications. <b>Android :</b> touchez longuement l’icône › Infos sur l’app › Notifications. Pour arrêter les alertes : onglet Infos, « Désactiver les alertes » (touchez deux fois pour confirmer).</p>
   </section>
 
+  <section class="after noprint" id="mv">
+    <h3>Plusieurs voyages avec nous ? Une seule app</h3>
+    <p class="small-note">L’app <b>Mes voyages</b> regroupe tous vos voyages accompagnés sous une seule icône. Déjà installée? Ce bouton y ajoute ce voyage.</p>
+    <p><a class="btn light" id="mv-btn" href="/mes-voyages/">Ajouter à l’app Mes voyages</a></p>
+  </section>
+
   <section class="after">
     <h3>Une fois installée</h3>
     <ul>
@@ -2462,6 +2468,7 @@ var qrcode = function() {
   var cm=location.hash.match(/(?:^#|&)cle=([^&]*)/),cle='';
   if(cm){try{cle=decodeURIComponent(cm[1]);}catch(e){cle=cm[1];}}
   var appBase=app;if(cle&&app)app=app+'#cle='+encodeURIComponent(cle);
+  var mvb=document.getElementById('mv-btn');if(mvb)mvb.href='/mes-voyages/#v={{ID}}'+(cle?'&cle='+encodeURIComponent(cle):'');
   if(cle){var pe=document.getElementById('phrase');if(pe){pe.style.display="block";document.getElementById('phrase-txt').textContent=cle;}}
   var urlEl=document.getElementById('url');
   urlEl.textContent=appBase?appBase.replace(/^https?:\/\//,'').replace(/\/$/,''):'adresse disponible une fois l’app en ligne';

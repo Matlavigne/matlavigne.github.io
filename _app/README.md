@@ -102,3 +102,7 @@ L'app et la page d'installation s'affichent en anglais quand le téléphone n'es
 - `_app/i18n/voyages/<voyage>.json` : dates et crédits propres au voyage.
 
 Le contenu de l'accompagnateur (programme, annonces, hôtel…) et les descriptions des pistes et restos restent tels qu'écrits. Pour une nouvelle station, ajoutez son fichier dans `stations/`; une chaîne absente du dictionnaire reste simplement en français.
+
+## App « Mes voyages » des voyageurs (monaccompagnateur.ca/mes-voyages)
+
+Une seule icône pour un voyageur qui part plusieurs fois. On y ajoute un voyage par sa phrase (bouton « Ajouter un voyage »), par le lien `/mes-voyages/#v=<id>&cle=<phrase>` ou par le bouton « Ajouter à l’app Mes voyages » de la page d’installation. L’app essaie la phrase sur les voyages de `mes-voyages/liste.json` (généré par `build.mjs` : identifiants et noms seulement) et range la clé comme l’app du voyage la range (`<id>-cle-v1`) : ouvert depuis Mes voyages, le voyage est déjà déverrouillé, et un bouton « ← Mes voyages » y ramène. La phrase n’est jamais gardée; rien n’est envoyé au serveur. Les apps par voyage restent disponibles comme avant.

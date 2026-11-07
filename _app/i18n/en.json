@@ -480,7 +480,12 @@
 "Auto : suit le mode clair ou sombre du téléphone.": "Auto: follows the phone’s light or dark mode.",
 "Alertes du voyage, installation de l’app, apparence, langue et accès accompagnateur : touchez la roue dentée en haut à droite.": "Trip alerts, app installation, appearance, language and trip leader access: tap the gear at the top right.",
 "Tous mes voyages": "All my trips",
-"← Mes voyages": "← My trips"
+"← Mes voyages": "← My trips",
+"Plusieurs voyages avec nous ? Une seule app": "Travelling with us more than once? One app",
+"L’app": "The",
+"regroupe tous vos voyages accompagnés sous une seule icône. Déjà installée? Ce bouton y ajoute ce voyage.": "app gathers all your guided trips under a single icon. Already installed? This button adds this trip to it.",
+"Mes voyages": "My trips",
+"Ajouter à l’app Mes voyages": "Add to the My trips app"
 },
 "regex": [
 [
