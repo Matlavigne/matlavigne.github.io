@@ -1157,7 +1157,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div class="card g-tools">
       <h3>Gérer la liste</h3>
       <div class="g-acts"><button type="button" class="light" data-g-import>Importer un CSV</button><button type="button" class="light" id="g-export">Exporter une copie (CSV)</button><button type="button" class="light" id="g-wipe">Effacer la liste</button></div>
-      <p class="small">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. À la fin du voyage, touchez « Effacer la liste ».</p>
+      <p class="small">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. Après le retour (au plus tard 30 jours), touchez « Effacer la liste » et supprimez aussi vos copies du fichier, comme le prévoit la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
     </div>
   </div>
   <p class="foot"><a href="#infos">← Infos</a></p>
@@ -1254,11 +1254,12 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <li id="conf-alertes"><b>Alertes du voyage</b> (si vous les activez) : votre téléphone reçoit d’Apple ou de Google une adresse de notification anonyme. Le service d’alertes (Cloudflare, en Amérique du Nord) la garde uniquement pour envoyer les alertes de ce voyage, sans nom, numéro ni contenu du voyage, et l’efface 7 jours après le retour. Désactivez les alertes à tout moment avec le bouton de l’onglet Infos.</li>
       <li>Les liens externes (Gendron Ski, WhatsApp, Facebook, vues en direct) ouvrent leurs sites, avec leurs propres règles de confidentialité.</li>
     </ul>
+    <p class="small">Responsable : Mathieu Lavigne, <a href="mailto:mathieu@monaccompagnateur.ca">mathieu@monaccompagnateur.ca</a> · <a href="/confidentialite.html" target="_blank" rel="noopener">Politique de confidentialité complète</a></p>
     <p style="margin-top:10px"><button type="button" class="light" id="wipe">Effacer mes données de cet appareil</button></p>
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 19:04</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 19:15</span></p>
 </section>
 </main>
 
@@ -1758,8 +1759,8 @@ function icsEvents(vs){
   const pad=n=>String(n).padStart(2,'0'),u=d=>d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+'00Z';
   const tx=x=>String(x||'').replace(/\\/g,'\\\\').replace(/[,;]/g,m=>'\\'+m).replace(/\n/g,'\\n');const st=u(new Date());const out=[];
   vs.forEach((v,i)=>{const nom=(v.code?v.code+' ':'')+(String(v.depart||'').split(/[·\-–—,(]/)[0].trim())+' → '+(String(v.arrivee||'').split(/[·\-–—,(]/)[0].trim());
-    out.push('BEGIN:VEVENT','UID:solden2027-vol-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(v.dep),'DTEND:'+u(v.arr||new Date(v.dep.getTime()+36e5)),'SUMMARY:'+tx('Vol '+nom),'DESCRIPTION:'+tx(v.note||''),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Vol '+nom),'TRIGGER:-PT3H','END:VALARM','END:VEVENT');
-    if(ckH(v)>0){const o=ckOpen(v);out.push('BEGIN:VEVENT','UID:solden2027-enreg-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(o),'DTEND:'+u(new Date(o.getTime()+30*6e4)),'SUMMARY:'+tx('Enregistrement en ligne : vol '+nom),'DESCRIPTION:'+tx((v.lienEnregistrement?v.lienEnregistrement+'\n':'')+(v.enregistrementNote||'')),...(v.lienEnregistrement?['URL:'+v.lienEnregistrement]:[]),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Enregistrement ouvert : vol '+nom),'TRIGGER:PT0S','END:VALARM','END:VEVENT');}});
+    out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-vol-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(v.dep),'DTEND:'+u(v.arr||new Date(v.dep.getTime()+36e5)),'SUMMARY:'+tx('Vol '+nom),'DESCRIPTION:'+tx(v.note||''),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Vol '+nom),'TRIGGER:-PT3H','END:VALARM','END:VEVENT');
+    if(ckH(v)>0){const o=ckOpen(v);out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-enreg-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(o),'DTEND:'+u(new Date(o.getTime()+30*6e4)),'SUMMARY:'+tx('Enregistrement en ligne : vol '+nom),'DESCRIPTION:'+tx((v.lienEnregistrement?v.lienEnregistrement+'\n':'')+(v.enregistrementNote||'')),...(v.lienEnregistrement?['URL:'+v.lienEnregistrement]:[]),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Enregistrement ouvert : vol '+nom),'TRIGGER:PT0S','END:VALARM','END:VEVENT');}});
   return out;
 }
 function downloadIcs(lines,name){const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//'+TRIP.id+'//FR','CALSCALE:GREGORIAN',...lines,'END:VCALENDAR'].join('\r\n');
@@ -2118,9 +2119,9 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-goto-bag]'))set
 let wipeArmed=false;
 $('#wipe').addEventListener('click',async()=>{
   const b=$('#wipe');
-  if(!wipeArmed){wipeArmed=true;b.textContent='Touchez encore pour confirmer';$('#wipe-msg').textContent='Les cases cochées, le domaine choisi, la photo de la passe, vos infos, la phrase du voyage et les copies hors ligne seront effacés. L’app restera installée.';setTimeout(()=>{if(wipeArmed){wipeArmed=false;b.textContent='Effacer mes données de cet appareil';$('#wipe-msg').textContent='';}},6000);return;}
+  if(!wipeArmed){wipeArmed=true;b.textContent='Touchez encore pour confirmer';$('#wipe-msg').textContent='Les cases cochées, le domaine choisi, la photo de la passe, vos infos, la phrase du voyage, la liste du groupe (accompagnateur) et les copies hors ligne seront effacés. L’app restera installée.';setTimeout(()=>{if(wipeArmed){wipeArmed=false;b.textContent='Effacer mes données de cet appareil';$('#wipe-msg').textContent='';}},6000);return;}
   wipeArmed=false;
-  try{Object.keys(localStorage).filter(k=>k.startsWith('solden-voyage-2027-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  try{Object.keys(localStorage).filter(k=>k.startsWith(TRIP.id+'-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
   try{if(window.caches){for(const k of await caches.keys()){const c=await caches.open(k);for(const r of await c.keys()){if(!r.url.startsWith(location.origin))await c.delete(r);}}}}catch(e){}
   b.textContent='Données effacées';$('#wipe-msg').textContent='C’est fait. Rechargez l’app avec Internet pour retrouver le programme à jour.';
   setTimeout(()=>location.reload(),1800);
