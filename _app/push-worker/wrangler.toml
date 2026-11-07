@@ -54,3 +54,6 @@ maxSubs = 300
 #   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, EDITOR_TOKENS
 # Secret ajouté pour la publication (npx wrangler secret put GITHUB_TOKEN) :
 #   GITHUB_TOKEN : jeton GitHub « fine-grained », dépôt du site seulement, Contents : Read and write
+# Secret de l'administration (npm run cle-admin) :
+#   ADMIN_TOKEN
+# Les voyages créés depuis monaccompagnateur.ca/admin sont gardés dans la base D1 (pas besoin de les ajouter ici).

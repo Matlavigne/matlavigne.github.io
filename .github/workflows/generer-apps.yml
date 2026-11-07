@@ -7,6 +7,11 @@ on:
     branches: [main]
     paths: ["_app/**", "!_app/push-worker/**"]
   workflow_dispatch:
+    inputs:
+      essai:
+        description: "Essai à blanc : crée un voyage fictif, génère tout, ne publie rien"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -32,11 +37,27 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter || true
           fc-cache -f >/dev/null || true
           test -x /usr/bin/google-chrome || (sudo apt-get install -y -qq google-chrome-stable || npx -y playwright install --with-deps chrome)
+      - name: Voyage fictif (essai à blanc)
+        if: ${{ inputs.essai }}
+        run: |
+          python3 -c "import json;v=json.load(open('_app/voyages/st-anton-mars2027.json'));v['id']='essai-robot';json.dump(v,open('_app/voyages/essai-robot.json','w'),ensure_ascii=False)"
       - name: Images des nouveaux voyages
         run: python3 _app/icones/preparer.py
       - name: Générer les apps
         run: node _app/build.mjs
+      - name: Vérifier l'essai
+        if: ${{ inputs.essai }}
+        run: |
+          ls -l essai-robot
+          for f in index.html hero.webp og.jpg icon-512.png icon-192.png apple-touch-icon.png icon-maskable-512.png manifest.webmanifest; do test -s essai-robot/$f || { echo "MANQUE $f"; exit 1; }; done
+          fc-list | grep -i "inter" | head -2 || echo "Inter absente"
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.essai }}
+        with:
+          name: essai-robot
+          path: essai-robot/
       - name: Publier
+        if: ${{ !inputs.essai }}
         run: |
           git config user.name "Robot monaccompagnateur"
           git config user.email "robot@monaccompagnateur.ca"

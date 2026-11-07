@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0c3a78">
+<title>Administration · Mon accompagnateur</title>
+<link rel="icon" type="image/png" href="/solden-voyage-2027/icon-192.png">
+<style>
+:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--green:#246b3c;--red:#b3261e}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--blue)}
+header{background:var(--blue-d);color:#fff;padding:22px 0 18px}
+header h1{margin:0;font-size:24px;letter-spacing:-.3px}header p{margin:4px 0 0;opacity:.85;font-size:14px}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+main{padding:20px 0 60px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 14px}
+h2{font-size:19px;margin:0 0 10px}h3{font-size:16px;margin:0 0 4px}
+.small{font-size:13px;color:var(--muted)}
+button,.btn{font:inherit;font-size:15px;font-weight:600;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:9px 14px;min-height:42px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.light,.btn.light{background:var(--white);color:var(--blue)}
+button.danger{background:var(--white);color:var(--red);border-color:var(--red)}
+button.danger.armed{background:var(--red);color:#fff}
+button:disabled{opacity:.55;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+label.chk{flex-direction:row;align-items:center;gap:8px;font-weight:500;color:var(--ink);font-size:15px}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%}
+label.chk input{width:auto}
+.help{font-size:13px;color:var(--muted);font-weight:400}
+.msg{border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:14px}
+.msg.err{background:#fdeceb;color:#8c1d18}.msg.ok{background:#e3f1e6;color:#1d5631}.msg.info{background:var(--soft);color:var(--blue-d)}.msg.warn{background:#fdf3d8;color:#6b4a00}
+.v{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+.v:first-of-type{border-top:0}
+.v .t{font-weight:700;font-size:17px}.v .meta{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.v .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--soft);color:var(--blue-d)}
+.tag.clos{background:#eee;color:#666}.tag.ok{background:#e3f1e6;color:#1d5631}
+.secret{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;background:#fdf3d8;border:1px solid #e0b44a;border-radius:8px;padding:8px 10px;word-break:break-all;user-select:all}
+textarea{font:inherit;font-size:14px;width:100%;min-height:150px;padding:10px;border:1.5px solid var(--line);border-radius:10px}
+.steps{margin:6px 0 0;padding-left:20px;font-size:14px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Administration des voyages</h1><p>monaccompagnateur.ca · créer un voyage, remettre les clés, clore après le retour</p></div></header>
+<main class="wrap">
+  <div id="m" class="msg" hidden></div>
+
+  <section class="card" id="login" hidden>
+    <h2>Connexion</h2>
+    <form id="login-f" class="grid" autocomplete="off">
+      <label class="full">Clé d’administration<input id="k" type="password" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+      <label class="chk full"><input type="checkbox" id="keep" checked> Mémoriser sur cet appareil</label>
+      <div class="full"><button type="submit">Se connecter</button></div>
+    </form>
+    <p class="help">La clé d’administration se crée une fois dans le Terminal (<code>npm run cle-admin</code> dans le dossier du Worker). Elle n’est jamais publiée.</p>
+  </section>
+
+  <section id="app" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Voyages</h2><div class="row"><button type="button" id="b-new">+ Nouveau voyage</button><button type="button" class="light" id="b-out">Se déconnecter</button></div></div>
+      <div id="list"><p class="small">Chargement…</p></div>
+    </div>
+
+    <form class="card" id="nv" hidden autocomplete="off">
+      <h2>Nouveau voyage</h2>
+      <div class="grid">
+        <label class="full">Station<select id="f-station"></select><span class="help">Les stations sont préparées une fois (avec Claude). Une nouvelle station apparaîtra ici dès qu’elle est prête.</span></label>
+        <label>Titre de l’app<input id="f-titre" maxlength="80"></label>
+        <label>Nom court (sous l’icône)<input id="f-court" maxlength="24"></label>
+        <label>Premier jour<input id="f-debut" type="date"></label>
+        <label>Dernier jour<input id="f-fin" type="date"></label>
+        <label class="chk full"><input type="checkbox" id="f-aconf"> Dates à confirmer</label>
+        <label class="full">Dates affichées<input id="f-dates" maxlength="60"><span class="help">Ex. « 5 au 13 mars 2027 » ou « Mars 2027 ».</span></label>
+        <label class="full">Adresse de l’app<input id="f-id" maxlength="63" autocapitalize="off" spellcheck="false"><span class="help" id="f-url"></span></label>
+        <label class="full">Photo d’en-tête (facultative)<input id="f-photo" type="file" accept="image/jpeg,image/png,image/webp"><span class="help">Paysage, au moins 1400 px de large. Sans photo : une illustration de la montagne de la station.</span></label>
+        <label class="full" id="f-credit-l" hidden>Crédit de la photo<input id="f-credit" maxlength="300" placeholder="ex. Photo : Gaislachkogl, Sloth (CC BY 3.0)"></label>
+        <label class="full">Phrase du voyage<input id="f-phrase" autocapitalize="off" spellcheck="false"><span class="help">Elle protège le contenu de l’app. <a href="#" id="f-gen">Proposer une autre phrase</a></span></label>
+        <label class="chk full"><input type="checkbox" id="f-accueil" checked> Afficher le voyage sur la page d’accueil du site</label>
+      </div>
+      <div class="row" style="margin-top:14px"><button type="submit" id="f-go">Créer le voyage</button><button type="button" class="light" id="f-cancel">Annuler</button></div>
+    </form>
+
+    <section class="card" id="res" hidden></section>
+  </section>
+</main>
+
+<script>
+'use strict';
+const WORKER='https://monaccompagnateur-push.monaccompagnateur.workers.dev';
+const SITE='https://monaccompagnateur.ca';
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY='monaccompagnateur-admin';
+let cle=(()=>{try{return localStorage.getItem(KEY)||sessionStorage.getItem(KEY)||'';}catch(e){return '';}})();
+let ETAT=null;
+function msg(t,c){const m=$('#m');if(!t){m.hidden=true;return;}m.hidden=false;m.className='msg '+(c||'info');m.innerHTML=t;scrollTo({top:0,behavior:'smooth'});}
+async function api(method,path,body){
+  const r=await fetch(WORKER+path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+cle},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;throw e;}return j;
+}
+
+/* ---------- Phrase du voyage : même chiffrement que l’éditeur (PBKDF2 600 000 + AES-GCM) ---------- */
+const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'],ITER=600000;
+const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
+async function encryptFile(o,phrase){
+  const salt=tob64(crypto.getRandomValues(new Uint8Array(16))),iv=crypto.getRandomValues(new Uint8Array(12));
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
+  const k=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(salt),iterations:ITER},base,{name:'AES-GCM',length:256},false,['encrypt']);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o))));
+  const out={};PUBLIC_KEYS.forEach(x=>{if(o[x]!==undefined)out[x]=o[x];});
+  out.chiffre={v:1,kdf:'PBKDF2-SHA256',iter:ITER,salt,iv:tob64(iv),data:tob64(ct)};return out;
+}
+const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','gondole','telesiege','sapin','glacier','sommet','strudel','chalet','luge','flocon','bouquetin','edelweiss','yodel','refuge','lagopede','crepe','cime','corniche','vallon','bretzel','grenat','myrtille','lanterne','avalanche','dameuse','fartage','godille','schuss','slalom','tyrolienne'];
+function phrase(){const w=[];while(w.length<3){const a=new Uint32Array(1);crypto.getRandomValues(a);const m=MOTS[a[0]%MOTS.length];if(!w.includes(m))w.push(m);}return w.join('-');}
+
+/* ---------- Connexion ---------- */
+function showLogin(t){$('#app').hidden=true;$('#login').hidden=false;if(t)msg(t,'err');$('#k').focus();}
+$('#login-f').addEventListener('submit',e=>{e.preventDefault();cle=$('#k').value.trim();try{localStorage.removeItem(KEY);sessionStorage.removeItem(KEY);($('#keep').checked?localStorage:sessionStorage).setItem(KEY,cle);}catch(x){}charger();});
+$('#b-out').onclick=()=>{try{localStorage.removeItem(KEY);sessionStorage.removeItem(KEY);}catch(x){}cle='';$('#k').value='';msg('');showLogin();};
+
+/* ---------- Liste des voyages ---------- */
+const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+async function charger(){
+  if(!cle)return showLogin();
+  msg('Chargement des voyages…','info');
+  try{ETAT=await api('GET','/api/admin/etat');}
+  catch(e){if(e.status===403||e.status===401)return showLogin('Clé d’administration refusée.');return msg('Impossible de joindre le service : '+esc(e.message),'err');}
+  msg('');$('#login').hidden=true;$('#app').hidden=false;dessiner();
+}
+function dessiner(){
+  const st=Object.fromEntries(ETAT.stations.map(s=>[s.id,s]));
+  $('#list').innerHTML=ETAT.voyages.map(v=>`<div class="v">
+    <span class="t">${esc(v.appCourt||v.titre)}</span><span>${v.clos?'<span class="tag clos">Clos</span>':'<span class="tag ok">Actif</span>'}</span>
+    <span class="meta">${esc(v.titre)} · ${esc(v.dates)} · ${esc(st[v.station]?.nom||v.station)}<br>
+      ${v.abonnes} téléphone${v.abonnes>1?'s':''} abonné${v.abonnes>1?'s':''} aux alertes · clé d’éditeur : ${v.cle==='admin'?'créée ici':v.cle==='terminal'?'créée au Terminal':'aucune'}</span>
+    <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a>
+    ${v.clos?'':`<button type="button" class="light" data-cle="${esc(v.id)}">Nouvelle clé d’éditeur</button><button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}</span></div>`).join('')||'<p class="small">Aucun voyage.</p>';
+}
+let armed={};
+document.addEventListener('click',async e=>{
+  const c=e.target.closest('[data-cle]');
+  if(c){const id=c.dataset.cle;
+    if(!armed[id+'c']){armed[id+'c']=1;c.textContent='Touchez encore : l’ancienne clé cessera de fonctionner';setTimeout(()=>{armed[id+'c']=0;c.textContent='Nouvelle clé d’éditeur';},5000);return;}
+    armed[id+'c']=0;c.disabled=true;
+    try{const r=await api('POST','/api/admin/cle',{trip:id});montrerCle(id,r.cle);}catch(x){msg('Erreur : '+esc(x.message),'err');}finally{c.disabled=false;c.textContent='Nouvelle clé d’éditeur';}
+    return;}
+  const k=e.target.closest('[data-clore]');
+  if(k){const id=k.dataset.clore;
+    if(!armed[id]){armed[id]=1;k.classList.add('armed');k.textContent='Touchez encore pour clore';setTimeout(()=>{armed[id]=0;k.classList.remove('armed');k.textContent='Clore';},5000);return;}
+    armed[id]=0;k.disabled=true;
+    try{await api('POST','/api/admin/clore',{trip:id});msg('Voyage clos : abonnements aux alertes et clé d’éditeur effacés. L’app reste en ligne en lecture.','ok');charger();}catch(x){msg('Erreur : '+esc(x.message),'err');k.disabled=false;}
+  }
+});
+function montrerCle(id,k){
+  const r=$('#res');r.hidden=false;
+  r.innerHTML=`<h2>Nouvelle clé d’éditeur · ${esc(id)}</h2><p class="small">Elle s’affiche une seule fois. Remettez-la à l’accompagnateur par un canal privé; l’ancienne ne fonctionne plus.</p><div class="secret">${esc(k)}</div>
+  <p class="row" style="margin-top:10px"><button type="button" class="light" id="cp">Copier</button><button type="button" class="light" id="ok">J’ai noté la clé</button></p>`;
+  $('#cp').onclick=()=>navigator.clipboard?.writeText(k);$('#ok').onclick=()=>{r.hidden=true;r.innerHTML='';charger();};
+  r.scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- Nouveau voyage ---------- */
+let photo=null,manuel={};
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+function suggestions(){
+  const s=ETAT.stations.find(x=>x.id===$('#f-station').value);if(!s)return;
+  const d=$('#f-debut').value,f=$('#f-fin').value,an=(d||f||'').slice(0,4)||String(new Date().getFullYear()+1);
+  const m=d?MOIS[+d.slice(5,7)-1]:'';
+  if(!manuel.titre)$('#f-titre').value='Gendronski '+s.nom;
+  if(!manuel.court)$('#f-court').value=(s.nom+' '+an).slice(0,24);
+  if(!manuel.id)$('#f-id').value=slug(s.nom)+'-'+(m?slug(m):'')+an;
+  if(!manuel.dates){
+    if($('#f-aconf').checked||!d||!f)$('#f-dates').value=m?m.charAt(0).toUpperCase()+m.slice(1)+' '+an:an;
+    else{const md=+d.slice(5,7),mf=+f.slice(5,7),jd=+d.slice(8),jf=+f.slice(8);
+      $('#f-dates').value=md===mf?`${jd} au ${jf} ${MOIS[mf-1]} ${an}`:`${jd} ${MOIS[md-1]} au ${jf} ${MOIS[mf-1]} ${f.slice(0,4)}`;}
+  }
+  $('#f-url').textContent=SITE+'/'+($('#f-id').value||'…')+'/';
+}
+['titre','court','id','dates'].forEach(k=>$('#f-'+k).addEventListener('input',()=>{manuel[k]=true;suggestions();}));
+['station','debut','fin','aconf'].forEach(k=>$('#f-'+k).addEventListener('change',suggestions));
+$('#f-gen').onclick=e=>{e.preventDefault();$('#f-phrase').value=phrase();};
+$('#b-new').onclick=()=>{
+  manuel={};photo=null;$('#nv').reset();$('#f-credit-l').hidden=true;
+  $('#f-station').innerHTML=ETAT.stations.map(s=>`<option value="${esc(s.id)}">${esc(s.nom)} · ${esc(s.lieu)}</option>`).join('');
+  $('#f-phrase').value=phrase();$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
+};
+$('#f-cancel').onclick=()=>{$('#nv').hidden=true;};
+// La photo est réduite dans le navigateur (2000 px de large au plus) avant l’envoi
+$('#f-photo').addEventListener('change',async e=>{
+  const f=e.target.files[0];photo=null;$('#f-credit-l').hidden=!f;if(!f)return;
+  try{const bmp=await createImageBitmap(f);const k=Math.min(1,2000/bmp.width);const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);photo=c.toDataURL('image/jpeg',0.85);
+    if(bmp.width<1200)msg('La photo est petite ('+bmp.width+' px de large) : elle risque d’être floue en en-tête.','warn');}
+  catch(x){msg('Photo illisible : choisissez un fichier JPEG ou PNG.','err');e.target.value='';}
+});
+function joursProgramme(d,f,tzStation){
+  const out=[];let t=Date.parse(d+'T12:00:00Z');const fin=Date.parse(f+'T12:00:00Z');let i=0;
+  while(t<=fin&&i<40){const iso=new Date(t).toISOString().slice(0,10);
+    out.push({date:iso,fuseau:i===0?'America/Toronto':tzStation,titre:i===0?'Départ de Montréal':t===fin?'Retour':'Ski',items:[]});t+=864e5;i++;}
+  return out;
+}
+$('#nv').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const s=ETAT.stations.find(x=>x.id===$('#f-station').value);
+  const b={station:s?.id,titre:$('#f-titre').value.trim(),appCourt:$('#f-court').value.trim(),debut:$('#f-debut').value,fin:$('#f-fin').value,dates:$('#f-dates').value.trim(),id:$('#f-id').value.trim(),photo,credit:$('#f-credit').value.trim(),accueil:$('#f-accueil').checked};
+  const ph=$('#f-phrase').value.trim();
+  if(!s||!b.titre||!b.appCourt||!b.debut||!b.fin||!b.dates||!b.id)return msg('Remplissez la station, le titre, le nom court, les deux dates et l’adresse.','err');
+  if(b.fin<b.debut)return msg('Le dernier jour doit suivre le premier.','err');
+  if(normPhrase(ph).length<8)return msg('La phrase du voyage est trop courte.','err');
+  const go=$('#f-go');go.disabled=true;go.textContent='Création…';
+  try{
+    const contenu={titre:b.titre,datesTexte:b.dates,sousTitre:'Voyage de ski en groupe',debut:b.debut,fin:b.fin,...($('#f-aconf').checked?{datesAConfirmer:true}:{}),
+      programme:$('#f-aconf').checked?[]:joursProgramme(b.debut,b.fin,s.fuseau),annonces:[],accompagnateur:{nom:'',role:'Votre accompagnateur'}};
+    b.contenu=JSON.stringify(await encryptFile(contenu,ph));
+    const r=await api('POST','/api/admin/voyages',b);
+    $('#nv').hidden=true;resultat(r,ph);charger();
+  }catch(x){msg('Création impossible : '+esc(x.message),'err');}
+  finally{go.disabled=false;go.textContent='Créer le voyage';}
+});
+function resultat(r,ph){
+  const app=r.url,inv=app+'installer.html#cle='+encodeURIComponent(ph),ed=app+'editeur.html';
+  const texte=`Voici l’accès à l’éditeur du voyage ${r.id} :\n- Éditeur : ${ed}\n- Clé de l’éditeur : ${r.cle}\n- Phrase du voyage : ${ph}\n\nDans l’éditeur, ouvrez « Connexion pour publier », entrez la clé, puis « Phrase du voyage » pour ouvrir le contenu.`;
+  const x=$('#res');x.hidden=false;
+  x.innerHTML=`<h2>Voyage créé ✓</h2>
+  <p id="etat" class="msg info">Le robot prépare l’app (icône, photo, pages). Elle sera en ligne dans 2 à 4 minutes…</p>
+  <p><b>Adresse de l’app :</b> <a href="${esc(app)}" target="_blank" rel="noopener">${esc(app)}</a></p>
+  <p><b>Phrase du voyage</b> (à donner aux voyageurs)</p><div class="secret">${esc(ph)}</div>
+  <p style="margin-top:12px"><b>Clé de l’éditeur</b> (pour l’accompagnateur, <u>affichée une seule fois</u>)</p><div class="secret">${esc(r.cle)}</div>
+  <p style="margin-top:12px"><b>Lien d’invitation des voyageurs</b> (ouvre l’app déjà déverrouillée)</p><div class="secret">${esc(inv)}</div>
+  <p style="margin-top:12px"><b>Message pour l’accompagnateur</b></p><textarea readonly id="txt">${esc(texte)}</textarea>
+  <p class="row" style="margin-top:10px"><button type="button" class="light" id="cp-txt">Copier le message</button><button type="button" class="light" id="cp-inv">Copier le lien d’invitation</button><button type="button" id="fin">J’ai noté la clé et la phrase</button></p>
+  <ol class="steps"><li>Gardez la clé et la phrase dans votre gestionnaire de mots de passe.</li><li>Une fois l’app en ligne, ouvrez l’éditeur pour remplir le programme, l’hôtel, les vols…</li></ol>`;
+  $('#cp-txt').onclick=()=>navigator.clipboard?.writeText(texte);$('#cp-inv').onclick=()=>navigator.clipboard?.writeText(inv);
+  $('#fin').onclick=()=>{x.hidden=true;x.innerHTML='';};
+  x.scrollIntoView({behavior:'smooth'});
+  const t0=Date.now();
+  (async function attendre(){
+    if(!$('#etat'))return;
+    try{const q=await fetch(app+'manifest.webmanifest?'+Date.now(),{cache:'no-store'});if(q.ok){$('#etat').className='msg ok';$('#etat').textContent='L’app est en ligne ✓';return;}}catch(e){}
+    if(Date.now()-t0>12*6e4){$('#etat').className='msg warn';$('#etat').textContent='L’app n’est pas encore en ligne après 12 minutes. Vérifiez l’onglet Actions du dépôt GitHub.';return;}
+    setTimeout(attendre,15000);
+  })();
+}
+
+if(cle)charger();else showLogin();
+</script>
+</body>
+</html>

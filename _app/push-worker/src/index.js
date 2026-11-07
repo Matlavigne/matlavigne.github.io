@@ -289,7 +289,7 @@ async function adminEtat(env) {
   const stations = [];
   for (const f of stFiles.filter((f) => f.name.endsWith(".json"))) {
     const j = await ghFile(env, `_app/stations/${f.name}`);
-    try { const s = JSON.parse(j.text); stations.push({ id: s.id, nom: s.nom, lieu: s.lieu, pays: s.pays }); } catch {}
+    try { const s = JSON.parse(j.text); stations.push({ id: s.id, nom: s.nom, lieu: s.lieu, pays: s.pays, fuseau: s.fuseau }); } catch {}
   }
   await ensureSchema(env);
   const subs = await env.DB.prepare("SELECT trip, COUNT(*) AS n FROM subscriptions GROUP BY trip").all();
