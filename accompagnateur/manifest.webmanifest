@@ -1,15 +1,29 @@
 {
+  "id": "/accompagnateur/",
   "name": "Mon accompagnateur · Mes voyages",
   "short_name": "Accompagnateur",
   "start_url": "/accompagnateur/",
-  "scope": "/accompagnateur/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0c3a78",
   "theme_color": "#0c3a78",
   "lang": "fr",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
