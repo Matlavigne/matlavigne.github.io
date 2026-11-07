@@ -45,6 +45,7 @@ const gh = http.createServer((req, res) => {
       return kids.length ? send(200, kids.map((k) => ({ name: k.split("/").pop(), path: k, type: "file" }))) : send(404, {});
     }
     if (req.method === "GET" && p === "/git/ref/heads/main") return send(200, { object: { sha: head } });
+    if (req.method === "GET" && /^\/git\/trees\//.test(p)) return send(200, { truncated: false, tree: [...files.keys()].map((k) => ({ path: k, type: "blob" })) });
     if (req.method === "GET" && (m = p.match(/^\/git\/commits\/(.+)$/))) return send(200, { sha: m[1], tree: { sha: commits.get(m[1]).tree } });
     const j = body ? JSON.parse(body) : {};
     if (req.method === "POST" && p === "/git/blobs") { const b = j.encoding === "base64" ? Buffer.from(j.content, "base64") : Buffer.from(j.content); const s = sha1(b); blobs.set(s, b); return send(201, { sha: s }); }
@@ -52,7 +53,7 @@ const gh = http.createServer((req, res) => {
     if (req.method === "POST" && p === "/git/commits") { const s = "c" + (commits.size); commits.set(s, { tree: j.tree, message: j.message, parents: j.parents }); return send(201, { sha: s }); }
     if (req.method === "PATCH" && p === "/git/refs/heads/main") {
       const c = commits.get(j.sha); if (c.parents[0] !== head) return send(422, {});
-      for (const e of trees.get(c.tree)) files.set(e.path, blobs.get(e.sha));
+      for (const e of trees.get(c.tree)) { if (e.sha === null) files.delete(e.path); else files.set(e.path, blobs.get(e.sha)); }
       head = j.sha; commitCount++; return send(200, { object: { sha: head } });
     }
     send(404, {});
@@ -141,6 +142,22 @@ try {
   check((await call("GET", `/api/voyage?trip=${nv.id}`, null, cle2)).status === 403, "après la clôture, la clé ne fonctionne plus");
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(r.json.voyages.find((x) => x.id === nv.id)?.clos === true, "marqué clos dans la liste");
+
+  console.log("\nSuppression");
+  put(`_app/icones/${nv.id}.svg`, "<svg/>"); put(`_app/i18n/voyages/${nv.id}.json`, "{}"); put(`${nv.id}/index.html`, "x");
+  r = await call("POST", "/api/admin/supprimer", { trip: nv.id }, ADMIN);
+  check(r.status === 400, "sans confirmation : refusé");
+  r = await call("POST", "/api/admin/supprimer", { trip: nv.id, confirmer: nv.id });
+  check([401, 403].includes(r.status), "sans session : refusé");
+  const avant = commitCount;
+  r = await call("POST", "/api/admin/supprimer", { trip: nv.id, confirmer: nv.id }, ADMIN);
+  check(r.status === 200 && commitCount === avant + 1, `voyage supprimé en un commit (${r.status} ${r.json.erreur || ""})`);
+  check(![...files.keys()].some((k) => k.includes(nv.id)), "fichiers de l'app, fiche, photo, icône et dictionnaire retirés");
+  check(files.has("st-anton-mars2027/voyage.json") && files.has("_app/voyages/st-anton-mars2027.json"), "les autres voyages sont intacts");
+  check(!JSON.parse(files.get("voyages.json")).voyages.some((x) => String(x.app || "").includes(nv.id)) && JSON.parse(files.get("voyages.json")).voyages.length === 1, "retiré de la page d'accueil");
+  r = await call("GET", "/api/admin/etat", null, ADMIN);
+  check(!r.json.voyages.some((x) => x.id === nv.id), "n'apparaît plus dans la liste");
+  check((await call("POST", "/api/admin/supprimer", { trip: nv.id, confirmer: nv.id }, ADMIN)).status === 404, "deuxième suppression : introuvable");
 } finally {
   wr.kill("SIGINT"); gh.close(); fs.rmSync(path.join(root, ".dev.vars"), { force: true });
 }

@@ -258,15 +258,22 @@ async function ghDir(env, path) {
   return Array.isArray(j) ? j : [];
 }
 
-// Un seul commit pour plusieurs fichiers : [{ path, text } | { path, b64 }]
+// Un seul commit pour plusieurs fichiers : [{ path, text } | { path, b64 } | { path, del: true }]
+// files peut aussi être une fonction (liste des chemins du dépôt) => fichiers, pour une suppression.
 async function commitFiles(env, files, message) {
   const g = github(env);
   const ref = await ghJson(env, `/git/ref/heads/${encodeURIComponent(g.branch)}`);
   const head = ref.object.sha;
   const commit = await ghJson(env, `/git/commits/${head}`);
+  if (typeof files === "function") {
+    const all = await ghJson(env, `/git/trees/${commit.tree.sha}?recursive=1`);
+    if (!all || all.truncated) throw new HttpError(502, "Liste des fichiers du dépôt incomplète");
+    files = await files(all.tree.filter((e) => e.type === "blob").map((e) => e.path));
+  }
   const tree = [];
   for (const f of files) {
     if (!/^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/.test(f.path) || f.path.includes("..")) throw new HttpError(400, `Chemin refusé : ${f.path}`);
+    if (f.del) { tree.push({ path: f.path, mode: "100644", type: "blob", sha: null }); continue; }
     const blob = await ghJson(env, "/git/blobs", { method: "POST", body: JSON.stringify(f.b64 != null ? { content: f.b64, encoding: "base64" } : { content: f.text, encoding: "utf-8" }) });
     tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
   }
@@ -385,6 +392,39 @@ async function adminNouvelleCle(env, trip) {
   return { ok: true, trip, cle };
 }
 
+// Suppression d'un voyage : l'app, sa fiche, sa photo, son icône, son dictionnaire, son entrée sur la page d'accueil
+// (un seul commit, réversible dans l'historique GitHub), puis ses alertes, sa clé et ses accès dans la base.
+async function adminSupprimer(env, b) {
+  const id = String(b.trip || "");
+  if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(id) || /^(admin|api|_app|assets|confidentialite)/.test(id)) throw new HttpError(400, "Voyage invalide");
+  if (b.confirmer !== id) throw new HttpError(400, "Confirmation manquante : tapez l'adresse du voyage");
+  let n = 0;
+  const commit = await commitFiles(env, async (paths) => {
+    const own = new Set([`_app/voyages/${id}.json`, `_app/i18n/voyages/${id}.json`, `_app/icones/${id}.svg`]);
+    const del = paths.filter((p) => p.startsWith(`${id}/`) || own.has(p) || new RegExp(`^_app/voyages/photos/${id}\\.(jpe?g|png|webp)$`).test(p));
+    if (!del.some((p) => p === `_app/voyages/${id}.json` || p.startsWith(`${id}/`))) throw new HttpError(404, "Voyage introuvable dans le dépôt");
+    n = del.length;
+    const out = del.map((p) => ({ path: p, del: true }));
+    const site = await ghFile(env, "voyages.json");
+    if (site) {
+      const d = JSON.parse(site.text);
+      const avant = (d.voyages || []).length;
+      d.voyages = (d.voyages || []).filter((v) => !String(v.app || "").includes(`/${id}/`));
+      if (d.voyages.length !== avant) out.push({ path: "voyages.json", text: JSON.stringify(d, null, 2) + "\n" });
+    }
+    return out;
+  }, `Suppression du voyage ${id}`);
+  await purgeTrip(env, id);
+  await ensureSchema(env);
+  if (tomlTrips(env)[id]) await env.DB.prepare(`INSERT INTO trips (id, titre, url, max_subs, created_at, clos) VALUES (?, ?, ?, 300, ?, 1) ON CONFLICT (id) DO UPDATE SET clos = 1`).bind(id, id, `/${id}/`, Date.now()).run();
+  else await env.DB.prepare("DELETE FROM trips WHERE id = ?").bind(id).run();
+  await env.DB.prepare("DELETE FROM editor_keys WHERE trip = ?").bind(id).run();
+  await ensureAuthSchema(env);
+  const us = (await env.DB.prepare("SELECT username, trips FROM users").all()).results || [];
+  for (const u of us) { const t = JSON.parse(u.trips || "[]"); if (t.includes(id)) await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(t.filter((x) => x !== id)), u.username).run(); }
+  return { ok: true, id, fichiers: n, commit };
+}
+
 async function handleAdmin(req, env, path, url) {
   const me = await requireAdmin(env, req);
   if (path.startsWith("/api/admin/comptes")) {
@@ -394,6 +434,7 @@ async function handleAdmin(req, env, path, url) {
   if (req.method === "GET" && path === "/api/admin/etat") return adminEtat(env);
   if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
+  if (req.method === "POST" && path === "/api/admin/supprimer") return adminSupprimer(env, await readJson(req));
   if (req.method === "POST" && path === "/api/admin/clore") {
     const b = await readJson(req); await requireTrip(env, b.trip);
     await purgeTrip(env, b.trip);

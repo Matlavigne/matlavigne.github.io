@@ -168,6 +168,7 @@ Créer un voyage sans coder, remettre ou remplacer la clé d'un accompagnateur, 
 - À la création, le navigateur chiffre le contenu de départ avec la phrase du voyage; le Worker écrit en **un seul commit** la fiche `_app/voyages/<id>.json`, le contenu chiffré `<id>/voyage.json`, la photo éventuelle (`_app/voyages/photos/<id>.jpg`) et, au choix, l'entrée de la page d'accueil (`voyages.json`). Il enregistre le voyage et sa clé d'éditeur (hachée) dans la base D1 : pas besoin de modifier `wrangler.toml` ni de redéployer.
 - Le robot GitHub (`.github/workflows/generer-apps.yml`) prépare ensuite les images (photo recadrée ou illustration, icônes) et génère l'app. Essai à blanc possible depuis l'onglet Actions (« Run workflow », case « Essai à blanc »).
 - Clore un voyage efface ses abonnements aux alertes et sa clé d'éditeur; l'app reste en ligne.
+- Supprimer un voyage (confirmation : taper son adresse) retire en un seul commit l'app, la fiche, la photo, l'icône, le dictionnaire anglais et l'entrée de la page d'accueil, puis efface ses alertes, sa clé et les accès des accompagnateurs. Récupérable au besoin dans l'historique GitHub.
 
 Les nouvelles stations se préparent encore à la main (fiche `_app/stations/<id>.json`, dictionnaire anglais, silhouette de l'icône); elles apparaissent ensuite dans le menu de l'administration.
 

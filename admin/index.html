@@ -285,7 +285,7 @@ function dessiner(){
     <span class="meta">${esc(v.titre)} · ${esc(v.dates)} · ${esc(st[v.station]?.nom||v.station)}<br>
       ${v.abonnes} téléphone${v.abonnes>1?'s':''} abonné${v.abonnes>1?'s':''} aux alertes · éditeur : ${v.acces?.length?esc(v.acces.join(', ')):'aucun accompagnateur'}</span>
     <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a>
-    ${v.clos?'':`<button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}</span></div>`).join('')||'<p class="small">Aucun voyage.</p>';
+    ${v.clos?'':`<button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}<button type="button" class="danger" data-suppr="${esc(v.id)}">Supprimer</button></span></div>`).join('')||'<p class="small">Aucun voyage.</p>';
 }
 let armed={};
 function arm(b,key,txt,fn){if(!armed[key]){armed[key]=1;const o=b.textContent;b.classList.add('armed');b.textContent=txt;setTimeout(()=>{armed[key]=0;b.classList.remove('armed');b.textContent=o;},5000);return;}armed[key]=0;fn();}
@@ -293,6 +293,14 @@ document.addEventListener('click',e=>{
   const k=e.target.closest('[data-clore]');
   if(k)arm(k,'clore'+k.dataset.clore,'Touchez encore pour clore',async()=>{k.disabled=true;
     try{await api('POST','/api/admin/clore',{trip:k.dataset.clore});msg('Voyage clos : abonnements aux alertes effacés. L’app reste en ligne en lecture.','ok');chargerTout();}catch(x){msg('Erreur : '+esc(x.message),'err');k.disabled=false;}});
+  const d=e.target.closest('[data-suppr]');
+  if(d){const id=d.dataset.suppr;
+    const r=prompt(`Supprimer définitivement le voyage « ${id} » ?\n\nL’app, l’éditeur, la page d’installation, le contenu, la photo et l’icône sont retirés du site, ainsi que les alertes, la clé et les accès des accompagnateurs. Les téléphones qui ont installé l’app ne pourront plus l’ouvrir.\n\nPour confirmer, tapez l’adresse du voyage : ${id}`);
+    if(r===null)return;
+    if(r.trim()!==id){msg('Suppression annulée : l’adresse tapée ne correspond pas.','err');return;}
+    d.disabled=true;d.textContent='Suppression…';
+    api('POST','/api/admin/supprimer',{trip:id,confirmer:id}).then(j=>{msg(`Voyage « ${esc(id)} » supprimé (${j.fichiers} fichiers). Il disparaît du site d’ici quelques minutes. Au besoin, il reste récupérable dans l’historique GitHub.`,'ok');chargerTout();})
+      .catch(x=>{msg('Erreur : '+esc(x.message),'err');d.disabled=false;d.textContent='Supprimer';});}
 });
 
 /* ---------- Comptes ---------- */
