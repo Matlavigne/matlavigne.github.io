@@ -159,3 +159,14 @@ Installation (une fois) :
 Clés : `npm run cle -- <voyage>` crée ou remplace la clé d'un voyage (l'ancienne cesse de fonctionner aussitôt). Le mode administrateur de l'éditeur (jeton GitHub personnel) reste disponible pour vous.
 
 Tests : `npm test` (alertes et publication, avec un faux GitHub local).
+
+## Administration (monaccompagnateur.ca/admin)
+
+Créer un voyage sans coder, remettre ou remplacer la clé d'un accompagnateur, clore un voyage après le retour.
+
+- La page `admin/index.html` appelle le Worker avec la **clé d'administration** (secret `ADMIN_TOKEN`, créé par `npm run cle-admin`).
+- À la création, le navigateur chiffre le contenu de départ avec la phrase du voyage; le Worker écrit en **un seul commit** la fiche `_app/voyages/<id>.json`, le contenu chiffré `<id>/voyage.json`, la photo éventuelle (`_app/voyages/photos/<id>.jpg`) et, au choix, l'entrée de la page d'accueil (`voyages.json`). Il enregistre le voyage et sa clé d'éditeur (hachée) dans la base D1 : pas besoin de modifier `wrangler.toml` ni de redéployer.
+- Le robot GitHub (`.github/workflows/generer-apps.yml`) prépare ensuite les images (photo recadrée ou illustration, icônes) et génère l'app. Essai à blanc possible depuis l'onglet Actions (« Run workflow », case « Essai à blanc »).
+- Clore un voyage efface ses abonnements aux alertes et sa clé d'éditeur; l'app reste en ligne.
+
+Les nouvelles stations se préparent encore à la main (fiche `_app/stations/<id>.json`, dictionnaire anglais, silhouette de l'icône); elles apparaissent ensuite dans le menu de l'administration.
