@@ -239,6 +239,7 @@ body.locked{overflow:hidden}
 .g-form input,.g-form select,.g-form textarea{font:inherit;font-size:16px;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
 .g-imp-t{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}.g-imp-t td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}
 .g-tools{margin-top:18px}
+.acc-tabs{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--white);margin:0 0 14px}.acc-tabs>*{flex:1;text-align:center;padding:10px 12px;font-weight:600;font-size:15px;text-decoration:none;color:var(--pine)}.acc-tabs>*+*{border-left:1px solid var(--line)}.acc-tabs [aria-current]{background:var(--pine);color:#fff}
 .fete{background:#ffe8a3;color:#5c4300;font-weight:700;border-radius:6px;padding:1px 7px}.age{color:var(--muted)}
 .pres-top{display:flex;gap:10px;align-items:center}.pres-top select{flex:1;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:0}
 .pres-new{display:flex;gap:8px;margin-top:8px}.pres-new input{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
@@ -1114,7 +1115,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
 <!-- INFOS -->
 <section class="view" id="v-groupe" hidden aria-labelledby="t-groupe">
-  <h2 id="t-groupe">Mon groupe</h2>
+  <h2 id="t-groupe">Accès accompagnateur</h2>
+  <nav class="acc-tabs" aria-label="Accès accompagnateur"><span aria-current="page">Mon groupe</span><a href="editeur.html">Éditeur</a></nav>
   <p class="small">Réservé à l’accompagnateur. La liste reste <b>sur ce téléphone seulement</b> : elle n’est jamais envoyée sur Internet, ni au site, ni aux voyageurs.</p>
   <div class="card" id="g-empty" hidden>
     <h3>Aucune liste sur ce téléphone</h3>
@@ -1256,7 +1258,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 18:53</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 19:04</span></p>
 </section>
 </main>
 

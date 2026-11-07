@@ -16,6 +16,7 @@ a{color:var(--blue)}
 header{background:var(--blue-d);color:#fff;padding:18px 0 14px}
 header h1{margin:0;font-size:22px;letter-spacing:-.3px}
 header p{margin:4px 0 0;font-size:13px;opacity:.85}
+header .acc-back{margin:0 0 8px;font-size:14px;opacity:1}header .acc-back a{color:#fff}
 h2{font-size:17px;margin:0}
 button,.btn{font:inherit;font-size:14px;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:8px 13px;min-height:40px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 button.light,.btn.light{background:#fff;color:var(--blue)}
@@ -67,7 +68,7 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1 id="t">Éditeur du voyage</h1><p id="t-sub">Modifiez le contenu de l’app, puis touchez « Publier ».</p></div></header>
+<header><div class="wrap"><p class="acc-back"><a href="./#groupe">← Accès accompagnateur</a> · <a href="./">App du voyage</a></p><h1 id="t">Éditeur du voyage</h1><p id="t-sub">Modifiez le contenu de l’app, puis touchez « Publier ».</p></div></header>
 <main class="wrap">
   <div id="m-load" class="msg info">Chargement…</div>
   <div id="m-draft" class="msg warn" hidden></div>
@@ -130,7 +131,7 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
     <summary><h2>Liste du groupe (accompagnateur seulement)</h2><span class="n">sur le téléphone</span></summary>
     <div class="body">
       <p class="help">La liste du groupe ne passe plus par le site : aucune donnée des voyageurs n’est publiée, même chiffrée. Elle se gère dans l’app, sur votre téléphone : <b>Infos › Accès accompagnateur</b>. Importez-y un fichier CSV (Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre) ou ajoutez les personnes à la main. Elle reste sur ce téléphone seulement; gardez une copie du CSV pour la réimporter au besoin.</p>
-      <p><a class="btn light" href="./#groupe" target="_blank" rel="noopener">Ouvrir la liste dans l’app</a></p>
+      <p><a class="btn light" href="./#groupe">Ouvrir la liste dans l’app</a></p>
     </div>
   </details>
 
