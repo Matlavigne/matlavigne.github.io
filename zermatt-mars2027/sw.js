@@ -1,6 +1,6 @@
 // Service worker généré par _app/build.mjs (ne pas modifier ici : modifier _app/gabarit/sw.js)
 // Changez CACHE à chaque mise à jour pour forcer l'actualisation chez les utilisateurs.
-const CACHE = 'gendronski-zermatt-2027-09540f8e';
+const CACHE = 'gendronski-zermatt-2027-1ba0b15b';
 const CORE = ['./', 'index.html', 'manifest.webmanifest',
               'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
               'voyage.json', 'hero.webp', 'installer.html', 'affiche-bagages.html', 'og.jpg', 'editeur.html'];
@@ -124,8 +124,20 @@ self.VOYAGE_PUSH = { worker: 'https://monaccompagnateur-push.monaccompagnateur.w
     if (conf.icon) options.icon = conf.icon;
     if (conf.badge) options.badge = conf.badge;
 
+    // Pastille sur l'icône de l'app : +1 par annonce, remise à jour par l'app à la lecture
+    var badge = (data.kind === "annonce" && self.navigator && self.navigator.setAppBadge)
+      ? caches.open("voyage-badge").then(function (c) {
+          var key = new Request(self.registration.scope + "__pastille__");
+          return c.match(key).then(function (r) { return r ? r.text() : "0"; }).then(function (t) {
+            var n = (parseInt(t, 10) || 0) + 1;
+            return c.put(key, new Response(String(n))).then(function () { return self.navigator.setAppBadge(n); });
+          });
+        }).catch(function () {})
+      : Promise.resolve();
+
     // iOS exige qu'une notification visible soit affichée pour chaque push
     event.waitUntil(Promise.all([
+      badge,
       self.registration.showNotification(title, options),
       tellClients({ type: "voyage-push", event: "received", kind: data.kind, id: data.id }),
     ]));

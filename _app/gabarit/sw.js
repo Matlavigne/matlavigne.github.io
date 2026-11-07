@@ -124,8 +124,20 @@ self.VOYAGE_PUSH = { worker: '{{PUSH_WORKER}}', trip: '{{ID}}', icon: 'icon-192.
     if (conf.icon) options.icon = conf.icon;
     if (conf.badge) options.badge = conf.badge;
 
+    // Pastille sur l'icône de l'app : +1 par annonce, remise à jour par l'app à la lecture
+    var badge = (data.kind === "annonce" && self.navigator && self.navigator.setAppBadge)
+      ? caches.open("voyage-badge").then(function (c) {
+          var key = new Request(self.registration.scope + "__pastille__");
+          return c.match(key).then(function (r) { return r ? r.text() : "0"; }).then(function (t) {
+            var n = (parseInt(t, 10) || 0) + 1;
+            return c.put(key, new Response(String(n))).then(function () { return self.navigator.setAppBadge(n); });
+          });
+        }).catch(function () {})
+      : Promise.resolve();
+
     // iOS exige qu'une notification visible soit affichée pour chaque push
     event.waitUntil(Promise.all([
+      badge,
       self.registration.showNotification(title, options),
       tellClients({ type: "voyage-push", event: "received", kind: data.kind, id: data.id }),
     ]));

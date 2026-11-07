@@ -239,6 +239,7 @@ body.locked{overflow:hidden}
 .g-form input,.g-form select,.g-form textarea{font:inherit;font-size:16px;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
 .g-imp-t{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}.g-imp-t td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}
 .g-tools{margin-top:18px}
+.voyage-push-btn.danger{background:#b3261e;border-color:#b3261e;color:#fff}
 .acc-tabs{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--white);margin:0 0 14px}.acc-tabs>*{flex:1;text-align:center;padding:10px 12px;font-weight:600;font-size:15px;text-decoration:none;color:var(--pine)}.acc-tabs>*+*{border-left:1px solid var(--line)}.acc-tabs [aria-current]{background:var(--pine);color:#fff}
 .fete{background:#ffe8a3;color:#5c4300;font-weight:700;border-radius:6px;padding:1px 7px}.age{color:var(--muted)}
 .pres-top{display:flex;gap:10px;align-items:center}.pres-top select{flex:1;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:0}
@@ -1265,7 +1266,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-07 09:00</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-07 11:05</span></p>
 </section>
 </main>
 
@@ -1425,6 +1426,12 @@ function renderHeader(){
 }
 
 /* ---------- Rendu : accueil ---------- */
+/* Pastille sur l’icône de l’app (écran d’accueil) : nombre d’annonces non lues.
+   Le service worker l’augmente à chaque alerte; l’app la remet au bon compte à l’ouverture. */
+function pastille(n){
+  try{if(navigator.setAppBadge){(n>0?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{});}}catch(e){}
+  try{if(window.caches)caches.open('voyage-badge').then(c=>c.put(new Request(new URL('__pastille__',location.href.split('#')[0].split('?')[0].replace(/[^/]*$/,'')).href),new Response(String(Math.max(0,n))))).catch(()=>{});}catch(e){}
+}
 function renderHome(){if(LOCKED||!valid(V))return;try{renderVols();renderRemontee();renderSondage();}catch(e){}
   const n=NOW(),{start,end}=tripBounds();const ti=todayIndex();
   let html;
@@ -1456,7 +1463,8 @@ function renderHome(){if(LOCKED||!valid(V))return;try{renderVols();renderRemonte
   $('#annonces').innerHTML=show.length?`<p class="overline">Annonces</p>`+show.map(a=>`<div class="card annonce"><div class="meta">${a.at>seen?'<span class="new">NOUVEAU</span>':''}<span>${esc(fmt(a.at,a.fuseau||TZL,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))}</span></div><p>${esc(a.texte)}</p></div>`).join('')+(list.length>6?`<details class="more"><summary>Annonces précédentes (${list.length-6})</summary>${list.slice(6).map(a=>`<div class="card annonce"><div class="meta">${esc(fmt(a.at,a.fuseau||TZL,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))}</div><p>${esc(a.texte)}</p></div>`).join('')}</details>`:''):'';
   const unseen=list.some(a=>a.at>seen);
   $('#dot-annonces').hidden=!unseen||current==='accueil';
-  if(current==='accueil'&&list.length){setTimeout(()=>{store.set(K.seen,Math.max(seen,list[0].at.getTime()));},4000);}
+  pastille(list.filter(a=>a.at>seen).length);
+  if(current==='accueil'&&list.length){setTimeout(()=>{store.set(K.seen,Math.max(seen,list[0].at.getTime()));pastille(0);},4000);}
   $('#sync-state').textContent=syncMsg;
 }
 
@@ -2323,7 +2331,18 @@ function renderAll(){if(LOCKED)return;try{renderRemontee();renderSondage();}catc
         }
       }
 
+      var armed = false, armT = null;
       btn.addEventListener("click", function () {
+        // Désactiver demande un deuxième toucher, pour éviter de couper les alertes par erreur
+        if (btn.textContent === "Désactiver les alertes" && !armed) {
+          armed = true;
+          btn.textContent = "Touchez encore pour désactiver";
+          btn.classList.add("danger");
+          msg.textContent = "Vous ne recevrez plus les annonces du groupe sur ce téléphone. Touchez de nouveau pour confirmer.";
+          armT = setTimeout(function () { armed = false; btn.classList.remove("danger"); render("on"); }, 6000);
+          return;
+        }
+        armed = false; clearTimeout(armT); btn.classList.remove("danger");
         btn.disabled = true;
         VoyagePush.state().then(function (s) {
           return s === "on" ? VoyagePush.disable() : VoyagePush.enable();
