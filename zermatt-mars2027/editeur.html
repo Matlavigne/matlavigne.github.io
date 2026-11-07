@@ -77,7 +77,7 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
   <details class="sec" id="s-alertes" hidden>
     <summary><h2>Alertes sur les téléphones</h2><span class="n" id="al-state">…</span></summary>
     <div class="body">
-      <p class="small">À chaque publication, les annonces sont programmées : les voyageurs qui ont activé les alertes reçoivent « Nouvelle annonce du groupe » à l’heure de l’annonce (au plus tôt 3 minutes après la publication). Le texte de l’annonce n’est jamais envoyé au service d’alertes.</p>
+      <p class="small">À chaque publication, les annonces sont programmées : les voyageurs qui ont activé les alertes reçoivent « Nouvelle annonce du groupe » à l’heure de l’annonce, ou dès la publication si vous avez choisi « Immédiatement ». Dans les deux cas, la notification part au plus tôt 3 minutes après la publication, le temps que le site se mette à jour. Le texte de l’annonce n’est jamais envoyé au service d’alertes.</p>
       <p><button type="button" class="light" id="al-test">Envoyer une alerte de test</button> <button type="button" class="light" id="al-status">Voir les abonnés et les envois</button> <button type="button" class="light" id="al-token">Changer le jeton des alertes</button></p>
       <div id="al-msg" class="small"></div>
     </div>
@@ -271,16 +271,16 @@ async function load(){
     try{V=await decryptFile(RAW,ph);openPhrase=normPhrase(ph);}
     catch(e){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Phrase incorrecte : impossible d’ouvrir le contenu publié. Vérifiez la phrase dans « Phrase du voyage ».','err');$('#sections').innerHTML='';return;}
   }
-  base=pretty(V);phUi();
+  normAnn(V);base=pretty(V);phUi();
   msg('#m-load','Contenu chargé depuis '+from+'.'+(remoteOk?'':MODE()==='cle'?' La clé de l’éditeur a été refusée pour ce voyage : vérifiez-la dans « Connexion pour publier ».':' Entrez la clé de l’éditeur (« Connexion pour publier ») pour pouvoir publier.'),remoteOk?'ok':(MODE()?'warn':'info'));
   if(remoteOk||!MODE())setTimeout(()=>msg('#m-load'),4000);
   const dr=LS.get(DRAFT_KEY(),null),ret=LS.get(RETOUR_KEY(),null);LS.del(RETOUR_KEY());
   const back=ret&&Date.now()-ret.at<12*36e5;
-  if(back&&dr&&dr.data&&pretty(dr.data)!==base){V=dr.data;}
+  if(back&&dr&&dr.data&&pretty(normAnn(dr.data))!==base){V=dr.data;}
   if(back)setTimeout(()=>{const ds=document.querySelectorAll('details');(ret.open||[]).forEach(i=>{if(ds[i])ds[i].open=true;});scrollTo(0,ret.y||0);msg('#m-draft','Retour de l’aperçu : vos modifications non publiées sont toujours là.','info');setTimeout(()=>msg('#m-draft'),4000);},60);
   else if(dr&&dr.data&&pretty(dr.data)!==base){
     msg('#m-draft',`Un brouillon non publié du ${esc(new Date(dr.at).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'}))} existe sur cet appareil. <button type="button" class="mini" id="dr-use">Reprendre le brouillon</button> <button type="button" class="mini light" id="dr-drop">Ignorer</button>`,'warn');
-    $('#dr-use').onclick=()=>{V=dr.data;msg('#m-draft');render();changed();if(dr.sha&&sha&&dr.sha!==sha)msg('#m-res','Attention : voyage.json a été modifié sur GitHub depuis ce brouillon. Vérifiez avant de publier.','warn');};
+    $('#dr-use').onclick=()=>{V=normAnn(dr.data);msg('#m-draft');render();changed();if(dr.sha&&sha&&dr.sha!==sha)msg('#m-res','Attention : voyage.json a été modifié sur GitHub depuis ce brouillon. Vérifiez avant de publier.','warn');};
     $('#dr-drop').onclick=()=>{LS.del(DRAFT_KEY());msg('#m-draft');};
   }
   $('#t').textContent='Éditeur · '+(V.titre||'voyage');
@@ -307,9 +307,9 @@ const ITEM=[['heure','Heure','time'],['titre','Titre','text'],['lieu','Lieu','te
 const S=[
   {id:'general',titre:'Titre et dates',type:'root',fields:[['titre','Titre affiché','text'],['datesTexte','Dates affichées','text'],['debut','Premier jour','date'],['fin','Dernier jour','date'],['niveau','Niveau du groupe','text'],['sousTitre','Sous-titre','text']]},
   {id:'depart',titre:'Compte à rebours (décollage)',type:'obj',key:'depart',help:'Le carré « J – » de l’Accueil compte jusqu’à cette heure.',fields:[['date','Date','date'],['heure','Heure','time'],['fuseau','Fuseau','tz']]},
-  {id:'annonces',titre:'Annonces',type:'list',key:'annonces',sort:'desc',help:'Une annonce n’apparaît dans l’app qu’à partir de sa date et de son heure : vous pouvez les préparer d’avance.',
-    label:a=>(a.alerte===false?'🔕 ':'')+(a.date?a.date.replace('T',' · '):'sans date')+' — '+(a.texte||'').slice(0,50),newItem:()=>({date:nowLocal(TZL),fuseau:TZL,texte:'',alerte:true}),
-    fields:[['date','Publier à partir du','datetime'],['fuseau','Fuseau de cette heure','tz'],['texte','Texte de l’annonce','textarea','full'],['alerte','Envoyer une alerte sur les téléphones (décochez pour une info visible seulement dans l’app)','bool','full']],
+  {id:'annonces',titre:'Annonces',type:'list',key:'annonces',sort:'desc',help:'Une annonce n’apparaît dans l’app qu’à partir de sa date et de son heure : vous pouvez les préparer d’avance. Alerte « À l’heure de l’annonce » : la notification part à l’heure indiquée, jamais moins de 3 minutes après la publication (le temps que le site se mette à jour) : prévoyez au moins 5 minutes d’avance. Alerte « Immédiatement » : la notification part dès la publication, sans égard à l’heure, et une annonce datée plus tard devient visible tout de suite.',
+    label:a=>({aucune:'🔕 ',immediat:'⚡ '}[ann(a)]||'')+(a.date?a.date.replace('T',' · '):'sans date')+' — '+(a.texte||'').slice(0,50),newItem:()=>({date:nowLocal(TZL),fuseau:TZL,texte:'',alerte:'heure'}),
+    fields:[['date','Publier à partir du','datetime'],['fuseau','Fuseau de cette heure','tz'],['texte','Texte de l’annonce','textarea','full'],['alerte','Alerte sur les téléphones','select',[['heure','À l’heure de l’annonce'],['immediat','Immédiatement, dès la publication'],['aucune','Aucune alerte (dans l’app seulement)']],'full']],
     templates:[['rdv','Changement de rendez-vous'],['meteo','Mauvais temps'],['bagages','Rappel de bagages'],['demain','Rendez-vous de demain']]},
   {id:'vols',titre:'Vols aller et retour',type:'list',key:'vols',help:'Un bloc par vol, correspondances comprises. Heures locales de chaque aéroport, comme sur la confirmation. Le numéro de vol (ex. LX 87) active les liens de suivi en direct. Les vols s’affichent en haut du Programme, et sur l’Accueil à partir de 36 heures avant le départ. Un rappel d’enregistrement en ligne s’affiche, et s’ajoute au calendrier des voyageurs, à l’heure d’ouverture (24 h avant par défaut).',
     label:v=>({aller:'Aller',retour:'Retour',correspondance:'Correspondance'}[v.sens]||'Vol')+(v.numero?' · '+v.numero:'')+(v.date?' · '+v.date:''),
@@ -347,6 +347,9 @@ const S=[
       ['lien','Lien (facultatif)','url'],['lienTexte','Texte du lien','text'],['lat','Latitude (facultatif)','number'],['lng','Longitude (facultatif)','number']]},
 ];
 const HANDLED=new Set(['titre','datesTexte','debut','fin','niveau','sousTitre',...S.filter(s=>s.key).map(s=>s.key)]);
+/* Mode d’alerte d’une annonce : 'heure' (défaut), 'immediat' ou 'aucune'. Anciennes valeurs : true / false. */
+const ann=a=>a.alerte===false||a.alerte==='aucune'?'aucune':a.alerte==='immediat'?'immediat':'heure';
+function normAnn(v){(v&&Array.isArray(v.annonces)?v.annonces:[]).forEach(a=>{if(a&&typeof a==='object')a.alerte=ann(a);});return v;}
 function nowLocal(tz){const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;}
 
 /* ---------- Modèles d’annonces ---------- */
@@ -488,10 +491,12 @@ $('#b-pub').onclick=async()=>{
   if(!MODE()||!canWrite){msg('#m-res','Connectez-vous avec la clé de l’éditeur de ce voyage (section « Connexion pour publier »).','err');$('#s-connexion').open=true;window.scrollTo({top:0,behavior:'smooth'});return;}
   const b=$('#b-pub');b.disabled=true;b.textContent='Publication…';
   try{
-   const doV=vDirty();
+   const doV=vDirty();let avance=0;
    if(doV){
     const cur=await remoteGet();const curSha=cur?cur.sha:null;
     if(curSha&&sha&&curSha!==sha&&!b.dataset.force){b.dataset.force='1';msg('#m-res','Le voyage a été modifié en ligne depuis l’ouverture de cette page (par vous ailleurs ou par quelqu’un d’autre). Touchez « Publier » encore une fois pour remplacer cette version par la vôtre, ou rechargez la page pour repartir de la version en ligne.','warn');window.scrollTo({top:0,behavior:'smooth'});return;}
+    const nowIso=new Date().toISOString();
+    (V.annonces||[]).forEach(a=>{if(ann(a)==='immediat'){const tz=a.fuseau||TZL,at=pushIso(a.date,tz);if(!at||at>nowIso){a.date=nowLocal(tz);avance++;}}});
     const out=pretty(clean(V));
     const ph=phNow();
     if(!ph&&RAW?.chiffre){throw Error('le contenu en ligne est protégé : entrez la phrase du voyage avant de publier');}
@@ -499,7 +504,7 @@ $('#b-pub').onclick=async()=>{
     sha=await remotePut(file,curSha||sha);V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
    }
     if(doV)render();changed();
-    msg('#m-res','✓ Publié. Les voyageurs verront les changements dans une à deux minutes. <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
+    msg('#m-res','✓ Publié. Les voyageurs verront les changements dans une à deux minutes.'+(avance?' '+avance+' annonce(s) « Immédiatement » mise(s) à l’heure actuelle pour être visible(s) tout de suite.':'')+' <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){msg('#m-res','La publication a échoué : '+esc(e.message)+'. Vos modifications restent enregistrées sur cet appareil; réessayez.','err');}
   finally{b.textContent='Publier';b.disabled=!dirty();}
 };
@@ -594,10 +599,11 @@ function pushIso(date,tz){const m=String(date||'').match(/^(\d{4})-(\d\d)-(\d\d)
   const off=d=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(d).map(x=>[x.type,x.value]));return Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second)-d.getTime();};
   const t=g-off(new Date(g));return new Date(g-off(new Date(t))).toISOString();}
 /* Identifiant stable d'une annonce : son heure et son fuseau (corriger le texte ne la renvoie pas) */
-function pushItems(v){const seen={};return(v.annonces||[]).filter(a=>a&&a.alerte!==false).map(a=>{const tz=a.fuseau||STN.fuseau;const at=pushIso(a.date,tz);if(!at)return null;
+function pushItems(v){const seen={},now=new Date().toISOString();return(v.annonces||[]).filter(a=>a&&ann(a)!=='aucune').map(a=>{const tz=a.fuseau||STN.fuseau;let at=pushIso(a.date,tz);if(!at)return null;
+  if(ann(a)==='immediat')at=now; // sans égard à l’heure : part dès que le site est à jour
   let id=('a-'+String(a.date).replace(/[^0-9T]/g,'')+'-'+tz.replace(/[^A-Za-z]/g,'').slice(0,12)).slice(0,60);seen[id]=(seen[id]||0)+1;if(seen[id]>1)id+='-'+seen[id];
   return{id,at,kind:'annonce'};}).filter(Boolean);}
-function pushSync(v){if(!PUSH_ON)return;VoyagePushEditor.sync(pushItems(v)).then(r=>{$('#al-msg').textContent='Alertes : '+r.programmees+' annonce(s) programmée(s)'+(r.retirees?', '+r.retirees+' retirée(s)':'')+'.';}).catch(e=>{$('#al-msg').textContent='Alertes non programmées : '+e.message;$('#s-alertes').open=true;});}
+function pushSync(v){if(!PUSH_ON)return;VoyagePushEditor.sync(pushItems(v)).then(r=>{$('#al-msg').textContent='Alertes : '+r.programmees+' annonce(s) programmée(s)'+(r.retirees?', '+r.retirees+' retirée(s)':'')+'.'+(r.ignorees_passees?' '+r.ignorees_passees+' annonce(s) dont l’heure est passée depuis plus de 15 minutes : aucune alerte. Choisissez « Immédiatement » pour l’envoyer quand même.':'');if(r.ignorees_passees)$('#s-alertes').open=true;}).catch(e=>{$('#al-msg').textContent='Alertes non programmées : '+e.message;$('#s-alertes').open=true;});}
 if(PUSH_ON){
   $('#al-test').onclick=()=>VoyagePushEditor.test().then(()=>{$('#al-msg').textContent='Alerte de test envoyée : elle arrive sur les téléphones abonnés d’ici une minute.';}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
   $('#al-status').onclick=()=>VoyagePushEditor.status().then(r=>{$('#al-msg').innerHTML='<b>'+r.abonnements+'</b> téléphone(s) abonné(s).<br>'+(r.annonces||[]).slice(0,8).map(a=>esc(a.kind)+' · '+esc(new Date(a.envoi).toLocaleString('fr-CA',{timeZone:STN.fuseau,dateStyle:'medium',timeStyle:'short'}))+' · '+(a.termine?a.livrees+' reçue(s)'+(a.echecs?', '+a.echecs+' échec(s)':''):'en attente')).join('<br>');}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
