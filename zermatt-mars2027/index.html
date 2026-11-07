@@ -246,6 +246,8 @@ body.locked{overflow:hidden}
 .pres-count{font-size:20px;font-weight:800;margin:10px 0 8px}.pres-count .ok{color:#246b3c}.pres-count .ko{color:var(--red)}
 .p-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--white);margin-bottom:6px;cursor:pointer;user-select:none}
 .p-row input{width:26px;height:26px;flex:none;accent-color:#246b3c}.p-row.on{background:#eef7f0;border-color:#b7d8bf}
+.p-txt{flex:1;min-width:0}.p-row .note{color:var(--ink);opacity:.8}.p-ex{border:0;background:none;padding:2px 0 0;min-height:0;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.p-out{opacity:.75;cursor:default;background:var(--soft)}.pres-count .ex{font-size:15px;font-weight:600;color:var(--muted)}.pres-keep{display:flex;gap:6px;align-items:center;margin-top:8px}
 .p-row .n{font-weight:700}.p-row .m{font-size:12px;color:var(--muted)}.p-row .t{margin-left:auto;font-size:13px;white-space:nowrap}
 /* Carte */
 .mapbox{position:relative;z-index:0;isolation:isolate;height:calc(100vh - 290px);min-height:380px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:#e4e9e0;margin:0 0 10px}
@@ -1150,6 +1152,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <div class="card" style="padding:12px 14px">
         <div class="pres-top"><label for="p-sel" class="small"><b>Appel</b></label><select id="p-sel"></select></div>
         <div class="pres-new"><input id="p-nom" placeholder="Nouvel appel (ex. Bus vers l’aéroport)" autocomplete="off"><button type="button" id="p-new">Créer</button></div>
+        <label class="small pres-keep"><input type="checkbox" id="p-keepex"> Garder les exclus de l’appel affiché</label>
       </div>
       <div class="chips" id="p-grp" role="group" aria-label="Sous-groupe"></div>
       <div class="pres-count" id="p-count" role="status" aria-live="polite"></div>
@@ -1262,7 +1265,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">Zermatt 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 23:03</span></p>
+  <p class="foot">Zermatt 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-07 09:00</span></p>
 </section>
 </main>
 
@@ -1712,21 +1715,27 @@ function drawPres(){
   if(pGrp&&!grps.includes(pGrp))pGrp='';
   $('#p-grp').innerHTML=grps.length?[['','Tous'],...grps.map(g=>[g,g])].map(([k,l])=>`<button type="button" data-pgrp="${esc(k)}" aria-pressed="${k===pGrp}">${esc(l)}</button>`).join(''):'';
   const q=normPhrase($('#g-q').value).replace(/-/g,' ');
-  const scope=all.filter(p=>!pGrp||p.sousGroupe===pGrp);
+  const ex=a.exclus||{};
+  const inGrp=all.filter(p=>!pGrp||p.sousGroupe===pGrp);
+  const scope=inGrp.filter(p=>!ex[p._id]),out=inGrp.filter(p=>ex[p._id]).sort(gTri);
   const here=scope.filter(p=>a.coches[p._id]).length,miss=scope.length-here;
-  $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}`;
-  const tel=t=>String(t||'').replace(/[^\d+]/g,'');
+  $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}${out.length?` <span class="ex">· ${out.length} exclu${out.length>1?'s':''}</span>`:''}`;
   const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.prenom,p.nom].join(' ')).replace(/-/g,' ').includes(q))).sort(gTri);
-  $('#p-list').innerHTML=rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}</span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`;
+  $('#p-list').innerHTML=(rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}<br><button type="button" class="p-ex" data-pexcl="${esc(p._id)}">Exclure de cet appel</button></span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`)
+    +(out.length&&!pMiss?`<p class="g-grp">Exclus de cet appel · ${out.length}</p>`+out.map(p=>`<div class="p-row p-out"><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}</span><button type="button" class="light mini" data-pincl="${esc(p._id)}">Remettre</button></div>`).join(''):'');
   $('#p-miss').setAttribute('aria-pressed',pMiss);$('#p-miss').textContent=pMiss?'Afficher tout le monde':'Seulement les absents';
 }
 document.addEventListener('click',e=>{
   const m=e.target.closest('[data-gmode]');if(m&&GRP){gMode=m.dataset.gmode;$$('[data-gmode]').forEach(b=>b.setAttribute('aria-pressed',b===m));$('#g-list').hidden=gMode!=='liste';$('#g-pres').hidden=gMode!=='pres';if(gMode==='pres')drawPres();return;}
   const g=e.target.closest('[data-pgrp]');if(g){pGrp=g.dataset.pgrp;drawPres();}
 });
+document.addEventListener('click',e=>{const x=e.target.closest('[data-pexcl],[data-pincl]');if(!x)return;e.preventDefault();
+  const s0=pState();const a=s0.appels.find(y=>y.id===s0.cur);if(!a)return;a.exclus=a.exclus||{};
+  if(x.dataset.pexcl){a.exclus[x.dataset.pexcl]=1;delete a.coches[x.dataset.pexcl];}else delete a.exclus[x.dataset.pincl];
+  pSave(s0);drawPres();});
 document.addEventListener('change',e=>{const c=e.target.closest('[data-pid]');if(!c)return;const s0=pState();const a=s0.appels.find(x=>x.id===s0.cur);if(!a)return;if(c.checked)a.coches[c.dataset.pid]=Date.now();else delete a.coches[c.dataset.pid];pSave(s0);setTimeout(drawPres,pMiss?350:0);});
 $('#p-sel').addEventListener('change',e=>{const s0=pState();s0.cur=e.target.value;pSave(s0);drawPres();});
-$('#p-new').addEventListener('click',()=>{const s0=pState();const a={id:Date.now().toString(36),nom:$('#p-nom').value.trim()||pDefNom(),at:Date.now(),coches:{}};s0.appels.unshift(a);s0.appels=s0.appels.slice(0,30);s0.cur=a.id;pSave(s0);$('#p-nom').value='';pMiss=false;drawPres();});
+$('#p-new').addEventListener('click',()=>{const s0=pState();const prev=s0.appels.find(x=>x.id===s0.cur);const a={id:Date.now().toString(36),nom:$('#p-nom').value.trim()||pDefNom(),at:Date.now(),coches:{},exclus:$('#p-keepex')?.checked&&prev?.exclus?{...prev.exclus}:{}};s0.appels.unshift(a);s0.appels=s0.appels.slice(0,30);s0.cur=a.id;pSave(s0);$('#p-nom').value='';pMiss=false;drawPres();});
 $('#p-miss').addEventListener('click',()=>{pMiss=!pMiss;drawPres();});
 let pArm={};const arm=(b,txt,fn)=>{if(!pArm[b.id]){pArm[b.id]=1;const o=b.textContent;b.textContent=txt;setTimeout(()=>{pArm[b.id]=0;b.textContent=o;},3500);return;}pArm[b.id]=0;fn();};
 $('#p-reset').addEventListener('click',e=>arm(e.target,'Touchez encore pour décocher',()=>{const s0=pState();const a=s0.appels.find(x=>x.id===s0.cur);if(a){a.coches={};pSave(s0);}e.target.textContent='Tout décocher';drawPres();}));
