@@ -158,6 +158,14 @@ try {
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(!r.json.voyages.some((x) => x.id === nv.id), "n'apparaît plus dans la liste");
   check((await call("POST", "/api/admin/supprimer", { trip: nv.id, confirmer: nv.id }, ADMIN)).status === 404, "deuxième suppression : introuvable");
+  put(`_app/voyages/${nv.id}.json`, JSON.stringify({ id: nv.id, station: "stanton", titre: "Fantôme", dates: "x" })); // GitHub en retard
+  r = await call("GET", "/api/admin/etat", null, ADMIN);
+  check(!r.json.voyages.some((x) => x.id === nv.id), "même si GitHub liste encore la fiche, le voyage n'apparaît plus");
+  files.delete(`_app/voyages/${nv.id}.json`);
+  r = await call("POST", "/api/admin/voyages", nv, ADMIN);
+  check(r.status === 200, `la même adresse peut resservir pour un nouveau voyage (${r.status} ${r.json.erreur || ""})`);
+  r = await call("GET", "/api/admin/etat", null, ADMIN);
+  check(r.json.voyages.some((x) => x.id === nv.id && !x.clos), "le nouveau voyage réapparaît, actif");
 } finally {
   wr.kill("SIGINT"); gh.close(); fs.rmSync(path.join(root, ".dev.vars"), { force: true });
 }

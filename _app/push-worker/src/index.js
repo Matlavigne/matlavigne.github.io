@@ -53,7 +53,7 @@ async function trips(env) {
   try {
     await ensureSchema(env);
     const r = await env.DB.prepare("SELECT id, titre, url, fin, max_subs, clos FROM trips").all();
-    for (const t of r.results || []) out[t.id] = { ...(out[t.id] || {}), title: t.titre, url: t.url || `/${t.id}/`, end: t.fin, maxSubs: t.max_subs || 300, clos: !!t.clos };
+    for (const t of r.results || []) out[t.id] = { ...(out[t.id] || {}), title: t.titre, url: t.url || `/${t.id}/`, end: t.fin, maxSubs: t.max_subs || 300, clos: !!t.clos, supprime: t.clos === 2 };
   } catch (e) { console.error("trips D1", e); }
   return out;
 }
@@ -317,6 +317,7 @@ async function adminEtat(env) {
     const j = await ghFile(env, `_app/voyages/${f.name}`);
     let v; try { v = JSON.parse(j.text); } catch { continue; }
     const t = all[v.id] || {};
+    if (t.supprime) continue; // supprimé : GitHub peut encore lister la fiche quelques instants
     voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, acces: acces(v.id), clos: !!t.clos });
   }
   voyages.sort((a, b) => String(b.fin || "").localeCompare(String(a.fin || "")));
@@ -372,7 +373,7 @@ async function adminCreer(env, b) {
   const cle = newKey(), now = Date.now();
   await ensureSchema(env);
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0)").bind(id, station, appCourt, `/${id}/`, b.fin, now),
+    env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0) ON CONFLICT (id) DO UPDATE SET station = excluded.station, titre = excluded.titre, url = excluded.url, fin = excluded.fin, created_at = excluded.created_at, clos = 0").bind(id, station, appCourt, `/${id}/`, b.fin, now),
     env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(id, await hashKey(cle), now),
   ]);
   let compte = null;
@@ -416,8 +417,8 @@ async function adminSupprimer(env, b) {
   }, `Suppression du voyage ${id}`);
   await purgeTrip(env, id);
   await ensureSchema(env);
-  if (tomlTrips(env)[id]) await env.DB.prepare(`INSERT INTO trips (id, titre, url, max_subs, created_at, clos) VALUES (?, ?, ?, 300, ?, 1) ON CONFLICT (id) DO UPDATE SET clos = 1`).bind(id, id, `/${id}/`, Date.now()).run();
-  else await env.DB.prepare("DELETE FROM trips WHERE id = ?").bind(id).run();
+  // Marqué supprimé (clos = 2) plutôt qu'effacé : plus d'alertes, et absent de l'administration même si GitHub tarde à mettre sa liste à jour
+  await env.DB.prepare(`INSERT INTO trips (id, titre, url, max_subs, created_at, clos) VALUES (?, ?, ?, 300, ?, 2) ON CONFLICT (id) DO UPDATE SET clos = 2`).bind(id, id, `/${id}/`, Date.now()).run();
   await env.DB.prepare("DELETE FROM editor_keys WHERE trip = ?").bind(id).run();
   await ensureAuthSchema(env);
   const us = (await env.DB.prepare("SELECT username, trips FROM users").all()).results || [];
