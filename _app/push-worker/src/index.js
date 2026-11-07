@@ -29,10 +29,32 @@ const MAX_BODY_BYTES = 8192;
 
 // ---------- configuration ----------
 
-function trips(env) {
+function tomlTrips(env) {
   const t = env.TRIPS;
   if (!t) return {};
   return typeof t === "string" ? JSON.parse(t) : t;
+}
+
+// Tables créées au besoin (voyages ajoutés par l'administration, clés d'éditeur)
+let schemaOk = false;
+async function ensureSchema(env) {
+  if (schemaOk) return;
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS trips (id TEXT PRIMARY KEY, station TEXT, titre TEXT, url TEXT, fin TEXT, max_subs INTEGER, created_at INTEGER, clos INTEGER DEFAULT 0)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS editor_keys (trip TEXT PRIMARY KEY, hash TEXT NOT NULL, created_at INTEGER NOT NULL)`),
+  ]);
+  schemaOk = true;
+}
+
+// Voyages connus : ceux de wrangler.toml, plus ceux créés depuis l'administration (base D1)
+async function trips(env) {
+  const out = { ...tomlTrips(env) };
+  try {
+    await ensureSchema(env);
+    const r = await env.DB.prepare("SELECT id, titre, url, fin, max_subs, clos FROM trips").all();
+    for (const t of r.results || []) out[t.id] = { ...(out[t.id] || {}), title: t.titre, url: t.url || `/${t.id}/`, end: t.fin, maxSubs: t.max_subs || 300, clos: !!t.clos };
+  } catch (e) { console.error("trips D1", e); }
+  return out;
 }
 
 function num(v, d) {
@@ -150,6 +172,10 @@ async function sha256(text) {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
 }
 
+const b64url = (u) => btoa(String.fromCharCode(...u)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function hashKey(k) { return b64url(await sha256("cle-editeur:" + k)); }
+const newKey = () => b64url(crypto.getRandomValues(new Uint8Array(24)));
+
 async function safeEqual(a, b) {
   const [ha, hb] = await Promise.all([sha256(a), sha256(b)]);
   let diff = 0;
@@ -164,14 +190,19 @@ async function requireEditor(env, req, trip) {
   if (!m) throw new HttpError(401, "Jeton manquant");
   let tokens = {};
   try { tokens = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch { tokens = {}; }
-  const candidates = [tokens[trip], tokens["*"]].filter(Boolean);
+  const candidates = [tokens[trip], tokens["*"], env.ADMIN_TOKEN].filter(Boolean);
   for (const t of candidates) if (await safeEqual(m[1], t)) return;
+  try {
+    await ensureSchema(env);
+    const row = await env.DB.prepare("SELECT hash FROM editor_keys WHERE trip = ?").bind(trip).first();
+    if (row && await safeEqual(await hashKey(m[1]), row.hash)) return;
+  } catch (e) { console.error("editor_keys", e); }
   throw new HttpError(403, "Jeton refusé");
 }
 
-function requireTrip(env, trip) {
+async function requireTrip(env, trip) {
   if (typeof trip !== "string" || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(trip)) throw new HttpError(400, "Voyage invalide");
-  const t = trips(env)[trip];
+  const t = (await trips(env))[trip];
   if (!t) throw new HttpError(404, "Voyage inconnu");
   return t;
 }
@@ -190,6 +221,173 @@ function validKey(b64, len, first) {
   } catch { return false; }
 }
 
+
+// ---------- administration : voyages créés sans coder ----------
+// Clé d'administration : secret ADMIN_TOKEN. Le Worker écrit la fiche du voyage, son contenu chiffré
+// (préparé dans le navigateur) et la photo dans le dépôt, en un seul commit; un robot GitHub (Actions)
+// génère ensuite l'app, l'icône et la photo d'en-tête.
+
+const MAX_ADMIN_BYTES = 8 * 1024 * 1024;
+
+async function requireAdmin(env, req) {
+  const m = (req.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/);
+  if (!env.ADMIN_TOKEN) throw new HttpError(503, "Administration non configurée (secret ADMIN_TOKEN)");
+  if (!m || !(await safeEqual(m[1], env.ADMIN_TOKEN))) throw new HttpError(403, "Clé d'administration refusée");
+}
+
+async function ghJson(env, path, opt = {}) {
+  const g = github(env);
+  const r = await fetch(`${g.api}/repos/${g.repo}${path}`, { ...opt, headers: { ...g.headers, ...(opt.body ? { "Content-Type": "application/json" } : {}), ...(opt.headers || {}) } });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new HttpError(502, `GitHub a répondu ${r.status} (${path.split("?")[0]})`);
+  return r.json();
+}
+async function ghFile(env, path) {
+  const g = github(env);
+  const j = await ghJson(env, `/contents/${path}?ref=${encodeURIComponent(g.branch)}`);
+  return j && !Array.isArray(j) ? { sha: j.sha, text: b64ToUtf8(j.content || "") } : null;
+}
+async function ghDir(env, path) {
+  const g = github(env);
+  const j = await ghJson(env, `/contents/${path}?ref=${encodeURIComponent(g.branch)}`);
+  return Array.isArray(j) ? j : [];
+}
+
+// Un seul commit pour plusieurs fichiers : [{ path, text } | { path, b64 }]
+async function commitFiles(env, files, message) {
+  const g = github(env);
+  const ref = await ghJson(env, `/git/ref/heads/${encodeURIComponent(g.branch)}`);
+  const head = ref.object.sha;
+  const commit = await ghJson(env, `/git/commits/${head}`);
+  const tree = [];
+  for (const f of files) {
+    if (!/^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/.test(f.path) || f.path.includes("..")) throw new HttpError(400, `Chemin refusé : ${f.path}`);
+    const blob = await ghJson(env, "/git/blobs", { method: "POST", body: JSON.stringify(f.b64 != null ? { content: f.b64, encoding: "base64" } : { content: f.text, encoding: "utf-8" }) });
+    tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
+  }
+  const t = await ghJson(env, "/git/trees", { method: "POST", body: JSON.stringify({ base_tree: commit.tree.sha, tree }) });
+  const c = await ghJson(env, "/git/commits", { method: "POST", body: JSON.stringify({ message, tree: t.sha, parents: [head], author: { name: "Administration monaccompagnateur", email: "admin@monaccompagnateur.ca" } }) });
+  const up = await fetch(`${g.api}/repos/${g.repo}/git/refs/heads/${encodeURIComponent(g.branch)}`, { method: "PATCH", headers: { ...g.headers, "Content-Type": "application/json" }, body: JSON.stringify({ sha: c.sha }) });
+  if (up.status === 422 || up.status === 409) throw new HttpError(409, "Le dépôt a changé pendant l'enregistrement : réessayez");
+  if (!up.ok) throw new HttpError(502, `GitHub a refusé l'enregistrement (${up.status})`);
+  return c.sha;
+}
+
+const AFFICHE_DEFAUT = {
+  soute: [{ t: "Sac à skis", d: "Skis et bâtons" }, { t: "Sac à bottes", d: "Bottes de ski et casque de ski" }, { t: "1 bagage de 23 kg", d: "Vêtements et effets personnels" }],
+  noteSoute: "Le sac à skis et le sac à bottes sont en plus du bagage de 23 kg. Ensemble, ski et bottes, ils ne doivent pas dépasser 23 kg.",
+  cabine: [{ t: "1 bagage à main", d: "Format cabine, dans le compartiment au-dessus du siège" }, { t: "1 sac personnel", d: "Sac à dos ou sac à main, sous le siège devant vous" }],
+  important: "Très important : les batteries externes et les batteries au lithium voyagent avec vous en cabine, jamais en soute.",
+  conseils: ["Gardez dans votre bagage à main : passeport, médicaments, chargeur et vos batteries.", "Mettez une étiquette à votre nom sur chaque sac."],
+};
+const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dateOk = (d) => /^\d{4}-\d\d-\d\d$/.test(d || "") && !Number.isNaN(Date.parse(d));
+const str = (v, max) => { if (typeof v !== "string") return ""; const t = v.trim(); if (t.length > max) throw new HttpError(400, "Texte trop long"); return t; };
+
+async function adminEtat(env) {
+  const [stFiles, vFiles, all] = await Promise.all([ghDir(env, "_app/stations"), ghDir(env, "_app/voyages"), trips(env)]);
+  const stations = [];
+  for (const f of stFiles.filter((f) => f.name.endsWith(".json"))) {
+    const j = await ghFile(env, `_app/stations/${f.name}`);
+    try { const s = JSON.parse(j.text); stations.push({ id: s.id, nom: s.nom, lieu: s.lieu, pays: s.pays }); } catch {}
+  }
+  await ensureSchema(env);
+  const subs = await env.DB.prepare("SELECT trip, COUNT(*) AS n FROM subscriptions GROUP BY trip").all();
+  const nSubs = Object.fromEntries((subs.results || []).map((r) => [r.trip, r.n]));
+  const keys = await env.DB.prepare("SELECT trip, created_at FROM editor_keys").all();
+  const kSet = Object.fromEntries((keys.results || []).map((r) => [r.trip, r.created_at]));
+  let toml = {}; try { toml = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch {}
+  const voyages = [];
+  for (const f of vFiles.filter((f) => f.name.endsWith(".json"))) {
+    const j = await ghFile(env, `_app/voyages/${f.name}`);
+    let v; try { v = JSON.parse(j.text); } catch { continue; }
+    const t = all[v.id] || {};
+    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, clos: !!t.clos });
+  }
+  voyages.sort((a, b) => String(b.fin || "").localeCompare(String(a.fin || "")));
+  return { stations, voyages };
+}
+
+async function adminCreer(env, b) {
+  const id = str(b.id, 63).toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(id)) throw new HttpError(400, "Adresse du voyage : lettres minuscules, chiffres et tirets seulement");
+  if (/^(admin|api|_app|assets|confidentialite)/.test(id)) throw new HttpError(400, "Cette adresse est réservée");
+  const station = str(b.station, 40);
+  const titre = str(b.titre, 80), dates = str(b.dates, 60), appCourt = str(b.appCourt, 24);
+  if (!titre || !dates || !appCourt) throw new HttpError(400, "Titre, dates et nom court de l'app requis");
+  if (!dateOk(b.debut) || !dateOk(b.fin) || b.fin < b.debut) throw new HttpError(400, "Premier et dernier jour invalides");
+  const [stFile, exists, dirExists] = await Promise.all([ghFile(env, `_app/stations/${station}.json`), ghFile(env, `_app/voyages/${id}.json`), ghDir(env, id)]);
+  if (!stFile) throw new HttpError(400, "Station inconnue");
+  if (exists || dirExists.length) throw new HttpError(409, "Un voyage existe déjà à cette adresse");
+  const S = JSON.parse(stFile.text);
+  if (typeof b.contenu !== "string") throw new HttpError(400, "Contenu du voyage manquant");
+  const contenu = checkVoyage(b.contenu);
+  if (!contenu.chiffre) throw new HttpError(400, "Le contenu du nouveau voyage doit être protégé par une phrase");
+
+  const credit = b.photo ? (str(b.credit, 300) ? esc(str(b.credit, 300)) : "Photo : monaccompagnateur.ca") : "Illustration : monaccompagnateur.ca";
+  const config = {
+    id, station, titre, dates, appCourt,
+    nomApp: str(b.nomApp, 60) || `${titre} ${b.debut.slice(0, 4)}`,
+    pied: appCourt,
+    description: `L’app du voyage de ski en groupe à ${S.nom} : programme, annonces, état des pistes, carte et infos pratiques.`,
+    ogDescription: `Voyage de ski en groupe à ${S.nom} (${dates}) : programme, annonces, météo et carte GPS.`,
+    credit,
+    cache: `gendronski-${id}`,
+    affiche: { titre, sousDates: dates, bagages: AFFICHE_DEFAUT },
+  };
+  const files = [
+    { path: `_app/voyages/${id}.json`, text: JSON.stringify(config, null, 2) + "\n" },
+    { path: `${id}/voyage.json`, text: JSON.stringify(contenu.v, null, 1) + "\n" },
+  ];
+  if (b.photo) {
+    const m = String(b.photo).match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) throw new HttpError(400, "Photo : JPEG, PNG ou WebP seulement");
+    files.push({ path: `_app/voyages/photos/${id}.${m[1] === "jpeg" ? "jpg" : m[1]}`, b64: m[2] });
+  }
+  if (b.accueil) {
+    const site = await ghFile(env, "voyages.json");
+    if (site) {
+      const d = JSON.parse(site.text);
+      d.voyages = Array.isArray(d.voyages) ? d.voyages : [];
+      d.voyages.unshift({ titre: appCourt, lieu: S.lieu.replace(" · ", ", "), debut: b.debut, fin: b.fin, dates, photo: `/${id}/hero.webp`, app: `https://monaccompagnateur.ca/${id}/`, souvenir: "" });
+      files.push({ path: "voyages.json", text: JSON.stringify(d, null, 2) + "\n" });
+    }
+  }
+  const commit = await commitFiles(env, files, `Nouveau voyage : ${titre} (${dates})`);
+  const cle = newKey(), now = Date.now();
+  await ensureSchema(env);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0)").bind(id, station, appCourt, `/${id}/`, b.fin, now),
+    env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(id, await hashKey(cle), now),
+  ]);
+  return { ok: true, id, cle, commit, url: `https://monaccompagnateur.ca/${id}/` };
+}
+
+async function adminNouvelleCle(env, trip) {
+  await requireTrip(env, trip);
+  const cle = newKey();
+  await ensureSchema(env);
+  await env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(trip, await hashKey(cle), Date.now()).run();
+  return { ok: true, trip, cle };
+}
+
+async function handleAdmin(req, env, path, url) {
+  await requireAdmin(env, req);
+  if (req.method === "GET" && path === "/api/admin/etat") return adminEtat(env);
+  if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
+  if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
+  if (req.method === "POST" && path === "/api/admin/clore") {
+    const b = await readJson(req); await requireTrip(env, b.trip);
+    await purgeTrip(env, b.trip);
+    await ensureSchema(env);
+    const t = (await trips(env))[b.trip] || {};
+    await env.DB.prepare(`INSERT INTO trips (id, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, 300, ?, 1) ON CONFLICT (id) DO UPDATE SET clos = 1`).bind(b.trip, t.title || b.trip, t.url || `/${b.trip}/`, t.end || null, Date.now()).run();
+    await env.DB.prepare("DELETE FROM editor_keys WHERE trip = ?").bind(b.trip).run();
+    return { ok: true };
+  }
+  throw new HttpError(404, "Introuvable");
+}
+
 // ---------- routes ----------
 
 async function handle(req, env) {
@@ -197,6 +395,7 @@ async function handle(req, env) {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
+  if (path.startsWith("/api/admin/")) return json(env, req, await handleAdmin(req, env, path, url));
 
   if (req.method === "GET" && path === "/api/vapid") {
     return json(env, req, { publicKey: env.VAPID_PUBLIC_KEY });
@@ -206,7 +405,7 @@ async function handle(req, env) {
   if (req.method === "POST" && path === "/api/subscribe") {
     if (!allowedOrigin(env, req.headers.get("Origin"))) throw new HttpError(403, "Origine refusée");
     const body = await readJson(req);
-    const t = requireTrip(env, body.trip);
+    const t = await requireTrip(env, body.trip);
     const s = body.subscription || {};
     const keys = s.keys || {};
     if (!validEndpoint(env, s.endpoint)) throw new HttpError(400, "Endpoint refusé");
@@ -227,7 +426,7 @@ async function handle(req, env) {
   if (req.method === "POST" && path === "/api/unsubscribe") {
     if (!allowedOrigin(env, req.headers.get("Origin"))) throw new HttpError(403, "Origine refusée");
     const body = await readJson(req);
-    requireTrip(env, body.trip);
+    await requireTrip(env, body.trip);
     if (typeof body.endpoint !== "string") throw new HttpError(400, "Endpoint manquant");
     await env.DB.prepare("DELETE FROM subscriptions WHERE trip = ? AND endpoint = ?").bind(body.trip, body.endpoint).run();
     return json(env, req, { ok: true });
@@ -238,7 +437,7 @@ async function handle(req, env) {
   // La liste remplace les envois en attente; ce qui est déjà parti n'est jamais renvoyé.
   if (req.method === "POST" && path === "/api/schedule") {
     const body = await readJson(req);
-    requireTrip(env, body.trip);
+    await requireTrip(env, body.trip);
     await requireEditor(env, req, body.trip);
     if (!Array.isArray(body.items) || body.items.length > 200) throw new HttpError(400, "items invalide");
     const c = cfg(env);
@@ -288,7 +487,7 @@ async function handle(req, env) {
   // Notification de test, envoyée à tout le groupe à la prochaine minute
   if (req.method === "POST" && path === "/api/test") {
     const body = await readJson(req);
-    requireTrip(env, body.trip);
+    await requireTrip(env, body.trip);
     await requireEditor(env, req, body.trip);
     const id = `test-${Date.now()}`;
     await env.DB.prepare("INSERT INTO announcements (trip, id, kind, send_at, created_at) VALUES (?, ?, 'test', ?, ?)")
@@ -298,7 +497,7 @@ async function handle(req, env) {
 
   if (req.method === "GET" && path === "/api/status") {
     const trip = url.searchParams.get("trip");
-    requireTrip(env, trip);
+    await requireTrip(env, trip);
     await requireEditor(env, req, trip);
     const subs = await env.DB.prepare("SELECT COUNT(*) AS n FROM subscriptions WHERE trip = ?").bind(trip).first();
     const anns = await env.DB.prepare(
@@ -322,7 +521,7 @@ async function handle(req, env) {
   // Lecture du voyage.json à jour (avec son sha) pour l'éditeur
   if (req.method === "GET" && path === "/api/voyage") {
     const trip = url.searchParams.get("trip");
-    requireTrip(env, trip);
+    await requireTrip(env, trip);
     await requireEditor(env, req, trip);
     return json(env, req, { ok: true, trip, ...(await ghGetVoyage(env, trip)) });
   }
@@ -330,7 +529,7 @@ async function handle(req, env) {
   // Publication depuis l'éditeur : remplace <voyage>/voyage.json, et rien d'autre
   if (req.method === "POST" && path === "/api/publier") {
     const body = await readJson(req, MAX_VOYAGE_BYTES + 4096);
-    requireTrip(env, body.trip);
+    await requireTrip(env, body.trip);
     await requireEditor(env, req, body.trip);
     if (typeof body.content !== "string" || !body.content.length) throw new HttpError(400, "Contenu manquant");
     if (new TextEncoder().encode(body.content).length > MAX_VOYAGE_BYTES) throw new HttpError(413, "Contenu trop gros");
@@ -367,7 +566,7 @@ async function handle(req, env) {
   // Effacement complet des données d'un voyage
   if (req.method === "POST" && path === "/api/purge") {
     const body = await readJson(req);
-    requireTrip(env, body.trip);
+    await requireTrip(env, body.trip);
     await requireEditor(env, req, body.trip);
     await purgeTrip(env, body.trip);
     return json(env, req, { ok: true });
@@ -388,7 +587,7 @@ async function purgeTrip(env, trip) {
 
 export async function runDue(env, now = Date.now()) {
   const c = cfg(env);
-  const allTrips = trips(env);
+  const allTrips = await trips(env);
   let budget = c.maxPerRun;
   const log = { envoyees: 0, expirees: 0, echecs: 0, annonces_terminees: 0 };
 
@@ -464,7 +663,7 @@ export async function runDue(env, now = Date.now()) {
 
 async function purgeFinishedTrips(env, now = Date.now()) {
   const c = cfg(env);
-  for (const [trip, t] of Object.entries(trips(env))) {
+  for (const [trip, t] of Object.entries(await trips(env))) {
     if (!t.end) continue;
     const end = Date.parse(`${t.end}T23:59:59Z`);
     if (Number.isFinite(end) && now > end + c.purgeAfterDays * 86400000) await purgeTrip(env, trip);

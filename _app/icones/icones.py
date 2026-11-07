@@ -6,6 +6,7 @@ icon-maskable-512.png (zone sûre Android) et apple-touch-icon.png (180 px, iPho
 
     python3 _app/icones/icones.py            # tous les voyages
     python3 _app/icones/icones.py zermatt    # seulement les voyages dont l'id contient « zermatt »
+    python3 _app/icones/icones.py --manquantes   # seulement les voyages qui n'ont pas encore d'icône
 
 Rendu par Chrome (Playwright) avec la police Inter. Les SVG sources sont gardés dans _app/icones/.
 Pour une nouvelle station, ajoutez son profil de montagne dans MONTAGNES (sinon : profil générique).
@@ -65,22 +66,30 @@ def svg(nom, annee, crete, echelle=1.0):
 </svg>'''
 
 
-def main():
-    filtre = sys.argv[1] if len(sys.argv) > 1 else ""
+def main(filtre=None, manquantes=False):
+    if filtre is None:
+        args = [a for a in sys.argv[1:] if not a.startswith("--")]
+        filtre = args[0] if args else ""
+        manquantes = "--manquantes" in sys.argv
     voyages = []
     for f in sorted((APP / "voyages").glob("*.json")):
         v = json.loads(f.read_text())
         if filtre and filtre not in v["id"]:
             continue
+        if manquantes and (ROOT / v["id"] / "icon-512.png").exists():
+            continue
         st = json.loads((APP / "stations" / f"{v['station']}.json").read_text())
         nom = v.get("iconeNom") or st["nom"]
         annee = v.get("iconeAnnee") or (re.search(r"20\d\d", v.get("dates", "") + v["id"]) or [""])[0]
         voyages.append((v["id"], nom, annee, MONTAGNES.get(v["station"], GENERIQUE)))
+    if not voyages:
+        return
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
         pg = b.new_page(viewport={"width": 1024, "height": 1024})
         for vid, nom, annee, crete in voyages:
             out = ROOT / vid
+            out.mkdir(exist_ok=True)
             for nomf, ech, px in [("icon-512.png", 1.0, 512), ("icon-192.png", 1.0, 192), ("apple-touch-icon.png", 1.0, 180), ("icon-maskable-512.png", 0.8, 512)]:
                 s = svg(nom, annee, crete, ech)
                 if ech == 1.0:

@@ -1,0 +1,46 @@
+# Robot de génération : après chaque changement dans _app/ (par exemple un voyage créé depuis
+# l'administration), prépare les images manquantes, génère les apps et publie le résultat.
+name: Générer les apps
+
+on:
+  push:
+    branches: [main]
+    paths: ["_app/**", "!_app/push-worker/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generer-apps
+  cancel-in-progress: false
+
+jobs:
+  generer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Outils (images, police Inter)
+        run: |
+          pip install pillow playwright
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-inter || true
+          fc-cache -f >/dev/null || true
+          test -x /usr/bin/google-chrome || (sudo apt-get install -y -qq google-chrome-stable || npx -y playwright install --with-deps chrome)
+      - name: Images des nouveaux voyages
+        run: python3 _app/icones/preparer.py
+      - name: Générer les apps
+        run: node _app/build.mjs
+      - name: Publier
+        run: |
+          git config user.name "Robot monaccompagnateur"
+          git config user.email "robot@monaccompagnateur.ca"
+          git add -A
+          git diff --cached --quiet && echo "Rien à publier" && exit 0
+          git commit -m "Apps générées par le robot"
+          git push
