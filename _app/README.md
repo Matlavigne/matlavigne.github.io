@@ -90,3 +90,13 @@ Aucune donnée des voyageurs n'est dans le dépôt. La liste du groupe se gère 
 ## Icônes
 
 Les icônes d'écran d'accueil de chaque voyage (montagne de la station, nom, année) se génèrent avec `python3 _app/icones/icones.py` (Chrome et la police Inter requis), puis `node _app/build.mjs` pour que les apps les rechargent. Pour une nouvelle station, ajoutez sa silhouette dans `MONTAGNES` du script. Champs facultatifs du voyage : `iconeNom`, `iconeAnnee`.
+
+## Anglais
+
+L'app et la page d'installation s'affichent en anglais quand le téléphone n'est pas en français (choix modifiable dans Infos › Langue · Language; `?lang=en` pour tester). Le code reste en français : `_app/i18n/runtime.js` traduit l'affichage à partir des dictionnaires, chaînes exactes et modèles (regex, groupes traduits à leur tour; un texte « a · b · c » est traduit morceau par morceau).
+
+- `_app/i18n/en.json` : interface commune.
+- `_app/i18n/stations/<station>.json` : textes de la fiche de station (urgences, faits, phrases utiles, points météo, webcams).
+- `_app/i18n/voyages/<voyage>.json` : dates et crédits propres au voyage.
+
+Le contenu de l'accompagnateur (programme, annonces, hôtel…) et les descriptions des pistes et restos restent tels qu'écrits. Pour une nouvelle station, ajoutez son fichier dans `stations/`; une chaîne absente du dictionnaire reste simplement en français.

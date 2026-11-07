@@ -1245,6 +1245,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p style="margin-top:10px"><button type="button" class="light" id="wipe">Effacer mes données de cet appareil</button></p>
     <p class="small" id="wipe-msg"></p>
   </div>
+  <div class="card" id="langue" data-no-i18n>
+    <h3>Langue · Language</h3>
+    <div class="seg" role="group" aria-label="Langue · Language"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
+    <p class="small" style="margin-top:8px">Auto : langue du téléphone · Auto: phone language</p>
+  </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
   <p class="foot">{{PIED}} · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : {{VERSION}}</span></p>
 </section>
@@ -1254,6 +1259,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <script id="ski-data" type="application/json">{{SKI_JSON}}</script>
 <script id="station-data" type="application/json">{{STATION_JSON}}</script>
 <script id="trip-data" type="application/json">{{TRIP_JSON}}</script>
+<script id="i18n-en" type="application/json">{{LANG_DICO}}</script>
+<script>
+{{LANG_SCRIPT}}
+</script>
 <script id="leaflet-js">
 /* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -1279,8 +1288,11 @@ function zoned(date,time,tz){const [y,m,d]=date.split('-').map(Number);const [h,
 function parseLocal(str,tz){const m=String(str||'').match(/^(\d{4}-\d\d-\d\d)(?:T(\d\d:\d\d))?/);return m?zoned(m[1],m[2]||'00:00',tz):null;}
 const NOW=(()=>{const a=params.get('apercu');if(a){const d=parseLocal(a,TZL);if(d&&!isNaN(d)){const shift=d-Date.now();return()=>new Date(Date.now()+shift);}}return()=>new Date();})();
 const dayKey=(d,tz)=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
-const fmt=(d,tz,o)=>new Intl.DateTimeFormat('fr-CA',{timeZone:tz,...o}).format(d);
-function until(ms){const m=Math.round(ms/60000);if(m<1)return'maintenant';if(m<60)return'dans '+m+' min';const h=Math.floor(m/60),r=m%60;if(h<24)return'dans '+h+' h'+(r?' '+String(r).padStart(2,'0'):'');const j=Math.round(h/24);return'dans '+j+' jour'+(j>1?'s':'');}
+/* hhmm : heure « 16:30 » affichée : « 16 h 30 » en français, « 4:30 p.m. » en anglais */
+const hhmm=x=>{const m=String(x||'').match(/^(\d{1,2}):(\d\d)/);if(!m)return String(x||'');const h=+m[1];return LANG==='en'?`${h%12||12}:${m[2]} ${h<12?'a.m.':'p.m.'}`:`${m[1]} h ${m[2]}`;};
+const hOnly=x=>{const h=+x;return LANG==='en'?`${h%12||12} ${h<12?'a.m.':'p.m.'}`:String(x).padStart(2,'0')+' h';};
+const fmt=(d,tz,o)=>new Intl.DateTimeFormat(LOC,{timeZone:tz,...o}).format(d);
+function until(ms){const m=Math.round(ms/60000),en=LANG==='en';if(m<1)return en?'now':'maintenant';if(m<60)return(en?'in ':'dans ')+m+' min';const h=Math.floor(m/60),r=m%60;if(h<24)return(en?'in ':'dans ')+h+' h'+(r?' '+String(r).padStart(2,'0'):'');const j=Math.round(h/24);return en?'in '+j+' day'+(j>1?'s':''):'dans '+j+' jour'+(j>1?'s':'');}
 
 /* ---------- Données du voyage ---------- */
 let V=null,syncMsg='';
@@ -1374,7 +1386,7 @@ function setOffline(off){
   el.hidden=!off;document.body.classList.toggle('is-offline',off);
   if(!off)return;
   const at=store.get(K.voyage,null)?.at;
-  const quand=at?new Intl.DateTimeFormat('fr-CA',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(at)):'';
+  const quand=at?new Intl.DateTimeFormat(LOC,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(at)):'';
   el.innerHTML=`<b>Hors ligne</b> · programme enregistré${quand?' le '+esc(quand):''}. Météo, état des pistes et plan reviendront avec Internet.`;
 }
 addEventListener('offline',()=>setOffline(true));
@@ -1388,12 +1400,13 @@ function allItems(pre=true){
   return out;
 }
 function tripBounds(){
+  if(!valid(V))return{start:new Date(864e13),end:new Date(864e13)}; // contenu pas encore chargé (ou verrouillé)
   const first=V.programme[0],last=V.programme[V.programme.length-1];
   const firstTimed=allItems(false).find(x=>x.at);
   const dep=V.depart&&V.depart.date&&V.depart.heure?zoned(V.depart.date,V.depart.heure,TZ_ALIAS[(V.depart.fuseau||'').toLowerCase()]||V.depart.fuseau||'America/Toronto'):null;
   return{start:dep||(firstTimed?firstTimed.at:zoned(V.debut,'00:00',first?.fuseau||'America/Toronto')),end:zoned(V.fin,'23:59',last?.fuseau||TZL)};
 }
-function todayIndex(){const n=NOW();return V.programme.findIndex(d=>dayKey(n,d.fuseau||TZL)===d.date);}
+function todayIndex(){const n=NOW();if(!valid(V))return -1;return V.programme.findIndex(d=>dayKey(n,d.fuseau||TZL)===d.date);}
 
 /* ---------- Rendu : en-tête ---------- */
 function renderHeader(){
@@ -1406,6 +1419,11 @@ function renderHeader(){
 }
 
 /* ---------- Rendu : accueil ---------- */
+/* ---------- Langue ---------- */
+(function(){let p=null;try{p=localStorage.getItem(LANG_KEY);}catch(e){}const cur=p==='fr'||p==='en'?p:'auto';
+  $$('[data-lang]').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.lang===cur);b.addEventListener('click',()=>setLang(b.dataset.lang==='auto'?null:b.dataset.lang));});
+  try{if(window.caches)caches.open('voyage-badge').then(c=>c.put(new Request(new URL('__langue__',location.href.split('#')[0].split('?')[0].replace(/[^/]*$/,'')).href),new Response(LANG))).catch(()=>{});}catch(e){}
+})();
 /* Pastille sur l’icône de l’app (écran d’accueil) : nombre d’annonces non lues.
    Le service worker l’augmente à chaque alerte; l’app la remet au bon compte à l’ouverture. */
 function pastille(n){
@@ -1502,7 +1520,7 @@ function renderSkiStatic(){
   $('#infos-ski').innerHTML=(V.infosSki||[]).map(t=>`<li>${esc(t)}</li>`).join('');
   const both=domSel==='both';
   const picks=domAreas().flatMap(a=>(SKI.picks[a]||[]).map(p=>({...p,area:a})));
-  $('#picks').innerHTML=picks.map(p=>`<div class="card pick"><span class="num ${esc(p.level)}"${p.num?'':' aria-hidden="true"'}>${esc(p.num||({blue:'B',black:'N'}[p.level]||'R'))}</span><div>${both?`<span class="area-tag">${esc(DOMS[p.area].nom)}</span>`:''}<h4>${esc(p.title)}</h4><p class="small">${esc(p.levelLabel)} · ${esc(p.sector)}${p.length?' · '+esc(p.length.toLocaleString('fr-CA'))+' m':''}</p><p>${esc(p.text)}</p><div class="row"><span class="tag" data-pick-status="${esc(p.area+'|'+(p.feedId||'')+'|'+(p.liftKw||''))}">État : …</span>${p.mapUrl||p.mapFocus?`<button type="button" class="linkbtn small" data-plan-pick="${esc(p.area+'|'+p.num)}">Voir sur le plan ↑</button>`:''}</div></div></div>`).join('');
+  $('#picks').innerHTML=picks.map(p=>`<div class="card pick"><span class="num ${esc(p.level)}"${p.num?'':' aria-hidden="true"'}>${esc(p.num||({blue:'B',black:'N'}[p.level]||'R'))}</span><div>${both?`<span class="area-tag">${esc(DOMS[p.area].nom)}</span>`:''}<h4>${esc(p.title)}</h4><p class="small">${esc(p.levelLabel)} · ${esc(p.sector)}${p.length?' · '+esc(p.length.toLocaleString(LOC))+' m':''}</p><p>${esc(p.text)}</p><div class="row"><span class="tag" data-pick-status="${esc(p.area+'|'+(p.feedId||'')+'|'+(p.liftKw||''))}">État : …</span>${p.mapUrl||p.mapFocus?`<button type="button" class="linkbtn small" data-plan-pick="${esc(p.area+'|'+p.num)}">Voir sur le plan ↑</button>`:''}</div></div></div>`).join('');
   renderAdresses();
 }
 
@@ -1540,7 +1558,7 @@ const PASSE_KEY=TRIP.id+'-passe-v1';
 function renderPasse(){
   const p=store.get(PASSE_KEY,{})||{};
   $('#passe-fig').hidden=!p.photo;if(p.photo)$('#passe-photo').src=p.photo;
-  $('#passe-date').textContent=p.at?'Photo du '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(new Date(p.at)):'';
+  $('#passe-date').textContent=p.at?'Photo du '+new Intl.DateTimeFormat(LOC,{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(new Date(p.at)):'';
   if(document.activeElement!==$('#passe-numero'))$('#passe-numero').value=p.numero||'';
   $('#passe-add').textContent=p.photo?'Reprendre la photo':'Prendre la photo';
   $('#passe-big').hidden=$('#passe-del').hidden=!(p.photo||p.numero);$('#passe-big').hidden=!p.photo;
@@ -1596,10 +1614,10 @@ function gFete(iso){if(!/^\d{4}-\d\d-\d\d$/.test(iso||'')||!V||!V.debut||!V.fin)
   const a=Date.parse(V.debut+'T00:00:00Z')-10*J,b=Date.parse(V.fin+'T00:00:00Z')+10*J;if(isNaN(a)||isNaN(b))return null;
   for(let y=new Date(a).getUTCFullYear();y<=new Date(b).getUTCFullYear();y++){const t=Date.UTC(y,bm-1,bd);if(t>=a&&t<=b&&y>by)return {date:new Date(t),age:y-by};}
   return null;}
-const gFeteTxt=f=>f.age+' ans le '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',timeZone:'UTC'}).format(f.date);
+const gFeteTxt=f=>f.age+' ans le '+new Intl.DateTimeFormat(LOC,{day:'numeric',month:'long',timeZone:'UTC'}).format(f.date);
 function gAgeHtml(p){const a=gAge(p.naissance),f=gFete(p.naissance);if(a==null&&!f)return '';
   return f?`<span class="fete">${a!=null?esc(a+' ans · '):''}${esc(gFeteTxt(f))}</span>`:`<span class="age">${a} ans</span>`;}
-const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
+const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat(LOC,{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
 const gTel=t=>String(t||'').replace(/[^\d+]/g,'');
 
 /* Lecture CSV : UTF-8 ou Windows-1252 (Excel), séparateur ; , ou tabulation, guillemets. */
@@ -1637,7 +1655,7 @@ function drawGroupe(){
   const L=all.filter(p=>!q||normPhrase([p.prenom,p.nom,p.cellulaire,p.autre].join(' ')).replace(/-/g,' ').includes(q)).sort(gTri);
   const g={F:0,M:0};all.forEach(p=>{if(g[p.genre]!=null)g[p.genre]++;});
   const ages=all.map(p=>gAge(p.naissance)).filter(a=>a!=null),mineurs=ages.filter(a=>a<18).length;
-  $('#g-sum').textContent=all.length+' personne'+(all.length>1?'s':'')+(g.F||g.M?` · ${g.F} femme${g.F>1?'s':''}, ${g.M} homme${g.M>1?'s':''}`:'')+(mineurs?` · ${mineurs} mineur${mineurs>1?'s':''}`:'')+(GRP.maj?' · modifiée le '+new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(GRP.maj)):'');
+  $('#g-sum').textContent=all.length+' personne'+(all.length>1?'s':'')+(g.F||g.M?` · ${g.F} femme${g.F>1?'s':''}, ${g.M} homme${g.M>1?'s':''}`:'')+(mineurs?` · ${mineurs} mineur${mineurs>1?'s':''}`:'')+(GRP.maj?' · modifiée le '+new Intl.DateTimeFormat(LOC,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(GRP.maj)):'');
   $('#g-list').innerHTML=L.map(p=>{const a=gAge(p.naissance);
     const info=[GENRE[p.genre]||p.genre,p.naissance?gDateTxt(p.naissance)+(a!=null?` (${a} ans)`:''):''].filter(Boolean).join(' · ');
     return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${gFete(p.naissance)?`<span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler ${esc(p.cellulaire)}</a><a href="sms:${esc(gTel(p.cellulaire))}">Texto</a><a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
@@ -1694,7 +1712,7 @@ const PRES_KEY=TRIP.id+'-presences-v1';
 let gMode='liste',pGrp='',pMiss=false;
 const pState=()=>{const s0=store.get(PRES_KEY,null)||{};s0.appels=Array.isArray(s0.appels)?s0.appels:[];return s0;};
 const pSave=s0=>store.set(PRES_KEY,s0);
-const pDefNom=()=>'Appel du '+new Intl.DateTimeFormat('fr-CA',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date());
+const pDefNom=()=>'Appel du '+new Intl.DateTimeFormat(LOC,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date());
 function pCur(){const s0=pState();let a=s0.appels.find(x=>x.id===s0.cur);if(!a){a={id:Date.now().toString(36),nom:pDefNom(),at:Date.now(),coches:{}};s0.appels.unshift(a);s0.cur=a.id;pSave(s0);}return a;}
 function drawPres(){
   const s0=pState(),a=pCur();
@@ -1739,7 +1757,7 @@ const tzNom=tz=>tz===S.fuseau?S.fuseauNom:({'America/Toronto':'heure de Montréa
 function volState(v,n){
   if(v.arr&&n>v.arr)return ['done','Arrivé (selon l’horaire)'];
   if(n>=v.dep)return v.arr?['air','En vol (selon l’horaire)']:['air','Parti (selon l’horaire)'];
-  const h=(v.dep-n)/36e5;if(h<=24)return ['soon','Départ dans '+(h<1?Math.max(1,Math.round(h*60))+' min':Math.floor(h)+' h '+String(Math.round((h%1)*60)).padStart(2,'0'))];
+  const h=(v.dep-n)/36e5;if(h<=24){const mm=Math.max(1,Math.round(h*60));return ['soon',(LANG==='en'?'Departs ':'Départ ')+until(mm*6e4)];}
   return ['','Prévu'];
 }
 function volCard(v,n){
@@ -1760,8 +1778,8 @@ function icsEvents(vs){
   const pad=n=>String(n).padStart(2,'0'),u=d=>d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+'00Z';
   const tx=x=>String(x||'').replace(/\\/g,'\\\\').replace(/[,;]/g,m=>'\\'+m).replace(/\n/g,'\\n');const st=u(new Date());const out=[];
   vs.forEach((v,i)=>{const nom=(v.code?v.code+' ':'')+(String(v.depart||'').split(/[·\-–—,(]/)[0].trim())+' → '+(String(v.arrivee||'').split(/[·\-–—,(]/)[0].trim());
-    out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-vol-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(v.dep),'DTEND:'+u(v.arr||new Date(v.dep.getTime()+36e5)),'SUMMARY:'+tx('Vol '+nom),'DESCRIPTION:'+tx(v.note||''),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Vol '+nom),'TRIGGER:-PT3H','END:VALARM','END:VEVENT');
-    if(ckH(v)>0){const o=ckOpen(v);out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-enreg-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(o),'DTEND:'+u(new Date(o.getTime()+30*6e4)),'SUMMARY:'+tx('Enregistrement en ligne : vol '+nom),'DESCRIPTION:'+tx((v.lienEnregistrement?v.lienEnregistrement+'\n':'')+(v.enregistrementNote||'')),...(v.lienEnregistrement?['URL:'+v.lienEnregistrement]:[]),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx('Enregistrement ouvert : vol '+nom),'TRIGGER:PT0S','END:VALARM','END:VEVENT');}});
+    out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-vol-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(v.dep),'DTEND:'+u(v.arr||new Date(v.dep.getTime()+36e5)),'SUMMARY:'+tx((LANG==='en'?'Flight ':'Vol ')+nom),'DESCRIPTION:'+tx(v.note||''),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx((LANG==='en'?'Flight ':'Vol ')+nom),'TRIGGER:-PT3H','END:VALARM','END:VEVENT');
+    if(ckH(v)>0){const o=ckOpen(v);out.push('BEGIN:VEVENT','UID:'+TRIP.id+'-enreg-'+i+'@voyage','DTSTAMP:'+st,'DTSTART:'+u(o),'DTEND:'+u(new Date(o.getTime()+30*6e4)),'SUMMARY:'+tx((LANG==='en'?'Online check-in: flight ':'Enregistrement en ligne : vol ')+nom),'DESCRIPTION:'+tx((v.lienEnregistrement?v.lienEnregistrement+'\n':'')+(v.enregistrementNote||'')),...(v.lienEnregistrement?['URL:'+v.lienEnregistrement]:[]),'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+tx((LANG==='en'?'Check-in open: flight ':'Enregistrement ouvert : vol ')+nom),'TRIGGER:PT0S','END:VALARM','END:VEVENT');}});
   return out;
 }
 function downloadIcs(lines,name){const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//'+TRIP.id+'//FR','CALSCALE:GREGORIAN',...lines,'END:VCALENDAR'].join('\r\n');
@@ -1800,7 +1818,7 @@ function renderNeige(){
     let hi=(h.time||[]).findIndex(t=>t.slice(0,13)>=nowKey);if(hi<0)hi=0;
     const dep=h.snow_depth?.[hi];const ti=(dy.time||[]).indexOf(dayKey(n,TZL));const t0=ti>=0?ti:0;
     const sf=dy.snowfall_sum||[];const today=sf[t0]||0,next3=sf.slice(t0+1,t0+4).reduce((a,b)=>a+(b||0),0);
-    return`<div class="neige-pt"><span>${both&&DOMS[p.domaine]?esc(DOMS[p.domaine].nom)+' · ':''}${esc(p.nom)}${p.altitude?` <span class="small">${esc(p.altitude.toLocaleString('fr-CA'))} m</span>`:''}<br><b>${dep!=null?Math.round(dep*100)+' cm':'—'}</b> <span class="small">de neige au sol</span></span><span class="small">Neige prévue<br>aujourd’hui <b>${Math.round(today)} cm</b><br>3 jours suivants <b>${Math.round(next3)} cm</b></span></div>`;}).join('')||'<p class="small">Aucun point météo pour ce domaine.</p>';
+    return`<div class="neige-pt"><span>${both&&DOMS[p.domaine]?esc(DOMS[p.domaine].nom)+' · ':''}${esc(p.nom)}${p.altitude?` <span class="small">${esc(p.altitude.toLocaleString(LOC))} m</span>`:''}<br><b>${dep!=null?Math.round(dep*100)+' cm':'—'}</b> <span class="small">de neige au sol</span></span><span class="small">Neige prévue<br>aujourd’hui <b>${Math.round(today)} cm</b><br>3 jours suivants <b>${Math.round(next3)} cm</b></span></div>`;}).join('')||'<p class="small">Aucun point météo pour ce domaine.</p>';
 }
 
 /* ---------- Dernière remontée ---------- */
@@ -1813,9 +1831,9 @@ function renderRemontee(){
   const now=hmNow(TZL);const both=domSel==='both';
   let soon=false;
   const rows=list.map(r=>{const [h,m]=r.heure.split(':').map(Number),t=h*60+m,left=t-now;
-    let st='';if(inTrip&&now>=12*60&&left>0){st=left<60?'dans '+left+' min':'dans '+hmTxt(left);if(left<=45)soon=true;}else if(inTrip&&left<=0&&left>-60)st='heure passée';
+    let st='';if(inTrip&&now>=12*60&&left>0){st=left<60?(LANG==='en'?'in ':'dans ')+left+' min':(LANG==='en'?'in ':'dans ')+hmTxt(left);if(left<=45)soon=true;}else if(inTrip&&left<=0&&left>-60)st='heure passée';
     return {r,t,left,st};});
-  const html=rows.map(({r,st})=>`<p class="overline">Dernière remontée${both&&DOMS[r.domaine]?' · '+esc(DOMS[r.domaine].nom):''}</p><div class="when">${esc(r.heure.replace(':',' h '))}${st?` <span class="small" style="font-weight:600">· ${esc(st)}</span>`:''}</div>${r.texte?`<p class="small">${esc(r.texte)}</p>`:''}`).join('');
+  const html=rows.map(({r,st})=>`<p class="overline">Dernière remontée${both&&DOMS[r.domaine]?' · '+esc(DOMS[r.domaine].nom):''}</p><div class="when">${esc(hhmm(r.heure))}${st?` <span class="small" style="font-weight:600">· ${esc(st)}</span>`:''}</div>${r.texte?`<p class="small">${esc(r.texte)}</p>`:''}`).join('');
   const sk=$('#ski-remontee');sk.hidden=!rows.length;sk.innerHTML=html;sk.classList.toggle('soon',soon);
   const hm=$('#home-remontee');const showHome=rows.some(x=>x.st&&x.st!=='heure passée');
   hm.hidden=!showHome;hm.innerHTML=showHome?html:'';hm.classList.toggle('soon',soon);
@@ -1834,13 +1852,14 @@ function renderSondage(){
 
 /* ---------- Partager ma position ---------- */
 function posText(lat,lng,acc,alt){
-  const t=new Intl.DateTimeFormat('fr-CA',{hour:'2-digit',minute:'2-digit'}).format(new Date());
-  return `Ma position (${V.titre||'voyage'}) à ${t} : https://maps.google.com/?q=${lat.toFixed(5)},${lng.toFixed(5)} · précision ± ${Math.round(acc)} m${alt!=null?' · altitude ≈ '+Math.round(alt)+' m':''}`;
+  const t=new Intl.DateTimeFormat(LOC,{hour:'2-digit',minute:'2-digit'}).format(new Date());
+  const u=`https://maps.google.com/?q=${lat.toFixed(5)},${lng.toFixed(5)}`,al=alt!=null?' · altitude ≈ '+Math.round(alt)+' m':'';
+  return LANG==='en'?`My location (${V.titre||'trip'}) at ${t}: ${u} · accuracy ± ${Math.round(acc)} m${al}`:`Ma position (${V.titre||'voyage'}) à ${t} : ${u} · précision ± ${Math.round(acc)} m${al}`;
 }
 function sharePanel(panel,p){
   const {latitude:a,longitude:b,accuracy:acc,altitude:alt}=p.coords;const txt=posText(a,b,acc,alt);const enc=encodeURIComponent(txt);
   panel.hidden=false;
-  panel.innerHTML=`<div class="coords">${a.toFixed(5)}, ${b.toFixed(5)}</div><p class="small">Précision ± ${Math.round(acc)} m${alt!=null?' · altitude ≈ '+Math.round(alt).toLocaleString('fr-CA')+' m':''}. En cas d’urgence, appelez le 112 et lisez ces coordonnées.</p>
+  panel.innerHTML=`<div class="coords">${a.toFixed(5)}, ${b.toFixed(5)}</div><p class="small">Précision ± ${Math.round(acc)} m${alt!=null?' · altitude ≈ '+Math.round(alt).toLocaleString(LOC)+' m':''}. En cas d’urgence, appelez le 112 et lisez ces coordonnées.</p>
   <div class="row">${navigator.share?'<button type="button" data-sp="share">Partager…</button>':''}<a class="btn light" href="https://wa.me/?text=${enc}" target="_blank" rel="noopener">WhatsApp</a><a class="btn light" href="sms:?&body=${enc}">Texto</a><button type="button" class="light" data-sp="copy">Copier</button></div>`;
   panel.querySelector('[data-sp="share"]')?.addEventListener('click',()=>navigator.share({text:txt}).catch(()=>{}));
   panel.querySelector('[data-sp="copy"]').addEventListener('click',e=>{navigator.clipboard?.writeText(txt).then(()=>{e.target.textContent='Copié';setTimeout(()=>e.target.textContent='Copier',2000);});});
@@ -1999,7 +2018,7 @@ function renderCams(){
   $('#cams-wrap').hidden=!list.length;if(!list.length)return;
   const both=domSel==='both',bucket=Math.floor(Date.now()/(10*60e3));
   const src=u=>/^https?:\/\//.test(u||'')?u+(u.includes('?')?'&':'?')+'live='+bucket:'';
-  $('#cams').innerHTML=list.map(c=>`<a class="cam" href="${esc(c.lien)}" target="_blank" rel="noopener"><div class="im${c.image?'':' err'}">${c.image?`<img src="${esc(src(c.image))}" alt="Webcam ${esc(c.nom)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">`:''}</div><div class="cap"><b>${both&&DOMS[c.domaine]?esc(DOMS[c.domaine].nom)+' · ':''}${esc(c.nom)}</b>${c.altitude?`<small>${esc(c.altitude.toLocaleString('fr-CA'))} m</small>`:''}</div></a>`).join('');
+  $('#cams').innerHTML=list.map(c=>`<a class="cam" href="${esc(c.lien)}" target="_blank" rel="noopener"><div class="im${c.image?'':' err'}">${c.image?`<img src="${esc(src(c.image))}" alt="Webcam ${esc(c.nom)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('err')">`:''}</div><div class="cap"><b>${both&&DOMS[c.domaine]?esc(DOMS[c.domaine].nom)+' · ':''}${esc(c.nom)}</b>${c.altitude?`<small>${esc(c.altitude.toLocaleString(LOC))} m</small>`:''}</div></a>`).join('');
 }
 function renderWx(){
   renderCams();renderNeige();
@@ -2007,7 +2026,7 @@ function renderWx(){
   const vis=pts.filter(p=>domAreas().includes(p.domaine));const shown=vis.length?vis:pts;
   if(!shown.some(p=>p.i===wxPoint))wxPoint=shown[0].i;
   const both=domSel==='both';
-  $('#wx-points').innerHTML=shown.map(p=>`<button type="button" data-wx="${p.i}" aria-pressed="${p.i===wxPoint}">${both&&DOMS[p.domaine]?esc(DOMS[p.domaine].nom)+' · ':''}${esc(p.nom)}${p.altitude?` <small>${esc(p.altitude.toLocaleString('fr-CA'))} m</small>`:''}</button>`).join('');
+  $('#wx-points').innerHTML=shown.map(p=>`<button type="button" data-wx="${p.i}" aria-pressed="${p.i===wxPoint}">${both&&DOMS[p.domaine]?esc(DOMS[p.domaine].nom)+' · ':''}${esc(p.nom)}${p.altitude?` <small>${esc(p.altitude.toLocaleString(LOC))} m</small>`:''}</button>`).join('');
   const al=$('#wx-alert');
   if(!wx){al.hidden=false;al.textContent=wxLoading?'Chargement des prévisions…':'Prévisions indisponibles pour le moment. Réessayez avec « Actualiser ».';$('#wx-now').innerHTML='';$('#wx-hours').innerHTML='';$('#wx-days').innerHTML='';return;}
   const ageH=(Date.now()-wx.fetched)/3600e3;
@@ -2019,10 +2038,10 @@ function renderWx(){
   let hi=(h.time||[]).findIndex(t=>t.slice(0,13)>=nowKey.slice(0,13));if(hi<0)hi=0;
   const fz=h.freezing_level_height?.[hi];
   const ti=(dy.time||[]).indexOf(dayKey(n,TZL));const td=ti>=0?ti:0;
-  const sun=t=>t?t.slice(11,16).replace(':',' h '):'—';
+  const sun=t=>t?hhmm(t.slice(11,16)):'—';
   $('#wx-now').innerHTML=`<span class="ic" aria-hidden="true">${wxIcon(c.weather_code,c.is_day)}</span><span class="t">${r0(c.temperature_2m)}°</span><span class="d">${esc(wxDesc(c.weather_code))} · ressenti ${r0(c.apparent_temperature)}°<br>Aujourd’hui ${r0(dy.temperature_2m_min?.[td])}° à ${r0(dy.temperature_2m_max?.[td])}°</span>
-    <div class="meta"><span>Vent <b>${r0(c.wind_speed_10m)} km/h</b>${c.wind_gusts_10m?` · rafales ${r0(c.wind_gusts_10m)}`:''}</span>${fz!=null?`<span>Isotherme 0 °C <b>${(Math.round(fz/50)*50).toLocaleString('fr-CA')} m</b></span>`:''}${dy.snowfall_sum?.[td]?`<span>Neige prévue <b>${r0(dy.snowfall_sum[td])} cm</b></span>`:''}${dy.uv_index_max?.[td]!=null?`<span>UV max <b>${r0(dy.uv_index_max[td])}</b></span>`:''}<span>Soleil ${sun(dy.sunrise?.[td])} – ${sun(dy.sunset?.[td])}</span></div>`;
-  let hh='';for(let i=hi;i<Math.min(hi+12,(h.time||[]).length);i++){const sn=h.snowfall?.[i];hh+=`<div class="wx-h"><small>${i===hi?'Maint.':esc(h.time[i].slice(11,13))+' h'}</small><div class="e" aria-hidden="true">${wxIcon(h.weather_code[i],h.is_day?.[i])}</div><b>${r0(h.temperature_2m[i])}°</b><span class="p">${sn>0.05?r0(sn*10)/10+' cm':(h.precipitation_probability?.[i]??0)+' %'}</span></div>`;}
+    <div class="meta"><span>Vent <b>${r0(c.wind_speed_10m)} km/h</b>${c.wind_gusts_10m?` · rafales ${r0(c.wind_gusts_10m)}`:''}</span>${fz!=null?`<span>Isotherme 0 °C <b>${(Math.round(fz/50)*50).toLocaleString(LOC)} m</b></span>`:''}${dy.snowfall_sum?.[td]?`<span>Neige prévue <b>${r0(dy.snowfall_sum[td])} cm</b></span>`:''}${dy.uv_index_max?.[td]!=null?`<span>UV max <b>${r0(dy.uv_index_max[td])}</b></span>`:''}<span>Soleil ${sun(dy.sunrise?.[td])} – ${sun(dy.sunset?.[td])}</span></div>`;
+  let hh='';for(let i=hi;i<Math.min(hi+12,(h.time||[]).length);i++){const sn=h.snowfall?.[i];hh+=`<div class="wx-h"><small>${i===hi?(LANG==='en'?'Now':'Maint.'):esc(hOnly(h.time[i].slice(11,13)))}</small><div class="e" aria-hidden="true">${wxIcon(h.weather_code[i],h.is_day?.[i])}</div><b>${r0(h.temperature_2m[i])}°</b><span class="p">${sn>0.05?r0(sn*10)/10+' cm':(h.precipitation_probability?.[i]??0)+' %'}</span></div>`;}
   $('#wx-hours').innerHTML=hh;
   $('#wx-days').innerHTML=(dy.time||[]).map((t,i)=>{const dd=zoned(t,'12:00',TZL);const sn=dy.snowfall_sum?.[i]||0;return`<li><span class="dn">${i===td&&ti>=0?'Auj.':esc(fmt(dd,TZL,{weekday:'short'}).replace('.',''))}<small>${esc(fmt(dd,TZL,{day:'numeric',month:'short'}).replace('.',''))}</small></span><span class="e" aria-hidden="true">${wxIcon(dy.weather_code[i])}</span><span class="x">${esc(wxDesc(dy.weather_code[i]))}<br>${sn>0.4?`<span class="snow">❄ ${r0(sn)} cm</span> · `:''}${dy.precipitation_probability_max?.[i]!=null?'précip. '+dy.precipitation_probability_max[i]+' % · ':''}vent ${r0(dy.wind_speed_10m_max?.[i])} km/h</span><span class="mm"><span>${r0(dy.temperature_2m_min[i])}°</span> / <b>${r0(dy.temperature_2m_max[i])}°</b></span></li>`;}).join('');
   const {start,end}=tripBounds();
@@ -2065,8 +2084,8 @@ function startGps(){
     if(!me){me=L.marker(last,{icon:L.divIcon({className:'gps-me',html:'<span></span>',iconSize:[20,20],iconAnchor:[10,10]}),interactive:false,keyboard:false}).addTo(map);ring=L.circle(last,{radius:acc,color:'#216aa7',weight:1,fillOpacity:.12,interactive:false}).addTo(map);}
     else{me.setLatLng(last);ring.setLatLng(last).setRadius(acc);}
     if(follow)map.setView(last,Math.max(map.getZoom(),15));follow=false;
-    const h=hotelPlace();let dist='';if(h){const dm=map.distance(last,[h.lat,h.lng]);dist=' · hôtel à '+(dm<1000?Math.round(dm/10)*10+' m':(dm/1000).toLocaleString('fr-CA',{maximumFractionDigits:1})+' km')+' à vol d’oiseau';}
-    gpsMsg((alt!=null?'Altitude ≈ '+Math.round(alt).toLocaleString('fr-CA')+' m · ':'')+'précision ± '+Math.round(acc)+' m'+dist);
+    const h=hotelPlace();let dist='';if(h){const dm=map.distance(last,[h.lat,h.lng]);dist=' · hôtel à '+(dm<1000?Math.round(dm/10)*10+' m':(dm/1000).toLocaleString(LOC,{maximumFractionDigits:1})+' km')+' à vol d’oiseau';}
+    gpsMsg((alt!=null?'Altitude ≈ '+Math.round(alt).toLocaleString(LOC)+' m · ':'')+'précision ± '+Math.round(acc)+' m'+dist);
   },e=>{gpsMsg({1:'Accès à la position refusé. Sur iPhone : Réglages › Confidentialité et sécurité › Service de localisation › Safari, puis « Lorsque l’app est active ».',2:'Position indisponible. Vérifiez que le Service de localisation est activé.',3:'Le GPS tarde à répondre…'}[e.code]||'Erreur de localisation.');},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
 }
 function stopGps(){if(watch!=null){navigator.geolocation.clearWatch(watch);watch=null;}}
@@ -2355,13 +2374,13 @@ if(TRIP.push&&window.VoyagePush){
   const sel=$('#cv-from'),inp=$('#cv-in');if(!sel||!inp)return;
   sel.innerHTML=DEV.map(c=>`<option value="${c}">${c} · ${esc(NOM[c]||c)}</option>`).join('');
   const rate=(a,b)=>{if(a===b)return 1;const r=fx?.rates||{};const ra=a==='CAD'?1:r[a],rb=b==='CAD'?1:r[b];return ra&&rb?rb/ra:null;};
-  const money=(v,c)=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:c,currencyDisplay:'narrowSymbol',maximumFractionDigits:v>=100?0:2}).format(v);
+  const money=(v,c)=>new Intl.NumberFormat(LOC,{style:'currency',currency:c,currencyDisplay:'narrowSymbol',maximumFractionDigits:v>=100?0:2}).format(v);
   function render(){
     const v=parseFloat(String(inp.value).replace(/\s/g,'').replace(',','.'));const from=sel.value;
     if(!fx){$('#cv-out').innerHTML='';$('#cv-note').textContent=navigator.onLine?'Chargement des taux…':'Taux pas encore chargés : ouvrez l’app une fois avec du réseau.';return;}
     $('#cv-out').innerHTML=isFinite(v)?DEV.filter(c=>c!==from).map(c=>{const r=rate(from,c);return r?`<div><span>${esc(NOM[c]||c)}</span><b>${esc(money(v*r,c))}</b></div>`:'';}).join(''):'';
     const loc=DEV.find(c=>c!=='CAD');const r1=rate(loc,'CAD');
-    $('#cv-note').textContent=(r1?'1 '+loc+' = '+r1.toLocaleString('fr-CA',{maximumFractionDigits:3})+' $ CA · ':'')+'Taux de la BCE du '+(/^\d{4}-\d\d-\d\d$/.test(fx.date)?fmt(zoned(fx.date,'12:00','UTC'),'UTC',{day:'numeric',month:'long',year:'numeric'}):fx.date)+'. Indicatif : votre carte ou le bureau de change ajoutent souvent des frais.';
+    $('#cv-note').textContent=(r1?'1 '+loc+' = '+r1.toLocaleString(LOC,{maximumFractionDigits:3})+' $ CA · ':'')+'Taux de la BCE du '+(/^\d{4}-\d\d-\d\d$/.test(fx.date)?fmt(zoned(fx.date,'12:00','UTC'),'UTC',{day:'numeric',month:'long',year:'numeric'}):fx.date)+'. Indicatif : votre carte ou le bureau de change ajoutent souvent des frais.';
   }
   async function load(){
     const syms=DEV.filter(c=>c!=='CAD').join(',');

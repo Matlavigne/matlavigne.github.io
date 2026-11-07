@@ -107,8 +107,18 @@ function build(tripId, version) {
   const ski = { picks: pistesSuggerees || {}, plans: Object.fromEntries(Object.entries(S.domaines).map(([k, d]) => [k, d.plan || ""])) };
   const trip = { id: T.id, titre: T.titre, depot: DEPOT, push: PUSH };
 
+  // Traduction anglaise : dictionnaire commun + dictionnaire de la station (+ celui du voyage s'il existe)
+  const dico = { exact: {}, regex: [] };
+  for (const f of [path.join(APP, "i18n", "en.json"), path.join(APP, "i18n", "stations", `${T.station}.json`), path.join(APP, "i18n", "voyages", `${T.id}.json`)]) {
+    if (!fs.existsSync(f)) continue;
+    const d = readJson(f);
+    Object.assign(dico.exact, d.exact || {});
+    dico.regex.push(...(d.regex || []));
+  }
+  for (const [re] of dico.regex) new RegExp(re); // une regex invalide arrête la génération
   const tokens = {
     ...blocs(S),
+    LANG_DICO: embed(dico), LANG_SCRIPT: fs.readFileSync(path.join(APP, "i18n", "runtime.js"), "utf8"),
     ID: esc(T.id), TITRE: esc(T.titre), DATES: esc(T.dates), APP_COURT: esc(T.appCourt), APP_COURT_JS: jsStr(T.appCourt),
     NOM_APP: esc(T.nomApp || T.titre), PIED: esc(T.pied || T.appCourt),
     DESCRIPTION: esc(T.description), OG_DESCRIPTION: esc(T.ogDescription || T.description),

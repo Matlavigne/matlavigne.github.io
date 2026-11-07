@@ -1,6 +1,6 @@
 // Service worker généré par _app/build.mjs (ne pas modifier ici : modifier _app/gabarit/sw.js)
 // Changez CACHE à chaque mise à jour pour forcer l'actualisation chez les utilisateurs.
-const CACHE = 'gendronski-st-anton-2027-74ea2746';
+const CACHE = 'gendronski-st-anton-2027-5d0725c6';
 const CORE = ['./', 'index.html', 'manifest.webmanifest',
               'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
               'voyage.json', 'hero.webp', 'installer.html', 'affiche-bagages.html', 'og.jpg', 'editeur.html'];
@@ -135,10 +135,25 @@ self.VOYAGE_PUSH = { worker: 'https://monaccompagnateur-push.monaccompagnateur.w
         }).catch(function () {})
       : Promise.resolve();
 
+    // Langue choisie dans l'app (gardée par l'app dans le cache) : textes génériques en anglais au besoin
+    var EN = {
+      "Nouvelle annonce du groupe. Touchez pour la lire.": "New group announcement. Tap to read it.",
+      "Rappel : un rendez-vous approche. Touchez pour les détails.": "Reminder: a meeting time is coming up. Tap for details.",
+      "Les alertes du voyage fonctionnent sur ce téléphone.": "Trip alerts work on this phone.",
+      "Nouvelle annonce du groupe.": "New group announcement.",
+      "Votre voyage": "Your trip"
+    };
+    var show = caches.open("voyage-badge").then(function (c) { return c.match(self.registration.scope + "__langue__"); })
+      .then(function (r) { return r ? r.text() : "fr"; }).catch(function () { return "fr"; })
+      .then(function (lang) {
+        if (lang === "en") { options.body = EN[options.body] || options.body; title = EN[title] || title; }
+        return self.registration.showNotification(title, options);
+      });
+
     // iOS exige qu'une notification visible soit affichée pour chaque push
     event.waitUntil(Promise.all([
       badge,
-      self.registration.showNotification(title, options),
+      show,
       tellClients({ type: "voyage-push", event: "received", kind: data.kind, id: data.id }),
     ]));
   });

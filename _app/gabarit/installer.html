@@ -149,6 +149,10 @@ ol.steps b{display:block}
   <p class="foot">Voyage organisé par Gendron Ski · app préparée par votre accompagnateur<br>Aucun compte, aucun cookie · <a href="/confidentialite.html">Politique de confidentialité</a></p>
 </main>
 
+<script id="i18n-en" type="application/json">{{LANG_DICO}}</script>
+<script>
+{{LANG_SCRIPT}}
+</script>
 <script>
 //---------------------------------------------------------------------
 //
@@ -2474,8 +2478,8 @@ var qrcode = function() {
   var sh=document.getElementById('share');
   var shareUrl=online?location.href.split('?')[0]:app;
   sh.addEventListener('click',function(){
-    if(navigator.share){navigator.share({title:'App du voyage {{APP_COURT_JS}}',text:'Installez l’app du voyage de ski {{APP_COURT_JS}} :',url:shareUrl}).catch(function(){});}
-    else if(navigator.clipboard){navigator.clipboard.writeText(shareUrl).then(function(){sh.textContent='Lien copié';setTimeout(function(){sh.textContent='Partager ce lien';},2000);});}
+    if(navigator.share){navigator.share({title:LANG==='en'?'Trip app {{APP_COURT_JS}}':'App du voyage {{APP_COURT_JS}}',text:LANG==='en'?'Install the {{APP_COURT_JS}} ski trip app:':'Installez l’app du voyage de ski {{APP_COURT_JS}} :',url:shareUrl}).catch(function(){});}
+    else if(navigator.clipboard){navigator.clipboard.writeText(shareUrl).then(function(){sh.textContent=t('Lien copié');setTimeout(function(){sh.textContent=t('Partager ce lien');},2000);});}
   });
 })();
 </script>
