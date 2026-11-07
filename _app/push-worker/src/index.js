@@ -426,6 +426,34 @@ async function adminSupprimer(env, b) {
   return { ok: true, id, fichiers: n, commit };
 }
 
+// App de l'accompagnateur : ses voyages (tous pour l'administrateur), sans le contenu chiffré
+async function mesVoyages(env, req) {
+  const u = await sessionUser(env, req);
+  if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
+  if (u.must_change) throw new HttpError(428, "Changez d'abord votre mot de passe temporaire");
+  const admin = u.role === "admin";
+  if (admin && !u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
+  const mine = new Set(JSON.parse(u.trips || "[]"));
+  const [vFiles, all] = await Promise.all([ghDir(env, "_app/voyages"), trips(env)]);
+  const ids = vFiles.filter((f) => f.name.endsWith(".json")).map((f) => f.name.slice(0, -5)).filter((id) => (admin || mine.has(id)) && !(all[id] || {}).supprime);
+  await ensureSchema(env);
+  const subs = await env.DB.prepare("SELECT trip, COUNT(*) AS n FROM subscriptions GROUP BY trip").all();
+  const nSubs = Object.fromEntries((subs.results || []).map((r) => [r.trip, r.n]));
+  const stations = {};
+  const voyages = [];
+  for (const id of ids) {
+    const j = await ghFile(env, `_app/voyages/${id}.json`);
+    let v; try { v = JSON.parse(j.text); } catch { continue; }
+    if (v.station && !(v.station in stations)) {
+      const sf = await ghFile(env, `_app/stations/${v.station}.json`);
+      try { const st = JSON.parse(sf.text); stations[v.station] = { nom: st.nom, lieu: st.lieu, fuseau: st.fuseau }; } catch { stations[v.station] = null; }
+    }
+    const t = all[id] || {};
+    voyages.push({ id, titre: v.titre, appCourt: v.appCourt, dates: v.dates, station: stations[v.station] || null, alertes: !!all[id], abonnes: nSubs[id] || 0, clos: !!t.clos, fin: t.end || null });
+  }
+  return { profil: { username: u.username, nom: u.nom || u.username, role: u.role }, voyages };
+}
+
 async function handleAdmin(req, env, path, url) {
   const me = await requireAdmin(env, req);
   if (path.startsWith("/api/admin/comptes")) {
@@ -456,6 +484,7 @@ async function handle(req, env) {
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
   if (path.startsWith("/api/auth/")) return json(env, req, await handleAuth(req, env, path, readJson));
+  if (path === "/api/mes-voyages" && req.method === "GET") return json(env, req, await mesVoyages(env, req));
   if (path.startsWith("/api/admin/")) return json(env, req, await handleAdmin(req, env, path, url));
 
   if (req.method === "GET" && path === "/api/vapid") {

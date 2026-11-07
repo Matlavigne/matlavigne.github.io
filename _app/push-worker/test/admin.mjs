@@ -143,6 +143,19 @@ try {
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(r.json.voyages.find((x) => x.id === nv.id)?.clos === true, "marqué clos dans la liste");
 
+  console.log("\nApp de l'accompagnateur");
+  check((await call("GET", "/api/mes-voyages")).status === 401, "sans session : refusé");
+  r = await call("GET", "/api/mes-voyages", null, ADMIN);
+  check(r.status === 200 && r.json.voyages.length === 2 && r.json.voyages.find((x) => x.id === "st-anton-mars2027")?.station?.nom === "St. Anton", `administrateur : tous les voyages, avec la station (${r.status} ${r.json.erreur || ""})`);
+  r = await call("POST", "/api/admin/comptes", { username: "julie.b", nom: "Julie B.", role: "accompagnateur", trips: ["st-anton-mars2027"] }, ADMIN);
+  const tmp = r.json.motDePasse;
+  r = await call("POST", "/api/auth/connexion", { username: "julie.b", password: tmp });
+  const julie = r.json.session;
+  check((await call("GET", "/api/mes-voyages", null, julie)).status === 428, "mot de passe temporaire : il faut d'abord le changer");
+  await call("POST", "/api/auth/mdp", { ancien: tmp, nouveau: "julie-nouveau-mdp" }, julie);
+  r = await call("GET", "/api/mes-voyages", null, julie);
+  check(r.status === 200 && r.json.voyages.length === 1 && r.json.voyages[0].id === "st-anton-mars2027" && r.json.profil.nom === "Julie B.", "accompagnateur : seulement ses voyages");
+
   console.log("\nSuppression");
   put(`_app/icones/${nv.id}.svg`, "<svg/>"); put(`_app/i18n/voyages/${nv.id}.json`, "{}"); put(`${nv.id}/index.html`, "x");
   r = await call("POST", "/api/admin/supprimer", { trip: nv.id }, ADMIN);

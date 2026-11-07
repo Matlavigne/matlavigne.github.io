@@ -194,3 +194,14 @@ Téléphone perdu et plus de codes de secours : `npm run secours-admin -- <nom d
 Les anciennes **clés d'éditeur** par voyage (`npm run cle`) fonctionnent encore (« Ancienne méthode » dans l'éditeur). Le jeton GitHub personnel reste disponible en mode administrateur.
 
 Tests : `npm test` (alertes, publication, administration, comptes).
+
+## App de l'accompagnateur (monaccompagnateur.ca/accompagnateur)
+
+Page installable (icône « Accompagnateur » sur l'écran d'accueil) où chaque accompagnateur retrouve, après connexion avec son compte, tous les voyages qui lui sont confiés (l'administrateur les voit tous) :
+
+- voyages à venir et en cours d'abord, avec les dates et un compte à rebours (« Départ dans 12 jours », « En cours · jour 3 sur 9 »), puis les voyages passés;
+- boutons App du voyage, Éditeur, Mon groupe (liste de présence, gardée sur le téléphone) et Partager l'app (lien de la page d'installation);
+- nombre de téléphones abonnés aux alertes;
+- réglages : apparence (auto, clair, sombre) et langue, partagés avec les apps des voyages.
+
+Le Worker répond à `GET /api/mes-voyages` (session de compte; mot de passe temporaire changé; double authentification pour l'administrateur). Les dates viennent des champs publics de `<voyage>/voyage.json`.

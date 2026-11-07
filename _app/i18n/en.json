@@ -478,7 +478,8 @@
 "Clair": "Light",
 "Sombre": "Dark",
 "Auto : suit le mode clair ou sombre du téléphone.": "Auto: follows the phone’s light or dark mode.",
-"Alertes du voyage, installation de l’app, apparence, langue et accès accompagnateur : touchez la roue dentée en haut à droite.": "Trip alerts, app installation, appearance, language and trip leader access: tap the gear at the top right."
+"Alertes du voyage, installation de l’app, apparence, langue et accès accompagnateur : touchez la roue dentée en haut à droite.": "Trip alerts, app installation, appearance, language and trip leader access: tap the gear at the top right.",
+"Tous mes voyages": "All my trips"
 },
 "regex": [
 [
