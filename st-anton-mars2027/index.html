@@ -277,6 +277,9 @@ body.locked{overflow:hidden}
 .phr td:first-child{font-weight:600;padding-right:12px}
 .ul{margin:0;padding-left:18px}.ul li{margin:4px 0}
 .foot{text-align:center;font-size:11px;color:var(--muted);padding:18px 0 26px}
+.apercu-bar{position:sticky;top:0;z-index:1200;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f6c343;color:#3d2c00;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;font-size:14px;box-shadow:0 2px 8px #0002}
+body.apercu .hero .wrap{padding-top:22px}
+.apercu-bar a{background:#3d2c00;color:#fff;text-decoration:none;font-weight:600;border-radius:999px;padding:7px 12px;white-space:nowrap}
 .verif{background:#f5e6e4;color:#97302b;border:1px solid #e3b7b2;border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 12px;white-space:pre-wrap}
 @media(max-width:420px){.hero h1{font-size:36px}.hero .h-dates{font-size:21px}.facts{grid-template-columns:1fr}}
 @media print{nav.tabs,.mapbox,.mapbar{display:none!important}.view[hidden]{display:block!important}body{padding:0}}
@@ -1259,7 +1262,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <p class="small" style="text-align:center;margin-top:18px"><a href="#groupe" id="acc-link">Accès accompagnateur</a></p>
-  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 19:15</span></p>
+  <p class="foot">St. Anton · Ski Arlberg · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-06 21:21</span></p>
 </section>
 </main>
 
@@ -1355,7 +1358,8 @@ function boot(){
   V=normTz(valid(cached?.data)?cached.data:def);
   if(cached?.at)syncMsg='Dernière mise à jour reçue le '+fmt(new Date(cached.at),'America/Toronto',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (heure de Montréal).';
   const br=params.has('brouillon')?store.get('voyage-apercu-brouillon',null):null;
-  if(br&&valid(br)){V=normTz(br);PREVIEW=true;const el=$('#verif');el.hidden=false;el.style.background='#fbf3e6';el.style.color='#6b4a1c';el.style.borderColor='#e7cfa8';el.textContent='Aperçu du brouillon de l’éditeur : ces changements ne sont pas encore publiés.';}
+  if(br&&valid(br)){V=normTz(br);PREVIEW=true;const el=document.createElement('div');el.className='apercu-bar';el.setAttribute('role','status');
+    el.innerHTML='<span><b>Aperçu</b> · pas encore publié</span><a href="editeur.html">← Revenir à l’éditeur</a>';document.body.prepend(el);document.body.classList.add('apercu');}
   if(!PREVIEW&&!valid(V))showLock(V,'');
   else renderAll();
   if(!navigator.onLine)setOffline(true);
