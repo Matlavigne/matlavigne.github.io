@@ -1,6 +1,6 @@
 // Service worker généré par _app/build.mjs (ne pas modifier ici : modifier _app/gabarit/sw.js)
 // Changez CACHE à chaque mise à jour pour forcer l'actualisation chez les utilisateurs.
-const CACHE = 'gendronski-zermatt-2027-1ba0b15b';
+const CACHE = 'gendronski-zermatt-2027-93bb0d48';
 const CORE = ['./', 'index.html', 'manifest.webmanifest',
               'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
               'voyage.json', 'hero.webp', 'installer.html', 'affiche-bagages.html', 'og.jpg', 'editeur.html'];
