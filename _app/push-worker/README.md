@@ -143,3 +143,19 @@ npm test
 ```
 
 Le test démarre le Worker en local avec une base D1 locale et un faux service de push. Ce faux service vérifie la signature VAPID et déchiffre chaque message comme le ferait un téléphone. Le test couvre aussi les refus (origine, jeton, clés), le délai de publication, le plafond par passage, l'absence de renvoi, les abonnements expirés et la purge.
+
+## Publication par clé d'éditeur (un accompagnateur = un voyage)
+
+Les accompagnateurs n'ont pas de jeton GitHub. Dans l'éditeur, ils entrent la **clé de l'éditeur** de leur voyage (la même que le « jeton des alertes »). L'éditeur chiffre le contenu avec la phrase du voyage, puis l'envoie au Worker (`POST /api/publier`). Le Worker vérifie la clé et écrit **uniquement** `<voyage>/voyage.json` dans le dépôt, avec le seul jeton GitHub, gardé comme secret.
+
+Garde-fous du Worker : chemin construit par le Worker (jamais reçu de l'éditeur), voyage connu dans `wrangler.toml`, contenu JSON de forme valide et de 600 Ko au plus, refus d'une version en clair si la version en ligne est protégée, refus si le fichier a changé depuis l'ouverture de l'éditeur (409). Chaque publication apparaît dans l'historique GitHub au nom « Éditeur <voyage> ».
+
+Installation (une fois) :
+
+1. Sur github.com, créez un jeton « fine-grained » : dépôt `matlavigne.github.io` seulement, permission **Contents : Read and write**, rien d'autre. Expiration : la plus longue que vous acceptez (à renouveler ensuite).
+2. Dans ce dossier : `npx wrangler secret put GITHUB_TOKEN`, collez le jeton.
+3. `npm run deploy`.
+
+Clés : `npm run cle -- <voyage>` crée ou remplace la clé d'un voyage (l'ancienne cesse de fonctionner aussitôt). Le mode administrateur de l'éditeur (jeton GitHub personnel) reste disponible pour vous.
+
+Tests : `npm test` (alertes et publication, avec un faux GitHub local).

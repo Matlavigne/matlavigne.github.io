@@ -26,6 +26,9 @@ MAX_PAST_SECONDS = "900"
 PUSH_TTL_SECONDS = "43200"
 # Effacement automatique des abonnements N jours après la fin du voyage
 PURGE_AFTER_DAYS = "7"
+# Publication depuis l'éditeur : dépôt et branche du site (le jeton est le secret GITHUB_TOKEN)
+GITHUB_REPO = "Matlavigne/matlavigne.github.io"
+GITHUB_BRANCH = "main"
 
 # Un bloc par voyage. Le nom doit correspondre au dossier de l'app sur monaccompagnateur.ca.
 # end : date de retour (les abonnements sont effacés 7 jours après).
@@ -49,3 +52,5 @@ maxSubs = 300
 
 # Secrets (jamais dans ce fichier), installés par « npm run setup » :
 #   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, EDITOR_TOKENS
+# Secret ajouté pour la publication (npx wrangler secret put GITHUB_TOKEN) :
+#   GITHUB_TOKEN : jeton GitHub « fine-grained », dépôt du site seulement, Contents : Read and write

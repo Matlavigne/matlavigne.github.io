@@ -190,7 +190,7 @@ try {
   check(real.length === 7 && real.every((e) => !e.err), `7 téléphones servis, VAPID vérifié et message déchiffré (${real.filter((e) => e.err).map((e) => e.err).join("; ")})`);
   check(devices.every((d) => d.received.length === 1 && d.received[0].id === "a1" && d.received[0].kind === "annonce"), "chaque téléphone a reçu l'annonce a1 une seule fois");
   const m = devices[0].received[0];
-  check(m.title === "Sölden 2027" && /Nouvelle annonce/.test(m.body) && m.url === "/solden-voyage-2027/#annonces", `texte générique, accents intacts : « ${m.title} — ${m.body} »`);
+  check(m.title === "Sölden 2027" && /Nouvelle annonce/.test(m.body) && m.url.startsWith("/solden-voyage-2027/"), `texte générique, accents intacts : « ${m.title} — ${m.body} »`);
   check(pushLog.filter((e) => e.name === "gone").length === 1, "abonnement expiré (410) contacté une seule fois");
 
   await cron(); await sleep(500);

@@ -1,4 +1,8 @@
-// Worker de notifications pour les apps de voyage monaccompagnateur.ca
+// Worker des apps de voyage monaccompagnateur.ca : alertes et publication depuis l'éditeur.
+//
+// Publication : chaque accompagnateur a une clé d'éditeur propre à SON voyage (EDITOR_TOKENS).
+// Le Worker garde le seul jeton GitHub (secret GITHUB_TOKEN) et n'écrit que <voyage>/voyage.json.
+// Il reçoit le contenu déjà chiffré par l'éditeur : il ne voit pas la phrase du voyage.
 //
 // Le Worker ne voit jamais le contenu du voyage : il garde les abonnements des téléphones
 // et un calendrier (identifiant + heure) des annonces, et envoie des textes génériques.
@@ -74,16 +78,72 @@ function json(env, req, data, status = 200) {
   });
 }
 
-async function readJson(req) {
+async function readJson(req, max = MAX_BODY_BYTES) {
   const len = Number(req.headers.get("Content-Length") || 0);
-  if (len > MAX_BODY_BYTES) throw new HttpError(413, "Requête trop grosse");
+  if (len > max) throw new HttpError(413, "Requête trop grosse");
   const text = await req.text();
-  if (text.length > MAX_BODY_BYTES) throw new HttpError(413, "Requête trop grosse");
+  if (text.length > max) throw new HttpError(413, "Requête trop grosse");
   try { return JSON.parse(text); } catch { throw new HttpError(400, "JSON invalide"); }
 }
 
 class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
+  constructor(status, message, extra) { super(message); this.status = status; this.extra = extra || {}; }
+}
+
+// ---------- publication sur GitHub (un seul fichier par voyage) ----------
+
+const MAX_VOYAGE_BYTES = 600 * 1024;
+
+function github(env) {
+  const repo = String(env.GITHUB_REPO || "");
+  if (!env.GITHUB_TOKEN || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new HttpError(503, "Publication non configurée sur le serveur");
+  return {
+    repo,
+    api: String(env.GITHUB_API || "https://api.github.com").replace(/\/+$/, ""),
+    branch: env.GITHUB_BRANCH || "main",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "monaccompagnateur-editeur",
+    },
+  };
+}
+
+// Le chemin est construit ici, jamais reçu du client : <voyage validé>/voyage.json
+const voyagePath = (trip) => `${trip}/voyage.json`;
+
+function utf8ToB64(text) {
+  const b = new TextEncoder().encode(text);
+  let x = "";
+  for (let i = 0; i < b.length; i += 0x8000) x += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(x);
+}
+function b64ToUtf8(b64) {
+  return new TextDecoder().decode(Uint8Array.from(atob(String(b64).replace(/\s/g, "")), (c) => c.charCodeAt(0)));
+}
+
+async function ghGetVoyage(env, trip) {
+  const g = github(env);
+  const r = await fetch(`${g.api}/repos/${g.repo}/contents/${voyagePath(trip)}?ref=${encodeURIComponent(g.branch)}`, { headers: g.headers });
+  if (r.status === 404) return { sha: null, content: null };
+  if (!r.ok) throw new HttpError(502, `GitHub a répondu ${r.status}`);
+  const j = await r.json();
+  return { sha: j.sha, content: b64ToUtf8(j.content || "") };
+}
+
+// Forme minimale d'un voyage.json : chiffré ({ chiffre: { iv, data, salt } }) ou en clair ({ programme: [] })
+function checkVoyage(text) {
+  let v;
+  try { v = JSON.parse(text); } catch { throw new HttpError(400, "Le contenu n'est pas du JSON valide"); }
+  if (!v || typeof v !== "object" || Array.isArray(v)) throw new HttpError(400, "Le contenu doit être un objet");
+  if (v.chiffre != null) {
+    const c = v.chiffre;
+    if (typeof c !== "object" || !["iv", "data", "salt"].every((k) => typeof c[k] === "string" && c[k].length)) throw new HttpError(400, "Bloc chiffré invalide");
+    return { v, chiffre: true };
+  }
+  if (!Array.isArray(v.programme)) throw new HttpError(400, "Le contenu doit contenir un programme");
+  return { v, chiffre: false };
 }
 
 async function sha256(text) {
@@ -259,6 +319,51 @@ async function handle(req, env) {
     });
   }
 
+  // Lecture du voyage.json à jour (avec son sha) pour l'éditeur
+  if (req.method === "GET" && path === "/api/voyage") {
+    const trip = url.searchParams.get("trip");
+    requireTrip(env, trip);
+    await requireEditor(env, req, trip);
+    return json(env, req, { ok: true, trip, ...(await ghGetVoyage(env, trip)) });
+  }
+
+  // Publication depuis l'éditeur : remplace <voyage>/voyage.json, et rien d'autre
+  if (req.method === "POST" && path === "/api/publier") {
+    const body = await readJson(req, MAX_VOYAGE_BYTES + 4096);
+    requireTrip(env, body.trip);
+    await requireEditor(env, req, body.trip);
+    if (typeof body.content !== "string" || !body.content.length) throw new HttpError(400, "Contenu manquant");
+    if (new TextEncoder().encode(body.content).length > MAX_VOYAGE_BYTES) throw new HttpError(413, "Contenu trop gros");
+    if (body.sha != null && (typeof body.sha !== "string" || !/^[0-9a-f]{40}$/.test(body.sha))) throw new HttpError(400, "sha invalide");
+    const neuf = checkVoyage(body.content);
+
+    const actuel = await ghGetVoyage(env, body.trip);
+    if (actuel.sha && body.sha !== actuel.sha) throw new HttpError(409, "Le voyage a été modifié ailleurs depuis l'ouverture de l'éditeur", { sha_actuel: actuel.sha });
+    // Ne jamais retirer la protection par erreur : un voyage chiffré reste chiffré
+    if (actuel.content && !neuf.chiffre) {
+      let avant = null;
+      try { avant = JSON.parse(actuel.content); } catch {}
+      if (avant && avant.chiffre) throw new HttpError(400, "Le voyage en ligne est protégé par une phrase : publication en clair refusée");
+    }
+
+    const g = github(env);
+    const r = await fetch(`${g.api}/repos/${g.repo}/contents/${voyagePath(body.trip)}`, {
+      method: "PUT",
+      headers: { ...g.headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: `Mise à jour du voyage ${body.trip} depuis l'éditeur`,
+        content: utf8ToB64(body.content),
+        sha: actuel.sha || undefined,
+        branch: g.branch,
+        author: { name: `Éditeur ${body.trip}`, email: "editeur@monaccompagnateur.ca" },
+      }),
+    });
+    if (r.status === 409 || r.status === 422) throw new HttpError(409, "Le voyage a été modifié ailleurs pendant la publication");
+    if (!r.ok) throw new HttpError(502, `GitHub a refusé la publication (${r.status})`);
+    const j = await r.json();
+    return json(env, req, { ok: true, sha: j.content && j.content.sha, commit: j.commit && j.commit.sha });
+  }
+
   // Effacement complet des données d'un voyage
   if (req.method === "POST" && path === "/api/purge") {
     const body = await readJson(req);
@@ -373,7 +478,7 @@ export default {
     } catch (err) {
       const status = err instanceof HttpError ? err.status : 500;
       if (status === 500) console.error(err);
-      return json(env, req, { ok: false, erreur: status === 500 ? "Erreur interne" : err.message }, status);
+      return json(env, req, { ok: false, erreur: status === 500 ? "Erreur interne" : err.message, ...(err.extra || {}) }, status);
     }
   },
 
