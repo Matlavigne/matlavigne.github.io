@@ -64,6 +64,20 @@ input{font:inherit;font-size:17px;padding:11px 12px;border:1.5px solid var(--lin
 .mine{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.mine:first-of-type{border-top:0}
 .mine button{min-height:36px;padding:6px 12px;font-size:14px}
 .mine button.armed{background:#b3261e;border-color:#b3261e;color:#fff}
+.isteps{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.isteps li{display:flex;gap:12px;align-items:flex-start}
+.isteps .ico{flex:none;width:40px;height:40px;border-radius:11px;background:var(--soft);color:var(--pine);display:grid;place-items:center;font-size:18px;font-weight:700}
+.isteps .ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.isteps b{display:block;font-size:15px}.isteps small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
+button.big{width:100%;min-height:52px;font-size:17px}
+.lab{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
+select{font:inherit;font-size:17px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%}
+.notif{display:flex;gap:10px;align-items:center;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px}
+.notif b{display:block}.notif small{display:block;color:var(--muted);font-size:12.5px}
+.notif .st{margin-left:auto;flex:none}
+.pend{background:var(--white);border:1px dashed var(--line);border-radius:18px;padding:14px 16px;margin:0 0 12px;display:flex;gap:12px;align-items:center}
+.pend .ic{font-size:26px;flex:none}.pend b{display:block;font-size:16px}.pend small{display:block;color:var(--muted);font-size:13px}
+.pend.refus{border-color:#e3b7b2}.pend .act{margin-left:auto;flex:none}
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
 </style>
 </head>
@@ -76,9 +90,22 @@ input{font:inherit;font-size:17px;padding:11px 12px;border:1.5px solid var(--lin
 
   <section id="v-install" class="card" hidden>
     <h2 data-i>Installez l’app sur votre téléphone</h2>
-    <p class="small" id="inst-txt"></p>
+    <p class="small" data-i>Une seule icône pour tous vos voyages. Les notifications de votre accompagnateur n’arrivent que dans l’app installée.</p>
+    <div id="inst-android" hidden style="margin-top:12px"><button type="button" id="inst-btn" class="big" data-i>📲 Installer l’app sur l’écran d’accueil</button></div>
+    <ol class="isteps" id="inst-ios" hidden>
+      <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg></span><span><b data-i>Touchez Partager</b><small data-i>Le carré avec une flèche, en bas de Safari (en haut sur iPad).</small></span></li>
+      <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg></span><span><b data-i>Choisissez « Sur l’écran d’accueil »</b><small data-i>Faites défiler la liste vers le bas si vous ne le voyez pas.</small></span></li>
+      <li><span class="ico">✓</span><span><b data-i>Touchez « Ajouter »</b><small data-i>L’icône Mon accompagnateur apparaît avec vos autres apps.</small></span></li>
+      <li><span class="ico">📱</span><span><b data-i>Ouvrez l’app depuis son icône</b><small data-i>Puis touchez « Ajouter un voyage ». C’est là que vous recevrez les notifications.</small></span></li>
+    </ol>
+    <ol class="isteps" id="inst-andro-man" hidden>
+      <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></span><span><b data-i>Touchez le menu ⋮ de Chrome</b><small data-i>En haut à droite.</small></span></li>
+      <li><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg></span><span><b data-i>Choisissez « Installer l’application »</b><small data-i>Ou « Ajouter à l’écran d’accueil ».</small></span></li>
+      <li><span class="ico">📱</span><span><b data-i>Ouvrez l’app depuis son icône</b><small data-i>Puis touchez « Ajouter un voyage ».</small></span></li>
+    </ol>
+    <p class="msg warn" id="inst-other" hidden style="margin:12px 0 0" data-i>Sur iPhone, l’installation se fait seulement dans Safari. Copiez l’adresse de cette page et ouvrez-la dans Safari.</p>
     <div id="inst-phrase" hidden>
-      <p class="small" style="margin:8px 0 0" data-i>Sur iPhone, l’app installée vous demandera une fois la phrase du voyage :</p>
+      <p class="small" style="margin:12px 0 0" data-i>Sur iPhone, l’app installée vous demandera une fois la phrase du voyage :</p>
       <div class="row"><span class="phrase" id="inst-ph"></span><button type="button" class="light" id="inst-copy" data-i>Copier la phrase</button></div>
     </div>
   </section>
@@ -91,12 +118,24 @@ input{font:inherit;font-size:17px;padding:11px 12px;border:1.5px solid var(--lin
 
   <section id="v-add" class="card" hidden>
     <h2 data-i>Ajouter un voyage</h2>
-    <p class="small" data-i>Entrez la phrase du voyage remise par votre accompagnateur (par exemple marmotte-fondue-glacier). Majuscules, accents et espaces n’ont pas d’importance.</p>
-    <form id="add-f" style="display:flex;flex-direction:column;gap:10px;margin-top:10px" autocomplete="off">
-      <input id="add-ph" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Phrase du voyage">
-      <div class="row"><button type="submit" id="add-go" data-i>Ajouter</button><button type="button" class="light" id="add-paste" data-i>Coller</button><button type="button" class="light" id="add-cancel" data-i>Annuler</button></div>
+    <p class="small" data-i>Demandez l’accès à votre accompagnateur : dès qu’il approuve, vous recevez une notification et le voyage s’ouvre dans l’app.</p>
+    <form id="rq-f" style="display:flex;flex-direction:column;gap:10px;margin-top:12px" autocomplete="on">
+      <label class="lab"><span data-i>Voyage</span><select id="rq-trip"></select></label>
+      <label class="lab"><span data-i>Prénom</span><input id="rq-pre" autocomplete="given-name" maxlength="40"></label>
+      <label class="lab"><span data-i>Nom</span><input id="rq-nom" autocomplete="family-name" maxlength="40"></label>
+      <p class="msg warn" id="rq-ios" hidden style="margin:0" data-i>Sur iPhone, installez d’abord l’app (étapes plus haut), puis ouvrez-la depuis son icône et faites la demande là : c’est là que vous recevrez la notification et que votre voyage s’ouvrira.</p>
+      <div class="notif" id="rq-notif"></div>
+      <div class="row"><button type="submit" id="rq-go" data-i>Demander l’accès</button><button type="button" class="light" id="add-cancel" data-i>Annuler</button></div>
     </form>
-    <p class="small" id="add-msg" role="status" style="margin:10px 0 0"></p>
+    <p class="small" id="rq-msg" role="status" style="margin:10px 0 0"></p>
+    <details id="ph-alt" style="margin-top:14px"><summary style="cursor:pointer;color:var(--pine);font-weight:600" data-i>J’ai la phrase du voyage</summary>
+      <p class="small" data-i>Entrez la phrase remise par votre accompagnateur (par exemple marmotte-fondue-glacier). Majuscules, accents et espaces n’ont pas d’importance.</p>
+      <form id="add-f" style="display:flex;flex-direction:column;gap:10px;margin-top:10px" autocomplete="off">
+        <input id="add-ph" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Phrase du voyage">
+        <div class="row"><button type="submit" id="add-go" data-i>Ajouter</button><button type="button" class="light" id="add-paste" data-i>Coller</button></div>
+      </form>
+      <p class="small" id="add-msg" role="status" style="margin:10px 0 0"></p>
+    </details>
   </section>
 
   <section id="v-reglages" hidden>
@@ -142,8 +181,8 @@ const EN={
 'Ajouter':'Add','Coller':'Paste','Annuler':'Cancel','Apparence':'Appearance','Clair':'Light','Sombre':'Dark','Auto : suit le mode clair ou sombre du téléphone.':'Auto: follows the phone’s light or dark mode.',
 'Alertes':'Alerts','Les alertes s’activent dans chaque voyage : ouvrez le voyage, roue dentée ⚙ en haut à droite, « Alertes du voyage ».':'Alerts are turned on in each trip: open the trip, gear ⚙ at the top right, “Trip alerts”.',
 'Voyages sur ce téléphone':'Trips on this phone','Retirer un voyage efface sa phrase et ses données de ce téléphone. Vous pourrez l’ajouter de nouveau avec sa phrase.':'Removing a trip erases its passphrase and data from this phone. You can add it again with its passphrase.',
-'← Mes voyages':'← My trips','Accès accompagnateur':'Trip leader access','Réservé aux accompagnateurs, avec leur compte : leurs voyages, la liste du groupe et l’éditeur.':'For trip leaders, with their account: their trips, the group list and the editor.','Confidentialité':'Privacy','Réglages':'Settings','Retirer':'Remove','Toucher encore pour retirer':'Tap again to remove','Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming',
-'Aucun voyage pour l’instant':'No trip yet','Touchez « Ajouter un voyage » et entrez la phrase reçue de votre accompagnateur.':'Tap “Add a trip” and enter the passphrase from your trip leader.',
+'← Mes voyages':'← My trips','Une seule icône pour tous vos voyages. Les notifications de votre accompagnateur n’arrivent que dans l’app installée.':'One icon for all your trips. Notifications from your trip leader only arrive in the installed app.','📲 Installer l’app sur l’écran d’accueil':'📲 Install the app on your home screen','Touchez Partager':'Tap Share','Le carré avec une flèche, en bas de Safari (en haut sur iPad).':'The square with an arrow, at the bottom of Safari (top on iPad).','Choisissez « Sur l’écran d’accueil »':'Choose “Add to Home Screen”','Faites défiler la liste vers le bas si vous ne le voyez pas.':'Scroll down the list if you don’t see it.','Touchez « Ajouter »':'Tap “Add”','L’icône Mon accompagnateur apparaît avec vos autres apps.':'The Mon accompagnateur icon appears with your other apps.','Ouvrez l’app depuis son icône':'Open the app from its icon','Puis touchez « Ajouter un voyage ». C’est là que vous recevrez les notifications.':'Then tap “Add a trip”. That’s where you’ll get notifications.','Touchez le menu ⋮ de Chrome':'Tap Chrome’s ⋮ menu','En haut à droite.':'At the top right.','Choisissez « Installer l’application »':'Choose “Install app”','Ou « Ajouter à l’écran d’accueil ».':'Or “Add to Home screen”.','Puis touchez « Ajouter un voyage ».':'Then tap “Add a trip”.','Sur iPhone, l’installation se fait seulement dans Safari. Copiez l’adresse de cette page et ouvrez-la dans Safari.':'On iPhone, installing only works in Safari. Copy this page’s address and open it in Safari.','Demandez l’accès à votre accompagnateur : dès qu’il approuve, vous recevez une notification et le voyage s’ouvre dans l’app.':'Ask your trip leader for access: as soon as they approve, you get a notification and the trip opens in the app.','Voyage':'Trip','Prénom':'First name','Nom':'Last name','Sur iPhone, installez d’abord l’app (étapes plus haut), puis ouvrez-la depuis son icône et faites la demande là : c’est là que vous recevrez la notification et que votre voyage s’ouvrira.':'On iPhone, first install the app (steps above), then open it from its icon and make the request there: that’s where you’ll get the notification and your trip will open.','Demander l’accès':'Request access','J’ai la phrase du voyage':'I have the trip passphrase','Entrez la phrase remise par votre accompagnateur (par exemple marmotte-fondue-glacier). Majuscules, accents et espaces n’ont pas d’importance.':'Enter the passphrase from your trip leader (for example marmotte-fondue-glacier). Capitals, accents and spaces don’t matter.','C’est installé ✓':'Installed ✓','Ouvrez l’app Mon accompagnateur depuis votre écran d’accueil, puis touchez « Ajouter un voyage ».':'Open the Mon accompagnateur app from your home screen, then tap “Add a trip”.','Notifications':'Notifications','Disponibles une fois l’app installée et ouverte depuis son icône.':'Available once the app is installed and opened from its icon.','Ce navigateur ne reçoit pas de notifications : ouvrez l’app pour voir l’approbation.':'This browser doesn’t get notifications: open the app to see the approval.','Notifications activées':'Notifications on','Vous serez averti dès que votre accompagnateur approuve.':'You’ll be notified as soon as your trip leader approves.','Notifications bloquées':'Notifications blocked','Réactivez-les dans les réglages du téléphone (Notifications), ou ouvrez l’app pour voir l’approbation.':'Turn them back on in the phone’s settings (Notifications), or open the app to see the approval.','Activer les notifications':'Turn on notifications','Pour savoir dès que votre accès est approuvé, puis recevoir les annonces du groupe.':'To know as soon as your access is approved, then get group announcements.','Activer':'Turn on','Entrez votre prénom et votre nom, comme sur votre réservation.':'Enter your first and last name, as on your booking.','Envoi de la demande…':'Sending the request…','Demande envoyée ✓ Vous recevrez une notification dès que votre accompagnateur l’approuve.':'Request sent ✓ You’ll get a notification as soon as your trip leader approves it.','Demande envoyée ✓ Rouvrez l’app plus tard : le voyage apparaîtra dès que votre accompagnateur l’approuve.':'Request sent ✓ Reopen the app later: the trip will appear as soon as your trip leader approves it.','Demande non approuvée. Vérifiez auprès de votre accompagnateur.':'Request not approved. Check with your trip leader.','En attente d’approbation par votre accompagnateur':'Waiting for your trip leader’s approval','vous serez averti':'you’ll be notified','Vérifier':'Check','L’accès a été approuvé, mais la clé n’a pas pu être ouverte sur ce téléphone. Demandez la phrase du voyage à votre accompagnateur.':'Access was approved, but the key could not be opened on this phone. Ask your trip leader for the trip passphrase.','Accès approuvé ✓':'Access approved ✓','Toujours en attente d’approbation.':'Still waiting for approval.','Accès accompagnateur':'Trip leader access','Réservé aux accompagnateurs, avec leur compte : leurs voyages, la liste du groupe et l’éditeur.':'For trip leaders, with their account: their trips, the group list and the editor.','Confidentialité':'Privacy','Réglages':'Settings','Retirer':'Remove','Toucher encore pour retirer':'Tap again to remove','Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming',
+'Aucun voyage pour l’instant':'No trip yet','Touchez « Ajouter un voyage » pour demander l’accès à votre accompagnateur.':'Tap “Add a trip” to ask your trip leader for access.',
 };
 const T=s=>LANG==='en'&&EN[s]?EN[s]:s;
 document.documentElement.lang=LANG;
@@ -223,7 +262,7 @@ function carte(v){
 function dessiner(){
   const vs=MES.map(v=>({v,e:etat(v)}));
   const act=vs.filter(x=>x.e.k!=='passe').sort((a,b)=>a.e.ord-b.e.ord),pas=vs.filter(x=>x.e.k==='passe').sort((a,b)=>a.e.ord-b.e.ord);
-  $('#list').innerHTML=act.map(x=>carte(x.v)).join('')||(MES.length?'':`<div class="card" style="text-align:center"><p style="margin:0 0 4px"><b>${T('Aucun voyage pour l’instant')}</b></p><p class="small" style="margin:0">${T('Touchez « Ajouter un voyage » et entrez la phrase reçue de votre accompagnateur.')}</p></div>`);
+  $('#list').innerHTML=demandesHtml()+act.map(x=>carte(x.v)).join('')||(MES.length||DEM.length?'':`<div class="card" style="text-align:center"><p style="margin:0 0 4px"><b>${T('Aucun voyage pour l’instant')}</b></p><p class="small" style="margin:0">${T('Touchez « Ajouter un voyage » pour demander l’accès à votre accompagnateur.')}</p></div>`);
   $('#passes').innerHTML=pas.length?`<p class="sect">${T('Voyages passés')}</p>`+pas.map(x=>carte(x.v)).join(''):'';
   $('#mine').innerHTML=MES.map(v=>`<div class="mine"><span>${esc(v.appCourt||v.titre||v.id)}</span><button type="button" class="light" data-retirer="${esc(v.id)}">${T('Retirer')}</button></div>`).join('')||'<p class="small" style="margin:0">—</p>';
 }
@@ -231,7 +270,7 @@ const VUES=['v-list','v-add','v-reglages'];
 function vue(id){VUES.forEach(v=>{$('#'+v).hidden=v!==id;});$('#gear').setAttribute('aria-pressed',id==='v-reglages');scrollTo(0,0);}
 $('#gear').onclick=()=>{msg('');vue($('#v-reglages').hidden?'v-reglages':'v-list');};
 $('#r-back').onclick=()=>vue('v-list');
-$('#b-add').onclick=()=>{msg('');$('#add-msg').textContent='';$('#add-ph').value='';vue('v-add');$('#add-ph').focus();};
+$('#b-add').onclick=()=>ouvrirDemande('');
 $('#add-cancel').onclick=()=>vue('v-list');
 $('#add-paste').onclick=async()=>{try{$('#add-ph').value=(await navigator.clipboard.readText()).trim();}catch(e){$('#add-ph').focus();}};
 $('#add-f').addEventListener('submit',async e=>{e.preventDefault();
@@ -252,10 +291,13 @@ $('#inst-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#in
 
 /* ---------- Lien d’invitation : #cle=la-phrase (&v=voyage) — jamais envoyé au serveur, retiré aussitôt de l’adresse ---------- */
 async function lien(){
+  if(location.hash==='#acces'){history.replaceState(null,'',location.pathname);verifierDemandes();return '';}
   const h=new URLSearchParams(location.hash.slice(1));const ph=h.get('cle')||'';let vise=h.get('v')||'';
   if(!ph&&!vise)return '';
   history.replaceState(null,'',location.pathname);
   if(vise&&!CATALOGUE.some(c=>c.id===vise))vise='';
+  // Lien sans phrase : demande d’accès à l’accompagnateur (sauf si le voyage n’est pas protégé ou déjà ajouté)
+  if(vise&&!ph){if(MES.some(m=>m.id===vise))return '';try{const v=await publicDe(vise);if(!v.chiffre){garder(vise,v);dessiner();return '';}}catch(e){}ouvrirDemande(vise);return '';}
   msg(LANG==='en'?'Adding your trip…':'Ajout de votre voyage…','info');
   try{const id=await ajouter(ph,vise);
     if(id){dessiner();vue('v-list');msg((LANG==='en'?'Added to your trips: ':'Ajouté à vos voyages : ')+'<b>'+esc(nomDe(id))+'</b>','ok');}
@@ -264,6 +306,120 @@ async function lien(){
   return ph;
 }
 addEventListener('hashchange',()=>{lien().then(ph=>{if(ph&&ios&&!standalone()){$('#inst-phrase').hidden=false;$('#inst-ph').textContent=ph;}});});
+
+/* ---------- Installation : bouton sur Android, étapes claires sur iPhone ---------- */
+let installEv=null;
+const autreNav=ios&&/CriOS|FxiOS|EdgiOS|FBAN|FBAV|Instagram|Line\//.test(navigator.userAgent);
+function majInstall(){
+  if(standalone()){$('#v-install').hidden=true;return;}
+  $('#inst-android').hidden=!installEv;
+  $('#inst-ios').hidden=!ios||autreNav;$('#inst-other').hidden=!autreNav;
+  $('#inst-andro-man').hidden=ios||!!installEv;
+}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;if(!$('#v-install').hidden)majInstall();});
+$('#inst-btn').onclick=async()=>{if(!installEv)return;installEv.prompt();try{const r=await installEv.userChoice;if(r.outcome==='accepted'){installEv=null;$('#v-install').innerHTML=`<h2>${T('C’est installé ✓')}</h2><p class="small">${T('Ouvrez l’app Mon accompagnateur depuis votre écran d’accueil, puis touchez « Ajouter un voyage ».')}</p>`;}}catch(e){}};
+addEventListener('appinstalled',()=>{installEv=null;});
+
+/* ---------- Demande d’accès (approbation par l’accompagnateur) ----------
+   Le téléphone crée sa propre paire de clés (la clé privée ne le quitte jamais, gardée dans IndexedDB).
+   L’accompagnateur chiffre la clé du voyage pour cette clé publique : le serveur ne peut pas la lire. */
+const WORKER='https://api.monaccompagnateur.ca';
+const DK='monaccompagnateur-demandes';
+let DEM=store.get(DK,[]);if(!Array.isArray(DEM))DEM=[];
+const saveDem=()=>store.set(DK,DEM);
+function idb(){return new Promise((ok,ko)=>{const r=indexedDB.open('monaccompagnateur',1);r.onupgradeneeded=()=>r.result.createObjectStore('cles');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error);});}
+async function idbGet(k){const db=await idb();return new Promise((ok,ko)=>{const r=db.transaction('cles').objectStore('cles').get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error);});}
+async function idbSet(k,v){const db=await idb();return new Promise((ok,ko)=>{const t=db.transaction('cles','readwrite');t.objectStore('cles').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>ko(t.error);});}
+async function cleAppareil(){
+  let kp=await idbGet('appareil').catch(()=>null);
+  if(!kp){kp=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},false,['deriveKey']);await idbSet('appareil',kp);}
+  return kp;
+}
+async function api(method,path,body,jeton){
+  const r=await fetch(WORKER+path,{method,headers:{'Content-Type':'application/json',...(jeton?{Authorization:'Bearer '+jeton}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;throw e;}return j;}
+const b64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0));};
+/* Notifications : abonnement du service worker de l’app */
+const notifOk=()=>'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window&&!(ios&&!standalone());
+async function abonnement(){
+  const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(()=>no(Error('sw')),6000))]);
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub){const {publicKey}=await api('GET','/api/vapid');sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(publicKey)});}
+  const j=sub.toJSON();return {endpoint:j.endpoint,keys:j.keys};
+}
+function majNotif(){
+  const z=$('#rq-notif');if(!z)return;
+  if(!notifOk()){z.innerHTML=`<span>🔕</span><span><b>${T('Notifications')}</b><small>${ios&&!standalone()?T('Disponibles une fois l’app installée et ouverte depuis son icône.'):T('Ce navigateur ne reçoit pas de notifications : ouvrez l’app pour voir l’approbation.')}</small></span>`;return;}
+  const p=Notification.permission;
+  z.innerHTML=p==='granted'?`<span>🔔</span><span><b>${T('Notifications activées')}</b><small>${T('Vous serez averti dès que votre accompagnateur approuve.')}</small></span>`
+    :p==='denied'?`<span>🔕</span><span><b>${T('Notifications bloquées')}</b><small>${T('Réactivez-les dans les réglages du téléphone (Notifications), ou ouvrez l’app pour voir l’approbation.')}</small></span>`
+    :`<span>🔔</span><span><b>${T('Activer les notifications')}</b><small>${T('Pour savoir dès que votre accès est approuvé, puis recevoir les annonces du groupe.')}</small></span><button type="button" class="light st" id="rq-nb">${T('Activer')}</button>`;
+  const b=$('#rq-nb');if(b)b.onclick=async()=>{try{await Notification.requestPermission();}catch(e){}majNotif();};
+}
+function ouvrirDemande(id){
+  msg('');$('#rq-msg').textContent='';$('#add-msg').textContent='';$('#add-ph').value='';
+  const deja=new Set(MES.map(m=>m.id));
+  const L=CATALOGUE.filter(c=>!deja.has(c.id));
+  $('#rq-trip').innerHTML=(L.length?L:CATALOGUE).map(c=>`<option value="${esc(c.id)}"${c.id===id?' selected':''}>${esc(c.appCourt||c.titre)}</option>`).join('');
+  const bloque=ios&&!standalone();$('#rq-ios').hidden=!bloque;$('#rq-go').disabled=bloque||!CATALOGUE.length;
+  try{const n=store.get('monaccompagnateur-nom',null);if(n){$('#rq-pre').value=n.pre||'';$('#rq-nom').value=n.nom||'';}}catch(e){}
+  majNotif();vue('v-add');
+}
+$('#rq-f').addEventListener('submit',async e=>{e.preventDefault();
+  const trip=$('#rq-trip').value,pre=$('#rq-pre').value.trim(),nom=$('#rq-nom').value.trim();
+  if(!trip)return;if(!pre||!nom){$('#rq-msg').textContent=T('Entrez votre prénom et votre nom, comme sur votre réservation.');return;}
+  // La permission doit être demandée tout de suite après le toucher (iPhone)
+  let perm=null;if(notifOk()&&Notification.permission==='default'){try{perm=Notification.requestPermission();}catch(x){}}
+  $('#rq-go').disabled=true;$('#rq-msg').textContent=T('Envoi de la demande…');
+  try{
+    if(perm)await perm;
+    let sub=null;if(notifOk()&&Notification.permission==='granted'){try{sub=await abonnement();}catch(x){}}
+    const kp=await cleAppareil();const jwk=await crypto.subtle.exportKey('jwk',kp.publicKey);
+    const r=await api('POST','/api/acces/demande',{trip,nom:pre+' '+nom,pub:{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y},sub});
+    store.set('monaccompagnateur-nom',{pre,nom});
+    DEM=DEM.filter(d=>d.trip!==trip);DEM.push({id:r.id,jeton:r.jeton,trip,nom:pre+' '+nom,at:Date.now(),statut:'attente',notif:!!sub});saveDem();
+    dessiner();vue('v-list');
+    msg(sub?T('Demande envoyée ✓ Vous recevrez une notification dès que votre accompagnateur l’approuve.'):T('Demande envoyée ✓ Rouvrez l’app plus tard : le voyage apparaîtra dès que votre accompagnateur l’approuve.'),'ok');
+  }catch(x){$('#rq-msg').textContent=x.message;}
+  $('#rq-go').disabled=false;
+});
+function demandesHtml(){
+  return DEM.map(d=>{const n=esc(nomDe(d.trip));
+    return d.statut==='refus'?`<div class="pend refus"><span class="ic">✋</span><span><b>${n}</b><small>${T('Demande non approuvée. Vérifiez auprès de votre accompagnateur.')}</small></span><button type="button" class="light act" data-dem-x="${esc(d.id)}">${T('Retirer')}</button></div>`
+      :`<div class="pend"><span class="ic">⏳</span><span><b>${n}</b><small>${T('En attente d’approbation par votre accompagnateur')}${d.notif?' · '+T('vous serez averti'):''}</small></span><button type="button" class="light act" data-dem-v="${esc(d.id)}">${T('Vérifier')}</button></div>`;}).join('');
+}
+document.addEventListener('click',e=>{
+  const x=e.target.closest('[data-dem-x]');if(x){DEM=DEM.filter(d=>d.id!==x.dataset.demX);saveDem();dessiner();return;}
+  if(e.target.closest('[data-dem-v]'))verifierDemandes(true);
+});
+/* Réception de la clé du voyage, chiffrée pour ce téléphone */
+async function ouvrirCle(c){
+  const kp=await cleAppareil();
+  const epk=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:c.epk.x,y:c.epk.y,ext:true},{name:'ECDH',namedCurve:'P-256'},false,[]);
+  const k=await crypto.subtle.deriveKey({name:'ECDH',public:epk},kp.privateKey,{name:'AES-GCM',length:256},false,['decrypt']);
+  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(c.iv)},k,b64u(c.data))));
+}
+let verifEnCours=false;
+async function verifierDemandes(manuel){
+  if(verifEnCours||!DEM.some(d=>d.statut==='attente'))return;verifEnCours=true;
+  try{for(const d of DEM.filter(x=>x.statut==='attente')){
+    let r;try{r=await api('GET','/api/acces/etat?id='+encodeURIComponent(d.id),null,d.jeton);}catch(x){if(x.status===404){d.statut='refus';}continue;}
+    if(r.statut==='refus'){d.statut='refus';continue;}
+    if(r.statut!=='ok')continue;
+    let v=null;try{v=await publicDe(d.trip);}catch(x){}
+    if(r.cle){try{const cle=await ouvrirCle(r.cle);store.set(d.trip+'-cle-v1',cle);}catch(x){msg(T('L’accès a été approuvé, mais la clé n’a pas pu être ouverte sur ce téléphone. Demandez la phrase du voyage à votre accompagnateur.'),'err');d.statut='refus';continue;}}
+    garder(d.trip,v||{});d.statut='fait';
+    msg(T('Accès approuvé ✓')+' <b>'+esc(nomDe(d.trip))+'</b>','ok');
+  }
+  DEM=DEM.filter(d=>d.statut!=='fait');saveDem();dessiner();
+  if(manuel&&DEM.some(d=>d.statut==='attente'))msg(T('Toujours en attente d’approbation.'),'info');}
+  finally{verifEnCours=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifierDemandes();});
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if((e.data||{}).kind==='acces')verifierDemandes();});
+setInterval(()=>{if(!document.hidden)verifierDemandes();},60000);
+/* Langue des notifications (lue par le service worker) */
+try{caches.open('voyage-badge').then(c=>c.put(new Request('/app/__langue__'),new Response(LANG)));}catch(e){}
 
 /* ---------- Démarrage ---------- */
 async function demarrer(){
@@ -276,11 +432,9 @@ async function demarrer(){
   await Promise.all(MES.map(async m=>{try{const v=await publicDe(m.id);Object.assign(m,{titre:v.titre,datesTexte:v.datesTexte,debut:v.debut,fin:v.fin});const c=CATALOGUE.find(x=>x.id===m.id);if(c)m.appCourt=c.appCourt;}catch(e){}}));
   // Un voyage supprimé du site disparaît de la liste
   if(CATALOGUE.length)MES=MES.filter(m=>CATALOGUE.some(c=>c.id===m.id));
-  saveMes();dessiner();
+  saveMes();dessiner();verifierDemandes();
   if(!standalone()){
-    $('#v-install').hidden=false;
-    $('#inst-txt').textContent=ios?(LANG==='en'?'In Safari, tap Share, then “Add to Home Screen”. All your trips will be in this single app.':'Dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Tous vos voyages seront dans cette seule app.')
-      :(LANG==='en'?'In Chrome, ⋮ menu, then “Install app”. All your trips will be in this single app.':'Dans Chrome, menu ⋮, puis « Installer l’application ». Tous vos voyages seront dans cette seule app.');
+    $('#v-install').hidden=false;majInstall();
     if(ph&&ios){$('#inst-phrase').hidden=false;$('#inst-ph').textContent=ph;}
   }
 }

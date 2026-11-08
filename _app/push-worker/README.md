@@ -210,3 +210,10 @@ Le Worker répond à `GET /api/mes-voyages` (session de compte; mot de passe tem
 ## Adresse du Worker
 
 Les apps appellent `https://api.monaccompagnateur.ca` (domaine monaccompagnateur.ca géré dans le DNS de Cloudflare; le site reste sur GitHub Pages en « DNS only »). L'ancienne adresse `monaccompagnateur-push.monaccompagnateur.workers.dev` reste active (`workers_dev = true`) pour les téléphones qui n'ont pas encore la nouvelle version des apps.
+
+## Accès par approbation (sans phrase pour le voyageur)
+
+- Le voyageur, dans l'app `/app/` : « Ajouter un voyage » › prénom, nom, notifications › « Demander l'accès ». Son téléphone crée une paire de clés ECDH P-256 (clé privée non exportable, dans IndexedDB). `POST /api/acces/demande` (nom, clé publique, abonnement aux notifications facultatif) renvoie un identifiant et un jeton (gardé haché).
+- L'accompagnateur, dans l'accès accompagnateur : bouton « Demandes d'accès » du voyage (`GET /api/acces/demandes`). Les noms sont comparés à la liste du groupe sur son téléphone seulement. À l'approbation, son app dérive la clé du voyage depuis la phrase et la chiffre pour la clé publique de chaque téléphone (ECDH + AES-GCM); `POST /api/acces/decision` la transmet : le Worker ne peut pas la lire.
+- Le Worker envoie la notification « Accès approuvé » et abonne le téléphone aux alertes du voyage. Le voyageur récupère la clé chiffrée (`GET /api/acces/etat`, avec son jeton) et l'app s'ouvre déverrouillée.
+- Limites : 10 demandes par heure et par adresse IP pour un voyage, 400 demandes en attente par voyage. Les demandes sont effacées avec le voyage (clôture, suppression ou 7 jours après la fin).

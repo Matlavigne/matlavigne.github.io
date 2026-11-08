@@ -187,6 +187,34 @@ try {
   check((await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["inconnu"] }, ADMIN)).status === 400, "un compte inconnu est refusé");
   check((await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: [] }, julie)).status === 403, "réservé à l'administrateur");
 
+  console.log("\nAccès par approbation");
+  const b64u = (n, first) => { const x = crypto.randomBytes(n); if (first != null) x[0] = first; return x.toString("base64url"); };
+  const pub = { kty: "EC", crv: "P-256", x: b64u(32), y: b64u(32) };
+  const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/essai-" + b64u(8), keys: { p256dh: b64u(65, 4), auth: b64u(16) } };
+  check((await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "X", pub })).status === 400, "nom trop court refusé");
+  check((await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "Paul Ancien", pub: { kty: "EC" } })).status === 400, "clé d'appareil invalide refusée");
+  r = await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "Paul Tremblay", pub, sub });
+  check(r.status === 200 && r.json.id && r.json.jeton, `demande créée (${r.status} ${r.json.erreur || ""})`);
+  const dem = r.json;
+  r = await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "Inconnu Suspect", pub });
+  const dem2 = r.json;
+  r = await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton);
+  check(r.status === 200 && r.json.statut === "attente" && !r.json.cle, "le voyageur voit « en attente »");
+  check((await call("GET", "/api/acces/etat?id=" + dem.id, null, dem2.jeton)).status === 404, "le jeton d'une autre demande ne fonctionne pas");
+  check((await call("GET", "/api/acces/demandes?trip=st-anton-mars2027")).status === 401, "liste des demandes : pas sans connexion");
+  r = await call("GET", "/api/acces/demandes?trip=st-anton-mars2027", null, ADMIN);
+  check(r.status === 200 && r.json.demandes.length === 2 && r.json.demandes.some((d) => d.nom === "Paul Tremblay" && d.notif && d.pub.x === pub.x), "l'accompagnateur voit les demandes, avec la clé publique");
+  r = await call("GET", "/api/mes-voyages", null, ADMIN);
+  check(r.json.voyages.find((v) => v.id === "st-anton-mars2027").demandes === 2, "pastille : 2 demandes en attente");
+  const cleCh = { epk: { kty: "EC", crv: "P-256", x: b64u(32), y: b64u(32) }, iv: b64u(12), data: b64u(60) };
+  r = await call("POST", "/api/acces/decision", { trip: "st-anton-mars2027", decisions: [{ id: dem.id, ok: true, cle: cleCh }, { id: dem2.id, ok: false }] }, ADMIN);
+  check(r.status === 200 && r.json.approuvees === 1 && r.json.refusees === 1, `approbation et refus (${r.status} ${r.json.erreur || ""})`);
+  r = await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton);
+  check(r.json.statut === "ok" && r.json.cle && r.json.cle.data === cleCh.data, "le voyageur reçoit la clé chiffrée pour son téléphone");
+  check((await call("GET", "/api/acces/etat?id=" + dem2.id, null, dem2.jeton)).json.statut === "refus", "demande refusée");
+  r = await call("GET", "/api/status?trip=st-anton-mars2027", null, ADMIN);
+  check(r.status === 200 && r.json.abonnements >= 1, `approuvé : abonné aux alertes du voyage (${r.json.abonnements})`);
+
   console.log("\nSuppression");
   put(`_app/icones/${nv.id}.svg`, "<svg/>"); put(`_app/i18n/voyages/${nv.id}.json`, "{}"); put(`${nv.id}/index.html`, "x");
   r = await call("POST", "/api/admin/supprimer", { trip: nv.id }, ADMIN);

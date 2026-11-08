@@ -444,6 +444,101 @@ async function adminSupprimer(env, b) {
   return { ok: true, id, fichiers: n, commit };
 }
 
+// ---------- Accès par approbation ----------
+// Le voyageur demande l'accès avec son nom et la clé publique de son téléphone; l'accompagnateur approuve depuis son app,
+// qui chiffre la clé du voyage pour ce téléphone seulement. Le Worker transmet sans pouvoir lire.
+let demandesOk = false;
+async function ensureDemandes(env) {
+  if (demandesOk) return;
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS demandes (id TEXT PRIMARY KEY, trip TEXT NOT NULL, nom TEXT NOT NULL, pub TEXT NOT NULL, jeton TEXT NOT NULL, sub TEXT, statut TEXT NOT NULL DEFAULT 'attente', cle TEXT, ip TEXT, created INTEGER NOT NULL, decided INTEGER, par TEXT)`).run();
+  demandesOk = true;
+}
+const rid = (n = 18) => { const a = crypto.getRandomValues(new Uint8Array(n)); return btoa(String.fromCharCode(...a)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+async function shaHex(t) { const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
+function checkSub(env, s) {
+  if (!s) return null;
+  const keys = s.keys || {};
+  if (!validEndpoint(env, s.endpoint) || !validKey(keys.p256dh, 65, 4) || !validKey(keys.auth, 16)) throw new HttpError(400, "Abonnement aux notifications invalide");
+  return JSON.stringify({ endpoint: s.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } });
+}
+async function demandeAuth(env, req, id) {
+  const m = (req.headers.get("Authorization") || "").match(/^Bearer\s+([A-Za-z0-9_-]{20,})$/);
+  if (!m) throw new HttpError(401, "Jeton manquant");
+  await ensureDemandes(env);
+  const d = await env.DB.prepare("SELECT * FROM demandes WHERE id = ?").bind(String(id || "")).first();
+  if (!d || d.jeton !== await shaHex(m[1])) throw new HttpError(404, "Demande introuvable");
+  return d;
+}
+async function handleAcces(req, env, path, url) {
+  await ensureDemandes(env);
+  if (req.method === "POST" && path === "/api/acces/demande") {
+    if (!allowedOrigin(env, req.headers.get("Origin"))) throw new HttpError(403, "Origine refusée");
+    const b = await readJson(req);
+    const t = await requireTrip(env, b.trip);
+    if (t.clos) throw new HttpError(410, "Ce voyage est terminé");
+    const nom = String(b.nom || "").replace(/\s+/g, " ").trim();
+    if (nom.length < 2 || nom.length > 80) throw new HttpError(400, "Entrez votre prénom et votre nom");
+    const k = b.pub || {};
+    if (k.kty !== "EC" || k.crv !== "P-256" || !/^[A-Za-z0-9_-]{40,50}$/.test(k.x || "") || !/^[A-Za-z0-9_-]{40,50}$/.test(k.y || "")) throw new HttpError(400, "Clé de l'appareil invalide");
+    const sub = checkSub(env, b.sub);
+    const ip = await shaHex((req.headers.get("CF-Connecting-IP") || "") + "|" + b.trip);
+    const now = Date.now();
+    const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM demandes WHERE ip = ? AND created > ?").bind(ip, now - 3600e3).first();
+    if (recent.n >= 10) throw new HttpError(429, "Trop de demandes : réessayez dans une heure");
+    const att = await env.DB.prepare("SELECT COUNT(*) AS n FROM demandes WHERE trip = ? AND statut = 'attente'").bind(b.trip).first();
+    if (att.n >= 400) throw new HttpError(429, "Trop de demandes en attente pour ce voyage");
+    const id = rid(12), jeton = rid(24);
+    await env.DB.prepare("INSERT INTO demandes (id, trip, nom, pub, jeton, sub, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, b.trip, nom, JSON.stringify({ kty: "EC", crv: "P-256", x: k.x, y: k.y }), await shaHex(jeton), sub, ip, now).run();
+    return { ok: true, id, jeton };
+  }
+  if (req.method === "GET" && path === "/api/acces/etat") {
+    const d = await demandeAuth(env, req, url.searchParams.get("id"));
+    return { statut: d.statut, trip: d.trip, cle: d.statut === "ok" && d.cle ? JSON.parse(d.cle) : null };
+  }
+  if (req.method === "POST" && path === "/api/acces/abonnement") {
+    const b = await readJson(req);
+    const d = await demandeAuth(env, req, b.id);
+    const sub = checkSub(env, b.sub);
+    await env.DB.prepare("UPDATE demandes SET sub = ? WHERE id = ?").bind(sub, d.id).run();
+    return { ok: true };
+  }
+  if (req.method === "GET" && path === "/api/acces/demandes") {
+    const trip = url.searchParams.get("trip") || "";
+    await requireTrip(env, trip); await requireEditor(env, req, trip);
+    const r = await env.DB.prepare("SELECT id, nom, pub, statut, created, decided, par, sub IS NOT NULL AS notif FROM demandes WHERE trip = ? ORDER BY created DESC LIMIT 500").bind(trip).all();
+    return { demandes: (r.results || []).map((d) => ({ ...d, pub: JSON.parse(d.pub), notif: !!d.notif })) };
+  }
+  if (req.method === "POST" && path === "/api/acces/decision") {
+    const b = await readJson(req, 512 * 1024);
+    const t = await requireTrip(env, b.trip); await requireEditor(env, req, b.trip);
+    const u = await sessionUser(env, req);
+    const c = cfg(env), now = Date.now();
+    const list = Array.isArray(b.decisions) ? b.decisions.slice(0, 500) : [];
+    let ok = 0, refus = 0, notifs = 0;
+    for (const x of list) {
+      const d = await env.DB.prepare("SELECT * FROM demandes WHERE id = ? AND trip = ?").bind(String(x.id || ""), b.trip).first();
+      if (!d) continue;
+      if (!x.ok) { await env.DB.prepare("UPDATE demandes SET statut = 'refus', cle = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u ? u.username : "cle", d.id).run(); refus++; continue; }
+      const cle = x.cle == null ? null : JSON.stringify(x.cle);
+      if (cle && cle.length > 4000) throw new HttpError(400, "Clé chiffrée trop longue");
+      await env.DB.prepare("UPDATE demandes SET statut = 'ok', cle = ?, decided = ?, par = ? WHERE id = ?").bind(cle, now, u ? u.username : "cle", d.id).run();
+      ok++;
+      if (d.sub && d.statut !== "ok") {
+        const s = JSON.parse(d.sub);
+        // Abonné aux alertes du voyage du même coup
+        await env.DB.prepare(`INSERT INTO subscriptions (trip, endpoint, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (trip, endpoint) DO NOTHING`).bind(b.trip, s.endpoint, s.keys.p256dh, s.keys.auth, now).run();
+        if (c.vapid.privateJwk) {
+          const r = await sendPush({ endpoint: s.endpoint, p256dh: s.keys.p256dh, auth: s.keys.auth }, { title: t.title || "Votre voyage", body: "Accès approuvé : touchez pour ouvrir votre voyage.", url: "/app/#acces", tag: `acces:${b.trip}`, kind: "acces", id: d.id }, c.vapid, { ttl: 86400, urgency: "high" }).catch(() => ({ status: 0 }));
+          if (r.status >= 200 && r.status < 300) notifs++;
+        }
+      }
+    }
+    return { ok: true, approuvees: ok, refusees: refus, notifiees: notifs };
+  }
+  throw new HttpError(404, "Introuvable");
+}
+
 // App de l'accompagnateur : ses voyages (tous pour l'administrateur), sans le contenu chiffré
 async function mesVoyages(env, req) {
   const u = await sessionUser(env, req);
@@ -457,6 +552,9 @@ async function mesVoyages(env, req) {
   await ensureSchema(env);
   const subs = await env.DB.prepare("SELECT trip, COUNT(*) AS n FROM subscriptions GROUP BY trip").all();
   const nSubs = Object.fromEntries((subs.results || []).map((r) => [r.trip, r.n]));
+  await ensureDemandes(env);
+  const dem = await env.DB.prepare("SELECT trip, SUM(statut = 'attente') AS attente, SUM(statut = 'ok') AS ok FROM demandes GROUP BY trip").all();
+  const nDem = Object.fromEntries((dem.results || []).map((r) => [r.trip, { attente: r.attente || 0, ok: r.ok || 0 }]));
   const stations = {};
   const voyages = [];
   for (const id of ids) {
@@ -467,7 +565,7 @@ async function mesVoyages(env, req) {
       try { const st = JSON.parse(sf.text); stations[v.station] = { nom: st.nom, lieu: st.lieu, fuseau: st.fuseau }; } catch { stations[v.station] = null; }
     }
     const t = all[id] || {};
-    voyages.push({ id, titre: v.titre, appCourt: v.appCourt, dates: v.dates, station: stations[v.station] || null, alertes: !!all[id], abonnes: nSubs[id] || 0, clos: !!t.clos, fin: t.end || null });
+    voyages.push({ id, titre: v.titre, appCourt: v.appCourt, dates: v.dates, station: stations[v.station] || null, alertes: !!all[id], abonnes: nSubs[id] || 0, demandes: (nDem[id] || {}).attente || 0, approuves: (nDem[id] || {}).ok || 0, clos: !!t.clos, fin: t.end || null });
   }
   return { profil: { username: u.username, nom: u.nom || u.username, role: u.role }, voyages };
 }
@@ -528,6 +626,7 @@ async function handle(req, env) {
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
   if (path.startsWith("/api/auth/")) return json(env, req, await handleAuth(req, env, path, readJson));
+  if (path.startsWith("/api/acces/")) return json(env, req, await handleAcces(req, env, path, url));
   if (path === "/api/voyage/accompagnateurs" && req.method === "GET") {
     // Pour l'éditeur : coordonnées des accompagnateurs du voyage, à inscrire dans le contenu chiffré
     const trip = url.searchParams.get("trip") || "";
@@ -725,6 +824,7 @@ async function purgeTrip(env, trip) {
     env.DB.prepare("DELETE FROM announcements WHERE trip = ?").bind(trip),
     env.DB.prepare("DELETE FROM subscriptions WHERE trip = ?").bind(trip),
   ]);
+  try { await env.DB.prepare("DELETE FROM demandes WHERE trip = ?").bind(trip).run(); } catch (e) { /* table absente */ }
 }
 
 export async function runDue(env, now = Date.now()) {

@@ -284,7 +284,6 @@
 "Lien copié": "Link copied",
 "Confidentialité": "Privacy",
 "Aucun cookie, aucune statistique de visite, aucune publicité.": "No cookies, no visitor statistics, no ads.",
-"L’app ne demande ni compte, ni nom, ni courriel.": "The app asks for no account, name or email.",
 "Vos cases cochées, le domaine choisi, les annonces lues et une copie du programme, de la météo et de l’état des pistes restent": "Your checkmarks, chosen ski area, read announcements and a copy of the schedule, weather and run status stay",
 "uniquement sur ce téléphone": "only on this phone",
 ", pour que l’app fonctionne hors ligne. Rien n’est envoyé à l’accompagnateur ni à personne d’autre.": ", so the app works offline. Nothing is sent to the trip leader or anyone else.",
@@ -515,7 +514,12 @@
 "L’icône Mon accompagnateur apparaît avec vos autres apps. Tous vos voyages accompagnés y seront.": "The Mon accompagnateur icon appears with your other apps. All your guided trips will be in it.",
 "Sur iPhone, ouvrez l’app installée, touchez « Ajouter un voyage » et collez ou tapez cette phrase (une seule fois).": "On iPhone, open the installed app, tap “Add a trip” and paste or type this passphrase (only once).",
 "Ouvrez votre voyage, puis roue dentée ⚙ en haut à droite › « Alertes du voyage »": "Open your trip, then gear ⚙ at the top right › “Trip alerts”",
-"Mon accompagnateur": "Mon accompagnateur"
+"Mon accompagnateur": "Mon accompagnateur",
+"Ouvrez l’app Mon accompagnateur depuis son icône, touchez « Ajouter un voyage », entrez votre prénom et votre nom, activez les notifications et touchez « Demander l’accès ». Dès que votre accompagnateur approuve, vous recevez une notification et le voyage s’ouvre. Il fonctionne ensuite même sans réseau, et un prochain voyage s’ajoutera dans la même app.": "Open the Mon accompagnateur app from its icon, tap “Add a trip”, enter your first and last name, turn on notifications and tap “Request access”. As soon as your trip leader approves, you get a notification and the trip opens. It then works even offline, and a next trip will be added to the same app.",
+"Pas de phrase?": "No passphrase?",
+"Demandez l’accès à votre accompagnateur": "Ask your trip leader for access",
+"dans l’app Mon accompagnateur.": "in the Mon accompagnateur app.",
+"L’app ne demande ni compte, ni courriel : seulement votre prénom et votre nom si vous demandez l’accès à un voyage, pour que votre accompagnateur l’approuve.": "The app asks for no account or email: only your first and last name if you request access to a trip, so your trip leader can approve it."
 },
 "regex": [
 [

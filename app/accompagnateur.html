@@ -67,6 +67,14 @@ input{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--lin
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed=true]{background:var(--pbg);color:#fff}
 .empty{text-align:center;padding:26px 18px}
+.dembtn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)}
+.dembtn>span:first-child{font-size:22px}.dembtn b{display:block;font-size:14.5px}.dembtn small{display:block;color:var(--muted);font-size:12.5px}
+.dembtn.on{background:#fdf3d8;border-color:#e0b44a}.dembtn i{margin-left:auto;font-style:normal;background:var(--red);color:#fff;font-weight:800;font-size:13px;border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;padding:0 7px}
+.dq{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line)}.dq:first-child{border-top:0}
+label.dq{flex-direction:row;font-weight:400;color:var(--ink);font-size:inherit;cursor:pointer}
+.dq input{width:24px;height:24px;flex:none;accent-color:#246b3c}.dq b{display:block;font-size:15px}.dq small{display:block;font-size:12.5px;color:var(--muted)}
+.dq .m{margin-left:auto;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}.dq .m.y{background:var(--ok-bg);color:var(--ok)}.dq .m.n{background:var(--warn-bg);color:var(--warn)}
+button.danger{color:var(--red);border-color:#e3b7b2}
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
 </style>
 </head>
@@ -120,6 +128,17 @@ input{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--lin
     <div class="who"><span id="qui"></span><a href="#" id="b-out" data-i>Se déconnecter</a></div>
     <p id="b-admin" hidden style="margin:0 0 14px"><a class="btn" href="/admin/" data-i>Administration</a> <span class="small" data-i>créer un voyage, comptes, accompagnateurs</span></p>
     <div id="list"></div>
+  </section>
+
+  <section id="v-dem" hidden>
+    <p style="margin:0 0 10px"><button type="button" class="light" id="dem-back" data-i>← Mes voyages</button></p>
+    <div class="card"><h2 id="dem-t"></h2><p class="small" data-i>Cochez les personnes à accepter. Le ✓ indique un nom trouvé dans votre liste du groupe (sur ce téléphone). À l’approbation, votre app envoie la clé du voyage chiffrée pour le téléphone de chaque personne : le serveur ne peut pas la lire. Elle reçoit une notification et son voyage s’ouvre.</p>
+      <div class="row" style="margin-top:10px"><button type="button" class="light" id="dem-all" data-i>Cocher ceux de la liste</button><button type="button" class="light" id="dem-none" data-i>Tout décocher</button></div>
+      <div id="dem-list" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px"><button type="button" id="dem-ok" data-i>Approuver</button><button type="button" class="light danger" id="dem-no" data-i>Refuser</button></div>
+      <p class="small" id="dem-msg" style="margin:8px 0 0"></p>
+    </div>
+    <details class="card" id="dem-hist"><summary style="cursor:pointer;font-weight:700" data-i>Déjà traitées</summary><div id="dem-old" style="margin-top:8px"></div></details>
   </section>
 
   <section id="v-reglages" hidden>
@@ -179,7 +198,7 @@ const EN={
 'Mon compte':'My account','Mot de passe et double authentification se gèrent sur la page du compte.':'Password and two-step verification are managed on the account page.',
 'Gérer mon compte':'Manage my account','Installer l’app Mon accompagnateur':'Install the Mon accompagnateur app',
 'iPhone : dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Android : menu ⋮ de Chrome, puis « Installer l’application ».':'iPhone: in Safari, tap Share, then “Add to Home Screen”. Android: Chrome ⋮ menu, then “Install app”.',
-'← Mes voyages':'← My trips','Mon profil':'My profile','Affiché aux voyageurs de vos voyages (onglet Infos) : ils pourront vous appeler, vous texter, vous écrire sur WhatsApp ou par courriel. Cellulaire et courriel facultatifs.':'Shown to your trips’ travellers (Info tab): they can call, text, WhatsApp or email you. Mobile and email are optional.','Nom affiché':'Display name','Cellulaire':'Mobile','Courriel':'Email','Enregistrer le profil':'Save profile','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
+'← Mes voyages':'← My trips','Demandes d’accès':'Access requests','Cochez les personnes à accepter. Le ✓ indique un nom trouvé dans votre liste du groupe (sur ce téléphone). À l’approbation, votre app envoie la clé du voyage chiffrée pour le téléphone de chaque personne : le serveur ne peut pas la lire. Elle reçoit une notification et son voyage s’ouvre.':'Tick the people to accept. ✓ marks a name found in your group list (on this phone). On approval, your app sends the trip key encrypted for each person’s phone: the server cannot read it. They get a notification and their trip opens.','Cocher ceux de la liste':'Tick those on the list','Tout décocher':'Untick all','Approuver':'Approve','Refuser':'Decline','Déjà traitées':'Already handled','✓ dans la liste':'✓ on the list','⚠ inconnu':'⚠ unknown','Aucune demande en attente.':'No pending request.','Approuvé':'Approved','Refusé':'Declined','Astuce : importez la liste du groupe (Mon groupe) pour repérer automatiquement les bons noms.':'Tip: import the group list (My group) to spot the right names automatically.','Cochez au moins une personne.':'Tick at least one person.','Préparation des accès…':'Preparing access…','Toucher encore pour refuser':'Tap again to decline','Mon profil':'My profile','Affiché aux voyageurs de vos voyages (onglet Infos) : ils pourront vous appeler, vous texter, vous écrire sur WhatsApp ou par courriel. Cellulaire et courriel facultatifs.':'Shown to your trips’ travellers (Info tab): they can call, text, WhatsApp or email you. Mobile and email are optional.','Nom affiché':'Display name','Cellulaire':'Mobile','Courriel':'Email','Enregistrer le profil':'Save profile','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
 'Les listes de groupe restent sur le téléphone de l’accompagnateur : elles ne passent jamais par Internet.':'Group lists stay on the trip leader’s phone: they never go over the Internet.',
 'App du voyage':'Trip app','Éditeur':'Editor','Mon groupe':'My group','Partager l’app':'Share the app',
 'Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming','Terminé':'Over','Clos':'Closed',
@@ -201,7 +220,7 @@ function msg(t,c){const m=$('#m');if(!t){m.hidden=true;return;}m.hidden=false;m.
 async function api(method,path,body,auth=true){
   const r=await fetch(WORKER+path,{method,headers:{'Content-Type':'application/json',...(auth&&SESSION?{Authorization:'Bearer '+SESSION}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;throw e;}return j;}
-const VUES=['v-wait','v-login','v-code','v-mdp','v-2fa','v-app','v-reglages'];
+const VUES=['v-wait','v-login','v-code','v-mdp','v-2fa','v-app','v-reglages','v-dem'];
 function vue(id){VUES.forEach(v=>{$('#'+v).hidden=v!==id;});$('#gear').hidden=!(id==='v-app'||id==='v-reglages');$('#gear').setAttribute('aria-pressed',id==='v-reglages');}
 
 $('#login-f').addEventListener('submit',async e=>{e.preventDefault();msg('');
@@ -268,6 +287,7 @@ function carte(v){
       ${v.clos?`<span class="tag clos">${T('Clos')}</span>`:e.k==='cours'?`<span class="tag now">${T('En cours')}</span>`:e.k==='futur'?`<span class="tag">${T('À venir')}</span>`:''}</div>
     <p class="when ${e.k==='cours'?'now':''}">${esc(plage(v))}</p>
     <p class="meta">${esc(e.txt)}${v.alertes?' · '+esc(abt):''}</p>
+    ${!v.clos&&e.k!=='passe'?`<button type="button" class="dembtn${v.demandes?' on':''}" data-dem="${esc(v.id)}"><span>🙋</span><span><b>${v.demandes?(LANG==='en'?`${v.demandes} access request${v.demandes>1?'s':''} to approve`:`${v.demandes} demande${v.demandes>1?'s':''} d’accès à approuver`):T('Demandes d’accès')}</b><small>${LANG==='en'?`${v.approuves||0} traveller${(v.approuves||0)>1?'s':''} approved`:`${v.approuves||0} voyageur${(v.approuves||0)>1?'s':''} approuvé${(v.approuves||0)>1?'s':''}`}</small></span>${v.demandes?`<i>${v.demandes}</i>`:''}</button>`:''}
     <div class="acts">
       <a class="btn" href="${base}">${IC.app}${T('App du voyage')}</a>
       <a class="btn light" href="${base}editeur.html">${IC.ed}${T('Éditeur')}</a>
@@ -283,6 +303,66 @@ function dessiner(){
   if(passes.length)h+=`<p class="sect">${T('Voyages passés')}</p>`+passes.map(x=>carte(x.v)).join('');
   $('#list').innerHTML=h;
 }
+
+/* ---------- Demandes d’accès des voyageurs ---------- */
+let DEMV=null,DEMS=[];
+const nrm=t=>normPhrase(t).replace(/-/g,' ');
+function dansListe(id){try{const g=JSON.parse(localStorage.getItem(id+'-groupe-local-v1')||'null');return new Set((g&&g.voyageurs||[]).flatMap(p=>[nrm((p.prenom||'')+' '+(p.nom||'')),nrm((p.nom||'')+' '+(p.prenom||''))]));}catch(e){return new Set();}}
+async function ouvrirDem(id){DEMV=DATA.voyages.find(x=>x.id===id);if(!DEMV)return;
+  $('#dem-t').textContent=(LANG==='en'?'Access requests · ':'Demandes d’accès · ')+(DEMV.appCourt||DEMV.titre);$('#dem-msg').textContent='';$('#dem-list').innerHTML='<p class="small">…</p>';
+  vue('v-dem');scrollTo(0,0);
+  try{DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(id))).demandes||[];}catch(x){$('#dem-list').innerHTML=`<p class="small">${esc(x.message)}</p>`;return;}
+  dessinerDem();
+}
+function dessinerDem(){
+  const L=dansListe(DEMV.id),fmt=t=>new Date(t).toLocaleString(LANG==='en'?'en-CA':'fr-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const att=DEMS.filter(d=>d.statut==='attente'),old=DEMS.filter(d=>d.statut!=='attente');
+  $('#dem-list').innerHTML=att.map(d=>{const y=L.has(nrm(d.nom));return `<label class="dq"><input type="checkbox" value="${esc(d.id)}"${y?' checked':''}><span><b>${esc(d.nom)}</b><small>${fmt(d.created)}${d.notif?' · 🔔':''}</small></span><span class="m ${y?'y':'n'}">${y?T('✓ dans la liste'):T('⚠ inconnu')}</span></label>`;}).join('')
+    ||`<p class="small">${T('Aucune demande en attente.')}</p>`;
+  $('#dem-old').innerHTML=old.map(d=>`<div class="dq"><span><b>${esc(d.nom)}</b><small>${d.statut==='ok'?T('Approuvé'):T('Refusé')} · ${fmt(d.decided||d.created)}${d.par?' · '+esc(d.par):''}</small></span>${d.statut==='refus'?`<button type="button" class="light m" data-dem-re="${esc(d.id)}">${T('Approuver')}</button>`:''}</div>`).join('')||`<p class="small">—</p>`;
+  $('#dem-hist').hidden=!old.length;$('#dem-ok').disabled=$('#dem-no').disabled=!att.length;
+  if(!L.size&&att.length)$('#dem-msg').textContent=T('Astuce : importez la liste du groupe (Mon groupe) pour repérer automatiquement les bons noms.');
+}
+$('#dem-back').onclick=()=>{vue('v-app');demarrer();};
+$('#dem-all').onclick=()=>{const L=dansListe(DEMV.id);$$('#dem-list input').forEach(i=>{const d=DEMS.find(x=>x.id===i.value);i.checked=!!d&&L.has(nrm(d.nom));});};
+$('#dem-none').onclick=()=>$$('#dem-list input').forEach(i=>{i.checked=false;});
+const b64url=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+/* Clé du voyage (la même que donne la phrase), pour la chiffrer ensuite pour chaque téléphone */
+async function cleVoyage(v){
+  const ph=await phrasePour(v);if(ph===null)return undefined;if(ph==='')return null;
+  const j=await (await fetch('/'+v.id+'/voyage.json',{cache:'no-store'})).json();const c=j.chiffre;
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(ph)),'PBKDF2',false,['deriveKey']);
+  const k=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
+  return {salt:c.salt,k:btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.exportKey('raw',k))))};
+}
+async function chiffrerPour(pub,cle){
+  const eph=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+  const dev=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:pub.x,y:pub.y,ext:true},{name:'ECDH',namedCurve:'P-256'},false,[]);
+  const k=await crypto.subtle.deriveKey({name:'ECDH',public:dev},eph.privateKey,{name:'AES-GCM',length:256},false,['encrypt']);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(cle))));
+  const e=await crypto.subtle.exportKey('jwk',eph.publicKey);
+  return {epk:{x:e.x,y:e.y},iv:b64url(iv),data:b64url(data)};
+}
+async function decider(ids,ok){
+  if(!ids.length){$('#dem-msg').textContent=T('Cochez au moins une personne.');return;}
+  $('#dem-ok').disabled=$('#dem-no').disabled=true;$('#dem-msg').textContent=ok?T('Préparation des accès…'):'…';
+  try{
+    let decisions;
+    if(ok){const cle=await cleVoyage(DEMV);if(cle===undefined){$('#dem-msg').textContent='';dessinerDem();return;}
+      decisions=[];for(const id of ids){const d=DEMS.find(x=>x.id===id);decisions.push({id,ok:true,cle:cle?await chiffrerPour(d.pub,cle):null});}}
+    else decisions=ids.map(id=>({id,ok:false}));
+    const r=await api('POST','/api/acces/decision',{trip:DEMV.id,decisions});
+    DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();
+    $('#dem-msg').textContent=ok?(LANG==='en'?`${r.approuvees} approved · ${r.notifiees} notified right away.`:`${r.approuvees} approuvé${r.approuvees>1?'s':''} · ${r.notifiees} averti${r.notifiees>1?'s':''} par notification.`)
+      :(LANG==='en'?`${r.refusees} declined.`:`${r.refusees} refusé${r.refusees>1?'s':''}.`);
+  }catch(x){$('#dem-msg').textContent=x.message;dessinerDem();}
+}
+$('#dem-ok').onclick=()=>decider($$('#dem-list input:checked').map(i=>i.value),true);
+let noArm=false;$('#dem-no').onclick=()=>{const ids=$$('#dem-list input:checked').map(i=>i.value);if(!ids.length){$('#dem-msg').textContent=T('Cochez au moins une personne.');return;}
+  if(!noArm){noArm=true;$('#dem-no').textContent=T('Toucher encore pour refuser');setTimeout(()=>{noArm=false;$('#dem-no').textContent=T('Refuser');},3500);return;}noArm=false;$('#dem-no').textContent=T('Refuser');decider(ids,false);};
+document.addEventListener('click',e=>{const d=e.target.closest('[data-dem]');if(d){ouvrirDem(d.dataset.dem);return;}const re=e.target.closest('[data-dem-re]');if(re)decider([re.dataset.demRe],true);});
+
 /* Partager l’app : lien de la page d’installation avec la phrase (#cle=…), qui ouvre l’app déjà déverrouillée.
    La phrase n’est jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -306,8 +386,8 @@ async function phrasePour(v){
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-share]');if(!b)return;
   const v=DATA.voyages.find(x=>x.id===b.dataset.share);
-  b.disabled=true;const ph=await phrasePour(v);b.disabled=false;if(ph===null)return;
-  const url=location.origin+'/'+v.id+'/installer.html'+(ph?'#cle='+encodeURIComponent(ph):'');
+  // Sans la phrase : les voyageurs demandent l’accès dans l’app et vous approuvez (bouton « Demandes d’accès »)
+  const url=location.origin+'/'+v.id+'/installer.html';
   const txt=(LANG==='en'?'Install the trip app: ':'Installez l’app du voyage : ')+(v.appCourt||v.titre);
   try{if(navigator.share){await navigator.share({title:v.appCourt||v.titre,text:txt,url});return;}}catch(x){if(x.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(url);msg((LANG==='en'?'Link copied: ':'Lien copié : ')+esc(url),'ok');}catch(x){msg(esc(url),'info');}

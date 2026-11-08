@@ -998,6 +998,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     </form>
     <p class="lock-msg" id="lock-msg" role="status"></p>
     <p class="small">Majuscules, accents et espaces n’ont pas d’importance. La phrase est gardée sur ce téléphone : vous ne la taperez qu’une fois.</p>
+    <p class="small" style="margin-top:10px"><b>Pas de phrase?</b> <a href="/app/#v={{ID}}">Demandez l’accès à votre accompagnateur</a> dans l’app Mon accompagnateur.</p>
   </div>
 </div>
 <div id="offline" class="offline" role="status" hidden></div>
@@ -1206,7 +1207,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <div class="card" id="confidentialite">
     <h3>Confidentialité</h3>
     <ul class="ul" style="font-size:14px">
-      <li><b>Aucun cookie, aucune statistique de visite, aucune publicité.</b> L’app ne demande ni compte, ni nom, ni courriel.</li>
+      <li><b>Aucun cookie, aucune statistique de visite, aucune publicité.</b> L’app ne demande ni compte, ni courriel : seulement votre prénom et votre nom si vous demandez l’accès à un voyage, pour que votre accompagnateur l’approuve.</li>
       <li>Vos cases cochées, le domaine choisi, les annonces lues et une copie du programme, de la météo et de l’état des pistes restent <b>uniquement sur ce téléphone</b>, pour que l’app fonctionne hors ligne. Rien n’est envoyé à l’accompagnateur ni à personne d’autre.</li>
       <li>Votre <b>position GPS</b> n’est utilisée que si vous touchez « Ma position », après l’autorisation de votre téléphone. Elle sert à afficher le point bleu sur la carte et n’est transmise à personne.</li>
       <li>Pour afficher son contenu, l’app contacte GitHub (hébergement), {{SOURCES_PISTES}} (pistes), Open-Meteo (météo), OpenStreetMap et OpenSnowMap (carte), {{SOURCES_WEBCAMS}} (webcams), Frankfurter (taux de change de la BCE). Comme pour tout site, ils voient l’adresse IP de l’appareil, sans autre information.</li>
@@ -2098,9 +2099,11 @@ function renderAll(){if(LOCKED)return;mesVoyages();try{renderRemontee();renderSo
   }
 
   // Le service worker peut ne jamais être prêt (navigation privée, erreur) : on n'attend pas plus de 5 s
+  // Dans l'app « Mon accompagnateur » (/app/), les alertes passent par son service worker : un seul abonnement
+  // pour tous les voyages du téléphone, et pas de notification en double.
   function registration() {
     return Promise.race([
-      navigator.serviceWorker.ready,
+      navigator.serviceWorker.getRegistration("/app/").then(function (r) { return r && r.active ? r : navigator.serviceWorker.ready; }).catch(function () { return navigator.serviceWorker.ready; }),
       new Promise(function (_, no) { setTimeout(function () { no(new Error("Service worker indisponible")); }, 5000); }),
     ]);
   }
