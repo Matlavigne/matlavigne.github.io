@@ -1123,6 +1123,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <section class="view" id="v-sortir" hidden aria-labelledby="t-sortir">
   <h2 id="t-sortir">Restos et bars</h2>
   <div class="controls"><div class="seg" role="group" aria-label="Domaine" data-dom-seg></div></div>
+  <div class="controls"><input id="ad-q" type="search" placeholder="Chercher un resto, un bar, un plat…" autocomplete="off" style="font:inherit;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;flex:1;min-width:0;background:var(--white);color:var(--ink)"></div>
   <div class="controls"><div class="chips" role="group" aria-label="Type d’adresse" id="ad-cats"></div></div>
   <div id="restos"></div>
   <p class="small" id="ad-note">Sélection de l’accompagnateur. Horaires et ambiance peuvent changer : vérifiez sur place.</p>
@@ -1755,14 +1756,19 @@ function renderAdresses(){
   if(!present.some(([k])=>k===adCat))adCat=present[0]?.[0]||'restaurant';
   $('#ad-cats').innerHTML=present.map(([k,l])=>`<button type="button" data-adcat="${k}" aria-pressed="${k===adCat}">${esc(l)} <small>${all.filter(a=>adCatsOf(a).includes(k)).length}</small></button>`).join('');
   const both=domSel==='both';
-  const list=all.filter(a=>adCatsOf(a).includes(adCat)).map((a,i)=>({a,i})).sort((x,y)=>(y.a.coupDeCoeur?1:0)-(x.a.coupDeCoeur?1:0)||x.i-y.i).map(x=>x.a);
+  // Recherche : dans toutes les catégories (nom, secteur, description, infos, étiquettes, accès)
+  const q=normPhrase($('#ad-q').value).replace(/-/g,' ');
+  const hit=a=>normPhrase([a.nom,a.secteur,a.description,a.infos,a.acces,(a.tags||[]).join(' ')].join(' ')).replace(/-/g,' ').includes(q);
+  $('#ad-cats').parentElement.style.display=q?'none':'';
+  const list=all.filter(a=>q?hit(a):adCatsOf(a).includes(adCat)).map((a,i)=>({a,i})).sort((x,y)=>(y.a.coupDeCoeur?1:0)-(x.a.coupDeCoeur?1:0)||x.i-y.i).map(x=>x.a);
   $('#restos').innerHTML=list.length?list.map(r=>{const idx=(V.adresses||[]).indexOf(r);const hasPos=typeof r.lat==='number'&&typeof r.lng==='number';
-    return`<div class="card resto${r.coupDeCoeur?' fav':''}">${r.coupDeCoeur?'<span class="fav-tag">★ Coup de cœur de l’accompagnateur</span>':''}${both?`<span class="area-tag">${esc(DOMS[r.domaine]?.nom||'')}</span>`:''}<h4>${esc(r.nom)}</h4>${r.secteur?`<p class="small">${esc(r.secteur)}</p>`:''}${(r.tags||[]).length?`<div class="tags">${r.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}${r.description?`<p>${esc(r.description)}</p>`:''}${r.acces||r.infos?`<details class="more"><summary>${r.acces?'Comment s’y rendre':'Plus d’infos'}</summary>${r.acces?`<p>${esc(r.acces)}</p>`:''}${r.infos?`<p class="small">${esc(r.infos)}</p>`:''}</details>`:''}${/^https?:\/\//.test(r.lien||'')||hasPos?`<p class="ad-acts">${hasPos?`<a href="#carte" data-goto-ad="${idx}">Voir sur la carte</a>`:''}${/^https?:\/\//.test(r.lien||'')?`<a class="small" href="${esc(r.lien)}" target="_blank" rel="noopener">${esc(r.lienTexte||'Plus d’infos')} ↗</a>`:''}</p>`:''}</div>`;}).join(''):'<p class="small">Aucune adresse pour ce domaine dans cette catégorie.</p>';
+    return`<div class="card resto${r.coupDeCoeur?' fav':''}">${r.coupDeCoeur?'<span class="fav-tag">★ Coup de cœur de l’accompagnateur</span>':''}${both?`<span class="area-tag">${esc(DOMS[r.domaine]?.nom||'')}</span>`:''}<h4>${esc(r.nom)}</h4>${r.secteur?`<p class="small">${esc(r.secteur)}</p>`:''}${(r.tags||[]).length?`<div class="tags">${r.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}${r.description?`<p>${esc(r.description)}</p>`:''}${r.acces||r.infos?`<details class="more"><summary>${r.acces?'Comment s’y rendre':'Plus d’infos'}</summary>${r.acces?`<p>${esc(r.acces)}</p>`:''}${r.infos?`<p class="small">${esc(r.infos)}</p>`:''}</details>`:''}${/^https?:\/\//.test(r.lien||'')||hasPos?`<p class="ad-acts">${hasPos?`<a href="#carte" data-goto-ad="${idx}">Voir sur la carte</a>`:''}${/^https?:\/\//.test(r.lien||'')?`<a class="small" href="${esc(r.lien)}" target="_blank" rel="noopener">${esc(r.lienTexte||'Plus d’infos')} ↗</a>`:''}</p>`:''}</div>`;}).join(''):(q?'<p class="small">Aucune adresse ne correspond à cette recherche.</p>':'<p class="small">Aucune adresse pour ce domaine dans cette catégorie.</p>');
 }
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-adcat]');if(c){adCat=c.dataset.adcat;store.set(AD_KEY,adCat);renderAdresses();return;}
   const g=e.target.closest('[data-goto-ad]');if(g){const a=(V.adresses||[])[+g.dataset.gotoAd];if(a)setTimeout(()=>{initMap();map.setView([a.lat,a.lng],16);adMarkers.find(m=>m._adIdx===+g.dataset.gotoAd)?.openPopup();},120);}
 });
+$('#ad-q').addEventListener('input',()=>renderAdresses());
 let adMarkers=[];
 function placeAdMarkers(){
   if(!map)return;adMarkers.forEach(m=>m.remove());adMarkers=[];

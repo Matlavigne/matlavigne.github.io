@@ -7,10 +7,18 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Éditeur du voyage</title>
 <meta name="theme-color" content="#13509f">
+<script>/* Thème partagé avec l’app : auto (suit le téléphone), clair ou sombre */
+(function(){var K='monaccompagnateur-theme',p=null;try{p=localStorage.getItem(K);}catch(e){}
+var m=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+function ap(){var d=p==='dark'||(p!=='light'&&!!(m&&m.matches));document.documentElement.setAttribute('data-theme',d?'dark':'light');}
+ap();if(m){if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);}
+window.setTheme=function(v){p=v==='dark'||v==='light'?v:null;try{if(p)localStorage.setItem(K,p);else localStorage.removeItem(K);}catch(e){}ap();};
+window.themePref=function(){return p||'auto';};})();</script>
+
 <link rel="icon" type="image/png" href="icon-192.png?v=684cabf1">
 <style>
 [hidden]{display:none!important}
-:root{--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--red:#ae3933;--green:#246b3c;--amber:#8a5413}
+:root{--bbg:#13509f;--ink:#16263a;--blue:#13509f;--blue-d:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--red:#ae3933;--green:#246b3c;--amber:#8a5413}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:96px}
 a{color:var(--blue)}
@@ -20,9 +28,9 @@ header h1{margin:0;font-size:22px;letter-spacing:-.3px}
 header p{margin:4px 0 0;font-size:13px;opacity:.85}
 header .acc-back{margin:0 0 8px;font-size:14px;opacity:1}header .acc-back a{color:#fff}
 h2{font-size:17px;margin:0}
-button,.btn{font:inherit;font-size:14px;border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:10px;padding:8px 13px;min-height:40px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-button.light,.btn.light{background:#fff;color:var(--blue)}
-button.danger{background:#fff;color:var(--red);border-color:#e3b7b2}
+button,.btn{font:inherit;font-size:14px;border:1px solid var(--bbg);background:var(--bbg);color:#fff;border-radius:10px;padding:8px 13px;min-height:40px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.light,.btn.light{background:var(--white);color:var(--blue)}
+button.danger{background:var(--white);color:var(--red);border-color:#e3b7b2}
 button.mini{min-height:32px;padding:4px 9px;font-size:13px}
 button:disabled{opacity:.5;cursor:default}
 .card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
@@ -103,7 +111,7 @@ body.focus .fbar{display:flex}
 .tl-day{position:relative;padding-left:66px;margin-bottom:12px}
 .tl-day:before{content:"";position:absolute;left:27px;top:0;bottom:-12px;width:2px;background:var(--line)}
 .tl-day:last-child:before{bottom:0}
-.tl-date{position:absolute;left:0;top:0;width:56px;border-radius:12px;background:var(--blue);color:#fff;text-align:center;padding:6px 0 5px;line-height:1.05;z-index:1}
+.tl-date{position:absolute;left:0;top:0;width:56px;border-radius:12px;background:var(--bbg);color:#fff;text-align:center;padding:6px 0 5px;line-height:1.05;z-index:1}
 .tl-date b{display:block;font-size:22px}.tl-date small{display:block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;opacity:.9}
 .tl-date.out{background:#9aa6b4}
 .tl-card{background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden}
@@ -126,11 +134,31 @@ body.focus .fbar{display:flex}
 .mapdlg .bot small{flex:1;color:var(--muted);font-size:12.5px}
 .mapdlg .res{max-height:150px;overflow:auto;border-bottom:1px solid var(--line)}
 .mapdlg .res button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:8px 12px;font-size:14px;border-top:1px solid var(--line)}
+:root[data-theme=dark]{color-scheme:dark;--bbg:#2c69bd;--ink:#e3e9f1;--blue:#86b6f2;--blue-d:#0a1d3a;--muted:#9babbd;--paper:#0d141e;--line:#2a3747;--white:#172130;--soft:#223041;--red:#f0847b;--green:#8fd6a2;--amber:#f2c27a}
+[data-theme=dark] button.danger{border-color:#6e2f2a}
+[data-theme=dark] .msg.ok{background:#173523;border-color:#2f6b41}[data-theme=dark] .msg.err{background:#3d1c1a;color:#f6a49c;border-color:#6e2f2a}
+[data-theme=dark] .msg.warn{background:#2e2312;color:#f0d29a;border-color:#5a4520}[data-theme=dark] .msg.info{color:var(--ink);border-color:#2f4560}
+[data-theme=dark] .f input,[data-theme=dark] .f textarea,[data-theme=dark] .f select,[data-theme=dark] .mapdlg .top input{background:#0f1824;color:var(--ink)}
+[data-theme=dark] .f.bad input,[data-theme=dark] .f.bad textarea{background:#2a1513}
+[data-theme=dark] .item,[data-theme=dark] .tl-edit{background:#131c28}[data-theme=dark] .item>.hd{background:#1a2533}[data-theme=dark] .item .item{background:var(--white)}
+[data-theme=dark] .bar{background:var(--white);box-shadow:0 -4px 16px #0006}
+[data-theme=dark] .ic.c1{background:#1b3456}[data-theme=dark] .ic.c2{background:#3a2a12}[data-theme=dark] .ic.c3{background:#173523}[data-theme=dark] .ic.c4{background:#2c2142}[data-theme=dark] .ic.c5{background:#223041}
+[data-theme=dark] .bd.ok,[data-theme=dark] .rl .y i{background:#173523}[data-theme=dark] .bd.todo,[data-theme=dark] .rl .n i,[data-theme=dark] .tl-tag{background:#3a2a12}
+[data-theme=dark] .ring{background:conic-gradient(var(--green) calc(var(--p)*1%),#2a3747 0)}
+[data-theme=dark] .tl-date{background:#2c69bd}[data-theme=dark] .tl-date.out{background:#3b4757}[data-theme=dark] .tl-tag.rdv{background:#17314c;color:#9cc8f0}
+[data-theme=dark] .mapdlg .box{background:var(--white)}
+[data-theme=dark] details.sec.cur>summary,[data-theme=dark] body.focus details.sec.cur>summary{background:transparent}
+.adsearch{display:flex;gap:8px;align-items:center;margin-top:12px;position:sticky;top:52px;z-index:5;background:var(--white);padding:6px 0}
+.adsearch input{flex:1;min-width:0;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--white);color:var(--ink)}
+[data-theme=dark] .adsearch input{background:#0f1824}
+.adsearch span{font-size:12px;color:var(--muted);white-space:nowrap}
+.thm{position:absolute;top:14px;right:14px;background:#ffffff1f;border:1px solid #ffffff55;color:#fff;min-height:34px;padding:4px 11px;font-size:13px;border-radius:999px}
+header{position:relative}
 .pick-pin{width:30px;height:30px;margin:-30px 0 0 -15px;background:var(--red);border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px #0006}.f .lab{font-size:13px;font-weight:600;color:var(--ink)}
 </style>
 </head>
 <body>
-<header><div class="wrap"><p class="acc-back"><a href="/app/accompagnateur.html">← Mes voyages</a> · <a href="./">App du voyage</a></p><h1 id="t">Éditeur du voyage</h1><p id="t-sub">Modifiez le contenu de l’app, puis touchez « Publier ».</p></div></header>
+<header><div class="wrap"><p class="acc-back"><a href="/app/accompagnateur.html">← Mes voyages</a> · <a href="./">App du voyage</a></p><h1 id="t">Éditeur du voyage</h1><button type="button" class="thm" id="thm" aria-label="Apparence"></button><p id="t-sub">Modifiez le contenu de l’app, puis touchez « Publier ».</p></div></header>
 <main class="wrap">
   <div id="m-load" class="msg info">Chargement…</div>
   <div id="m-draft" class="msg warn" hidden></div>
@@ -564,10 +592,11 @@ function render(){
     else if(s.type==='obj')body=`<div class="grid">${s.fields.map(f=>field([s.key],f,V[s.key]||{})).join('')}</div>`+(s.id==='hotel'?(()=>{const h=(V.lieux||[]).find(l=>l.id==='hotel'&&typeof l.lat==='number');return `<div class="addbar"><button type="button" class="light" data-pick-hotel>📍 ${h?'Déplacer l’hôtel sur la carte':'Placer l’hôtel sur la carte'}</button></div><p class="help">${h?`Position : ${h.lat}, ${h.lng} (section « Lieux sur la carte »).`:'Le point de l’hôtel s’affiche sur la carte de l’app et sert au bouton « Voir sur la carte » (onglet Infos).'}</p>`;})():'');
     else if(s.type==='rootlines')body=`<div class="grid">${field([],[s.key,s.label,'lines'],V)}</div>`;
     else if(s.id==='programme'){body=timelineHtml(s);n=(V[s.key]||[]).length;}
+    else if(s.id==='adresses'){body=`<div class="adsearch"><input id="ad-q" type="search" placeholder="Chercher une adresse (nom, secteur, étiquette…)" value="${esc(adQ)}" autocomplete="off"><span id="ad-q-n"></span></div>`+listHtml([s.key],s,V[s.key]);n=(V[s.key]||[]).length;}
     else{body=listHtml([s.key],s,V[s.key]);n=(V[s.key]||[]).length;}
     return`<details class="sec" id="s-${s.id}"${open.has('s-'+s.id)?' open':''}><summary><h2>${esc(s.titre)}</h2><span class="n">${n!==''?n:''}</span></summary><div class="body">${s.help?`<p class="help">${esc(s.help)}</p>`:''}${body}</div></details>`;
   }).join('')+`<details class="sec" id="s-avance"${open.has('s-avance')?' open':''}><summary><h2>Avancé : météo, webcams, organisateur…</h2><span class="n">${extra.length}</span></summary><div class="body"><p class="help">Format technique (JSON). À modifier seulement si nécessaire : une erreur ici est signalée avant la publication.</p><div class="f full" style="margin-top:10px"><textarea class="raw" id="raw" data-t="raw">${esc(JSON.stringify(Object.fromEntries(extra.map(k=>[k,V[k]])),null,2))}</textarea></div><p class="help" id="raw-msg"></p></div></details>`;
-  applyFocus();renderDash();
+  applyFocus();renderDash();filtreAdresses();
 }
 
 /* ---------- Saisie ---------- */
@@ -659,6 +688,17 @@ $('#b-pub').onclick=async()=>{
 };
 addEventListener('beforeunload',e=>{if(!leaving&&dirty()){e.preventDefault();e.returnValue='';}});
 addEventListener('pageshow',e=>{if(e.persisted)leaving=false;});
+
+
+/* ---------- Apparence : Auto, Clair, Sombre (même choix que l’app) ---------- */
+(function(){const L={auto:'◐ Auto',light:'☀ Clair',dark:'☾ Sombre'},N={auto:'light',light:'dark',dark:'auto'};
+  const b=$('#thm');const maj=()=>{b.textContent=L[themePref()];};maj();b.onclick=()=>{setTheme(N[themePref()]);maj();};})();
+/* ---------- Recherche dans les bonnes adresses ---------- */
+let adQ='';
+function filtreAdresses(){const sec=$('#s-adresses');if(!sec)return;const q=normPhrase(adQ).replace(/-/g,' ');let n=0;
+  sec.querySelectorAll(':scope>.body>.item').forEach((it,i)=>{const a=(V.adresses||[])[i]||{};const ok=!q||normPhrase([a.nom,a.secteur,a.description,a.infos,a.acces,(a.tags||[]).join(' '),(a.categories||[]).join(' ')].join(' ')).replace(/-/g,' ').includes(q);it.hidden=!ok;if(ok)n++;});
+  const c=$('#ad-q-n');if(c)c.textContent=q?`${n} / ${(V.adresses||[]).length}`:'';}
+document.addEventListener('input',e=>{if(e.target.id==='ad-q'){adQ=e.target.value;filtreAdresses();}});
 
 /* ---------- Tableau de bord en tuiles ---------- */
 const TILES=[

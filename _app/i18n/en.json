@@ -519,7 +519,9 @@
 "Pas de phrase?": "No passphrase?",
 "Demandez l’accès à votre accompagnateur": "Ask your trip leader for access",
 "dans l’app Mon accompagnateur.": "in the Mon accompagnateur app.",
-"L’app ne demande ni compte, ni courriel : seulement votre prénom et votre nom si vous demandez l’accès à un voyage, pour que votre accompagnateur l’approuve.": "The app asks for no account or email: only your first and last name if you request access to a trip, so your trip leader can approve it."
+"L’app ne demande ni compte, ni courriel : seulement votre prénom et votre nom si vous demandez l’accès à un voyage, pour que votre accompagnateur l’approuve.": "The app asks for no account or email: only your first and last name if you request access to a trip, so your trip leader can approve it.",
+"Chercher un resto, un bar, un plat…": "Search a restaurant, bar, dish…",
+"Aucune adresse ne correspond à cette recherche.": "No place matches this search."
 },
 "regex": [
 [
