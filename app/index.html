@@ -383,7 +383,15 @@ $('#rq-f').addEventListener('submit',async e=>{e.preventDefault();
     if(perm)await perm;
     let sub=null;if(notifOk()&&Notification.permission==='granted'){try{sub=await abonnement();}catch(x){}}
     const kp=await cleAppareil();const jwk=await crypto.subtle.exportKey('jwk',kp.publicKey);
-    const r=await api('POST','/api/acces/demande',{trip,nom:pre+' '+nom,pub:{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y},sub});
+    const corps={trip,pub:{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y},sub};
+    let r;
+    for(let essai=0;;essai++){
+      // Le nom est chiffré pour les téléphones des accompagnateurs du voyage : le service ne peut pas le lire
+      const ce=await api('GET','/api/acces/cle-equipe?trip='+encodeURIComponent(trip)).catch(()=>({}));
+      if(ce&&ce.pub){corps.nomc=await chiffrerNom(ce,pre+' '+nom);corps.ekid=ce.ekid;delete corps.nom;}
+      else{corps.nom=pre+' '+nom;delete corps.nomc;delete corps.ekid;}
+      try{r=await api('POST','/api/acces/demande',corps);break;}catch(x){if(x.status!==409||essai>=1)throw x;}
+    }
     store.set('monaccompagnateur-nom',{pre,nom});
     DEM=DEM.filter(d=>d.trip!==trip);DEM.push({id:r.id,jeton:r.jeton,trip,nom:pre+' '+nom,at:Date.now(),statut:'attente',notif:!!sub});saveDem();
     dessiner();vue('v-list');
@@ -400,6 +408,17 @@ document.addEventListener('click',e=>{
   const x=e.target.closest('[data-dem-x]');if(x){DEM=DEM.filter(d=>d.id!==x.dataset.demX);saveDem();dessiner();return;}
   if(e.target.closest('[data-dem-v]'))verifierDemandes(true);
 });
+/* Nom chiffré pour l’équipe d’accompagnateurs (clé publique d’équipe, ECDH éphémère + AES-GCM) */
+async function chiffrerNom(ce,nom){
+  const eph=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+  const pub=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:ce.pub.x,y:ce.pub.y,ext:true},{name:'ECDH',namedCurve:'P-256'},false,[]);
+  const k=await crypto.subtle.deriveKey({name:'ECDH',public:pub},eph.privateKey,{name:'AES-GCM',length:256},false,['encrypt']);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(ce.ekid)},k,new TextEncoder().encode(nom)));
+  const e=await crypto.subtle.exportKey('jwk',eph.publicKey);
+  const u=a=>btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return {epk:{x:e.x,y:e.y},iv:u(iv),data:u(data)};
+}
 /* Réception de la clé du voyage, chiffrée pour ce téléphone */
 async function ouvrirCle(c){
   const kp=await cleAppareil();

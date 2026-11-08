@@ -66,13 +66,23 @@
   async function kidDe(raw) { return hex((await sha(new Uint8Array([...enc.encode('kid|'), ...raw]))).slice(0, 16)); }
   const cleLocale = (trip) => idbGet('equipe-' + trip).catch(() => null);
   const garderCle = (trip, c) => idbSet('equipe-' + trip, c);
-  async function nouvelleCle() { const raw = crypto.getRandomValues(new Uint8Array(32)); return { raw, kid: await kidDe(raw) }; }
+  /* Une clé d’équipe = 32 octets (liste et présences) + une paire ECDH d’équipe : sa partie publique est remise aux voyageurs
+     pour chiffrer leur nom dans les demandes d’accès; la partie privée voyage avec la clé (anciennes gardées, pour les demandes en cours). */
+  async function nouvelleCle(precedente) {
+    const raw = crypto.getRandomValues(new Uint8Array(32));
+    const p = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
+    const j = await crypto.subtle.exportKey('jwk', p.privateKey);
+    const ek = { d: j.d, x: j.x, y: j.y };
+    const eks = {};
+    if (precedente) { if (precedente.ek) eks[await empreinte(precedente.ek)] = precedente.ek; for (const [k, v] of Object.entries(precedente.eks || {}).slice(-4)) eks[k] = v; }
+    return { raw, kid: await kidDe(raw), ek, eks };
+  }
   async function envelopper(pub, cle) {
     const eph = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
     const dev = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: pub.x, y: pub.y, ext: true }, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
     const k = await crypto.subtle.deriveKey({ name: 'ECDH', public: dev }, eph.privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, enc.encode(JSON.stringify({ kid: cle.kid, k: b64u(cle.raw) }))));
+    const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, enc.encode(JSON.stringify({ kid: cle.kid, k: b64u(cle.raw), ek: cle.ek || null, eks: cle.eks || {} }))));
     const e = await crypto.subtle.exportKey('jwk', eph.publicKey);
     return { epk: { x: e.x, y: e.y }, iv: b64u(iv), data: b64u(data) };
   }
@@ -83,7 +93,7 @@
     const j = JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(env.iv) }, k, unb64u(env.data))));
     const raw = unb64u(j.k);
     if (await kidDe(raw) !== j.kid) throw Error('Clé d’équipe abîmée');
-    return { raw, kid: j.kid };
+    return { raw, kid: j.kid, ek: j.ek || null, eks: j.eks || {} };
   }
   // Code de secours : la clé elle-même, en groupes de 4 caractères faciles à recopier
   const codeSecours = (cle) => b32(cle.raw).match(/.{1,4}/g).join('-');
@@ -92,6 +102,21 @@
     let raw; try { raw = unb32(s).slice(0, 32); } catch (e) { throw Error('Code de secours invalide : vérifiez les caractères.'); }
     if (s.length !== 52 || raw.length !== 32) throw Error('Code de secours incomplet : il compte 52 caractères.');
     return { raw, kid: await kidDe(raw) };
+  }
+
+  /* ---------- Nom chiffré d’une demande d’accès ---------- */
+  async function dechiffrerNom(trip, d) {
+    if (!d || !d.nomc) return d && d.nom || null;
+    const cle = await cleLocale(trip);
+    if (!cle) return null;
+    let ek = cle.ek && (await empreinte(cle.ek)) === d.ekid ? cle.ek : (cle.eks || {})[d.ekid];
+    if (!ek) return null;
+    try {
+      const priv = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', d: ek.d, x: ek.x, y: ek.y, ext: true }, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']);
+      const epk = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: d.nomc.epk.x, y: d.nomc.epk.y, ext: true }, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+      const k = await crypto.subtle.deriveKey({ name: 'ECDH', public: epk }, priv, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      return dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(d.nomc.iv), additionalData: enc.encode(d.ekid) }, k, unb64u(d.nomc.data)));
+    } catch (e) { return null; }
   }
 
   /* ---------- Chiffrement de la liste (compressée si possible) ---------- */
@@ -218,9 +243,10 @@
   }
   const quiACoche = (trip) => projeter(docLocal(trip), trip).qui;
 
-  let enCours = null, MOI = null;
+  let MOI = null;
   /* opts.creer : créer la clé d’équipe si personne ne l’a encore (seulement depuis Mon groupe) */
-  function synchroniser(trip, opts) { if (enCours) return enCours; enCours = sync1(trip, opts || {}).finally(() => { enCours = null; }); return enCours; }
+  const EN_COURS = {};
+  function synchroniser(trip, opts) { if (EN_COURS[trip]) return EN_COURS[trip]; EN_COURS[trip] = sync1(trip, opts || {}).finally(() => { delete EN_COURS[trip]; }); return EN_COURS[trip]; }
   async function sync1(trip, opts) {
     let moi = MOI;
     if (!moi) try { moi = MOI = (await api('GET', '/api/auth/moi')).profil; } catch (e) { if (e.status === 401) return { mode: 'local', raison: 'connexion' }; return { mode: 'horsligne', erreur: e.message }; }
@@ -245,7 +271,7 @@
       cle = await nouvelleCle();
       const doc = docLocal(trip);
       try {
-        const r = await api('PUT', '/api/groupe', { trip, base: 0, kid: cle.kid, blob: await chiffrer(cle, doc), cles: [{ appareil: a.id, env: await envelopper(a.pub, cle) }] });
+        const r = await api('PUT', '/api/groupe', { trip, base: 0, kid: cle.kid, epub: { x: cle.ek.x, y: cle.ek.y }, blob: await chiffrer(cle, doc), cles: [{ appareil: a.id, env: await envelopper(a.pub, cle) }] });
         await garderCle(trip, cle);
         store.set(k.sync, { version: r.version, kid: cle.kid, sale: false, maj: Date.now(), joint: true });
         return { ...base, mode: 'equipe', cle, creee: true, ...(await infos(trip, cle, a)) };
@@ -270,7 +296,8 @@
         doc = fusion(doc, distant);
       }
       const doitEnvoyer = distant ? !egal(doc, fusion(distant, vide())) : !!st.sale;
-      const rotation = eq.rotation && essai === 0;
+      // Nouvelle clé : un accompagnateur retiré, ou clé d’avant la clé publique d’équipe (mise à niveau, une fois)
+      const rotation = (eq.rotation || !eq.ekid || !cle.ek) && essai === 0;
       if (!doitEnvoyer && !rotation) {
         ecrireLocal(trip, doc);
         store.set(k.sync, { version: g.version, kid: cle.kid, sale: false, maj: Date.now(), joint: true });
@@ -280,9 +307,9 @@
       let cleEnvoi = cle;
       if (rotation) {
         // Un accompagnateur a été retiré : nouvelle clé, remise aux téléphones de l’équipe qui avaient la précédente
-        cleEnvoi = await nouvelleCle();
+        cleEnvoi = await nouvelleCle(cle);
         const dest = eq.appareils.filter((x) => x.cle || x.id === a.id);
-        corps = { ...corps, kid: cleEnvoi.kid, cles: await Promise.all(dest.map(async (x) => ({ appareil: x.id, env: await envelopper(x.pub, cleEnvoi) }))) };
+        corps = { ...corps, kid: cleEnvoi.kid, epub: { x: cleEnvoi.ek.x, y: cleEnvoi.ek.y }, cles: await Promise.all(dest.map(async (x) => ({ appareil: x.id, env: await envelopper(x.pub, cleEnvoi) }))) };
       }
       corps.blob = await chiffrer(cleEnvoi, doc);
       try {
@@ -323,6 +350,6 @@
     return cle;
   }
 
-  window.Equipe = { synchroniser, noterChangement, donnerCle, utiliserSecours, codeSecours, cleLocale, appareil, quiACoche, codeDe, docLocal, ecrireLocal,
+  window.Equipe = { synchroniser, dechiffrerNom, noterChangement, donnerCle, utiliserSecours, codeSecours, cleLocale, appareil, quiACoche, codeDe, docLocal, ecrireLocal,
     _t: { fusion, reporter, projeter, rapprocher, chiffrer, dechiffrer, nouvelleCle, depuisSecours, kidDe } };
 })();

@@ -1,6 +1,6 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mon accompagnateur » (voyageurs, accompagnateurs, administration) : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
-const CACHE = "app-v7";
+const CACHE = "app-v8";
 const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html", "equipe.js", "garde.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n.startsWith("app-") && n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
@@ -48,7 +48,7 @@ self.addEventListener("push", function (event) {
     .then(function (r) { return r ? r.text() : "fr"; }).catch(function () { return "fr"; })
     .then(function (lang) {
       if (lang === "en") {
-        if (data.kind === "demande" && data.nom) options.body = data.n > 1 ? data.nom + " is asking for access (" + data.n + " requests waiting)." : data.nom + " is asking for access to the trip.";
+        if (data.kind === "demande") options.body = data.n > 1 ? data.n + " access requests waiting." : "New access request for the trip.";
         else if (data.kind === "cle" && data.nom) options.body = data.nom + " is waiting for the My group team key.";
         else options.body = EN[options.body] || options.body;
         title = EN[title] || title;

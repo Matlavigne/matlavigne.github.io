@@ -10,7 +10,7 @@
 // L'app déchiffre l'annonce elle-même quand le voyageur touche la notification.
 
 import { sendPush, b64urlDecode } from "./webpush.js";
-import { handleEquipe, supprimerEquipe } from "./equipe.js";
+import { handleEquipe, supprimerEquipe, clePubliqueEquipe } from "./equipe.js";
 import { handleAuth, handleComptes, sessionUser, userCanEdit, requireAdminSession, purgeSessions, ensureAuthSchema } from "./auth.js";
 
 const KINDS = {
@@ -452,13 +452,13 @@ let demandesOk = false;
 async function ensureDemandes(env) {
   if (demandesOk) return;
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS demandes (id TEXT PRIMARY KEY, trip TEXT NOT NULL, nom TEXT NOT NULL, pub TEXT NOT NULL, jeton TEXT NOT NULL, sub TEXT, statut TEXT NOT NULL DEFAULT 'attente', cle TEXT, ip TEXT, created INTEGER NOT NULL, decided INTEGER, par TEXT)`).run();
-  try { await env.DB.prepare("ALTER TABLE demandes ADD COLUMN sel TEXT").run(); } catch (e) { /* déjà là */ }
+  for (const q of ["ALTER TABLE demandes ADD COLUMN sel TEXT", "ALTER TABLE demandes ADD COLUMN nomc TEXT", "ALTER TABLE demandes ADD COLUMN ekid TEXT"]) { try { await env.DB.prepare(q).run(); } catch (e) { /* déjà là */ } }
   // Téléphones des accompagnateurs abonnés aux alertes des demandes d'accès
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS comptes_subs (username TEXT NOT NULL, endpoint TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created INTEGER NOT NULL, PRIMARY KEY (username, endpoint))`).run();
   demandesOk = true;
 }
 // Avertit les accompagnateurs du voyage (sinon les administrateurs) qu'une demande attend
-async function alerterAccompagnateurs(env, trip, t, nom) {
+async function alerterAccompagnateurs(env, trip, t) {
   const c = cfg(env);
   if (!c.vapid.privateJwk) return 0;
   await ensureAuthSchema(env);
@@ -468,7 +468,8 @@ async function alerterAccompagnateurs(env, trip, t, nom) {
   if (!dest.length) return 0;
   const att = await env.DB.prepare("SELECT COUNT(*) AS n FROM demandes WHERE trip = ? AND statut = 'attente'").bind(trip).first();
   const n = att.n || 1;
-  return notifierComptes(env, dest, { title: t.title || "Demande d'accès", body: n > 1 ? `${nom} demande l'accès (${n} demandes en attente).` : `${nom} demande l'accès au voyage.`, nom, n, url: `/app/accompagnateur.html#dem=${encodeURIComponent(trip)}`, tag: `demande:${trip}`, kind: "demande", id: trip });
+  // Message générique : aucun nom de voyageur ne passe par le service de notifications
+  return notifierComptes(env, dest, { title: t.title || "Demande d'accès", body: n > 1 ? `${n} demandes d'accès en attente.` : "Nouvelle demande d'accès au voyage.", n, url: `/app/accompagnateur.html#dem=${encodeURIComponent(trip)}`, tag: `demande:${trip}`, kind: "demande", id: trip });
 }
 // Notification sur les téléphones de ces comptes (alertes activées dans l'accès accompagnateur)
 async function notifierComptes(env, usernames, msg) {
@@ -509,8 +510,20 @@ async function handleAcces(req, env, path, url) {
     const b = await readJson(req);
     const t = await requireTrip(env, b.trip);
     if (t.clos) throw new HttpError(410, "Ce voyage est terminé");
-    const nom = String(b.nom || "").replace(/\s+/g, " ").trim();
-    if (nom.length < 2 || nom.length > 80) throw new HttpError(400, "Entrez votre prénom et votre nom");
+    // Le nom arrive chiffré pour l'équipe d'accompagnateurs (clé publique d'équipe) : le service ne peut pas le lire.
+    // Sans clé d'équipe pour ce voyage (aucun accompagnateur n'a encore ouvert son app), il arrive en clair.
+    let nom = "", nomc = null, ekid = null;
+    if (b.nomc) {
+      const e = b.nomc;
+      if (!e.epk || !/^[A-Za-z0-9_-]{40,50}$/.test(e.epk.x || "") || !/^[A-Za-z0-9_-]{40,50}$/.test(e.epk.y || "") || !/^[A-Za-z0-9_-]{16}$/.test(e.iv || "") || !/^[A-Za-z0-9_-]{20,400}$/.test(e.data || "")) throw new HttpError(400, "Nom chiffré invalide");
+      const cle = await clePubliqueEquipe(env, b.trip);
+      if (!cle || cle.ekid !== b.ekid) throw new HttpError(409, "La clé de l'équipe a changé : réessayez");
+      nomc = JSON.stringify({ epk: { x: e.epk.x, y: e.epk.y }, iv: e.iv, data: e.data }); ekid = cle.ekid;
+    } else {
+      if (await clePubliqueEquipe(env, b.trip)) throw new HttpError(409, "Mettez l'app à jour et réessayez");
+      nom = String(b.nom || "").replace(/\s+/g, " ").trim();
+      if (nom.length < 2 || nom.length > 80) throw new HttpError(400, "Entrez votre prénom et votre nom");
+    }
     const k = b.pub || {};
     if (k.kty !== "EC" || k.crv !== "P-256" || !/^[A-Za-z0-9_-]{40,50}$/.test(k.x || "") || !/^[A-Za-z0-9_-]{40,50}$/.test(k.y || "")) throw new HttpError(400, "Clé de l'appareil invalide");
     const sub = checkSub(env, b.sub);
@@ -521,9 +534,9 @@ async function handleAcces(req, env, path, url) {
     const att = await env.DB.prepare("SELECT COUNT(*) AS n FROM demandes WHERE trip = ? AND statut = 'attente'").bind(b.trip).first();
     if (att.n >= 400) throw new HttpError(429, "Trop de demandes en attente pour ce voyage");
     const id = rid(12), jeton = rid(24);
-    await env.DB.prepare("INSERT INTO demandes (id, trip, nom, pub, jeton, sub, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(id, b.trip, nom, JSON.stringify({ kty: "EC", crv: "P-256", x: k.x, y: k.y }), await shaHex(jeton), sub, ip, now).run();
-    try { await alerterAccompagnateurs(env, b.trip, t, nom); } catch (e) { console.error("alerte demande", e); }
+    await env.DB.prepare("INSERT INTO demandes (id, trip, nom, nomc, ekid, pub, jeton, sub, ip, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(id, b.trip, nom, nomc, ekid, JSON.stringify({ kty: "EC", crv: "P-256", x: k.x, y: k.y }), await shaHex(jeton), sub, ip, now).run();
+    try { await alerterAccompagnateurs(env, b.trip, t); } catch (e) { console.error("alerte demande", e); }
     return { ok: true, id, jeton };
   }
   // L'accompagnateur active (ou coupe) les alertes des demandes sur son téléphone
@@ -554,6 +567,12 @@ async function handleAcces(req, env, path, url) {
     }
     return { ok: true, actif: true, test };
   }
+  if (req.method === "GET" && path === "/api/acces/cle-equipe") {
+    const trip = url.searchParams.get("trip") || "";
+    const t = await requireTrip(env, trip);
+    if (t.clos) throw new HttpError(410, "Ce voyage est terminé");
+    return (await clePubliqueEquipe(env, trip)) || { ekid: null, pub: null };
+  }
   if (req.method === "GET" && path === "/api/acces/etat") {
     const d = await demandeAuth(env, req, url.searchParams.get("id"));
     return { statut: d.statut, trip: d.trip, cle: d.statut === "ok" && d.cle ? JSON.parse(d.cle) : null };
@@ -568,8 +587,8 @@ async function handleAcces(req, env, path, url) {
   if (req.method === "GET" && path === "/api/acces/demandes") {
     const trip = url.searchParams.get("trip") || "";
     await requireTrip(env, trip); await requireEditor(env, req, trip);
-    const r = await env.DB.prepare("SELECT id, nom, pub, statut, created, decided, par, sel, sub IS NOT NULL AS notif FROM demandes WHERE trip = ? ORDER BY created DESC LIMIT 500").bind(trip).all();
-    return { demandes: (r.results || []).map((d) => ({ ...d, pub: JSON.parse(d.pub), notif: !!d.notif })) };
+    const r = await env.DB.prepare("SELECT id, nom, nomc, ekid, pub, statut, created, decided, par, sel, sub IS NOT NULL AS notif FROM demandes WHERE trip = ? ORDER BY created DESC LIMIT 500").bind(trip).all();
+    return { demandes: (r.results || []).map((d) => ({ ...d, pub: JSON.parse(d.pub), nomc: d.nomc ? JSON.parse(d.nomc) : null, notif: !!d.notif })) };
   }
   if (req.method === "POST" && path === "/api/acces/decision") {
     const b = await readJson(req, 512 * 1024);

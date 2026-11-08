@@ -18,7 +18,14 @@ async function schema(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS groupes (trip TEXT PRIMARY KEY, blob TEXT NOT NULL, version INTEGER NOT NULL, kid TEXT NOT NULL, updated INTEGER NOT NULL, par TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS equipe_attente (trip TEXT NOT NULL, appareil TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (trip, appareil))`),
   ]);
+  for (const q of ["ALTER TABLE groupes ADD COLUMN epub TEXT", "ALTER TABLE groupes ADD COLUMN ekid TEXT"]) { try { await env.DB.prepare(q).run(); } catch (e) { /* déjà là */ } }
   schemaOk = true;
+}
+// Clé publique d'équipe (pour chiffrer le nom des demandes d'accès), ou null
+export async function clePubliqueEquipe(env, trip) {
+  await schema(env);
+  const g = await env.DB.prepare("SELECT epub, ekid FROM groupes WHERE trip = ?").bind(trip).first();
+  return g && g.epub ? { ekid: g.ekid, pub: JSON.parse(g.epub) } : null;
 }
 
 async function empreinte(x, y) {
@@ -81,7 +88,7 @@ export async function handleEquipe(req, env, path, url, d) {
   const noms = new Set(membres.map((x) => x.username));
   const apps = membres.length ? ((await env.DB.prepare(`SELECT id, username, pub, nom FROM equipe_appareils WHERE username IN (${membres.map(() => "?").join(",")})`).bind(...membres.map((x) => x.username)).all()).results || []) : [];
   const appIds = new Set(apps.map((a) => a.id));
-  const g = await env.DB.prepare("SELECT version, kid, updated, par FROM groupes WHERE trip = ?").bind(id).first();
+  const g = await env.DB.prepare("SELECT version, kid, updated, par, ekid FROM groupes WHERE trip = ?").bind(id).first();
   const monApp = (aid) => { const a = apps.find((x) => x.id === aid && x.username === u.username); if (!a) throw new d.HttpError(400, "Téléphone non enregistré pour ce compte"); return a; };
 
   if (req.method === "GET" && path === "/api/equipe") {
@@ -101,7 +108,7 @@ export async function handleEquipe(req, env, path, url, d) {
       }
     }
     return {
-      kid: g ? g.kid : null, version: g ? g.version : 0, maj: g ? g.updated : null, majPar: g ? g.par : null,
+      kid: g ? g.kid : null, ekid: g ? g.ekid || null : null, version: g ? g.version : 0, maj: g ? g.updated : null, majPar: g ? g.par : null,
       cle: mine && g && mine.kid === g.kid ? JSON.parse(mine.env) : null,
       rotation,
       membres: membres.map((x) => ({ username: x.username, nom: x.nom || x.username })),
@@ -142,8 +149,12 @@ export async function handleEquipe(req, env, path, url, d) {
     if (s.length > MAX_BLOB) throw new d.HttpError(413, "Liste trop grosse");
     if (!validKid(b.kid)) throw new d.HttpError(400, "Clé d'équipe invalide");
     const nouvelle = !g || b.kid !== g.kid;
-    let cles = [];
+    let cles = [], epub = null, ekid = null;
     if (nouvelle) {
+      // Partie publique de la clé d'équipe : les voyageurs y chiffrent leur nom
+      const e = b.epub || {};
+      if (!/^[A-Za-z0-9_-]{40,50}$/.test(e.x || "") || !/^[A-Za-z0-9_-]{40,50}$/.test(e.y || "")) throw new d.HttpError(400, "Clé publique d'équipe manquante");
+      epub = JSON.stringify({ x: e.x, y: e.y }); ekid = await empreinte(e.x, e.y);
       // Nouvelle clé (création ou changement) : les enveloppes de tous les téléphones qui la reçoivent, dont le sien
       cles = Array.isArray(b.cles) ? b.cles.slice(0, 50) : [];
       for (const c of cles) if (!appIds.has(c.appareil) || !validEnv(c.env)) throw new d.HttpError(400, "Enveloppe invalide");
@@ -152,15 +163,17 @@ export async function handleEquipe(req, env, path, url, d) {
     const ver = (g ? g.version : 0);
     if (base !== ver) throw new d.HttpError(409, "La liste a changé entre-temps", { version: ver });
     const r = g
-      ? await env.DB.prepare("UPDATE groupes SET blob = ?, version = version + 1, kid = ?, updated = ?, par = ? WHERE trip = ? AND version = ?").bind(s, b.kid, now, u.username, id, base).run()
-      : await env.DB.prepare("INSERT INTO groupes (trip, blob, version, kid, updated, par) VALUES (?, ?, 1, ?, ?, ?) ON CONFLICT (trip) DO NOTHING").bind(id, s, b.kid, now, u.username).run();
+      ? (nouvelle
+        ? await env.DB.prepare("UPDATE groupes SET blob = ?, version = version + 1, kid = ?, epub = ?, ekid = ?, updated = ?, par = ? WHERE trip = ? AND version = ?").bind(s, b.kid, epub, ekid, now, u.username, id, base).run()
+        : await env.DB.prepare("UPDATE groupes SET blob = ?, version = version + 1, updated = ?, par = ? WHERE trip = ? AND version = ? AND kid = ?").bind(s, now, u.username, id, base, b.kid).run())
+      : await env.DB.prepare("INSERT INTO groupes (trip, blob, version, kid, epub, ekid, updated, par) VALUES (?, ?, 1, ?, ?, ?, ?, ?) ON CONFLICT (trip) DO NOTHING").bind(id, s, b.kid, epub, ekid, now, u.username).run();
     if (!r.meta || r.meta.changes !== 1) throw new d.HttpError(409, "La liste a changé entre-temps", { version: ver });
     if (nouvelle) {
       const st = [env.DB.prepare("DELETE FROM equipe_cles WHERE trip = ?").bind(id), env.DB.prepare("DELETE FROM equipe_attente WHERE trip = ?").bind(id)];
       for (const c of cles) st.push(env.DB.prepare("INSERT INTO equipe_cles (trip, appareil, kid, env, par, created) VALUES (?, ?, ?, ?, ?, ?)").bind(id, c.appareil, b.kid, JSON.stringify(c.env), u.username, now));
       await env.DB.batch(st);
     }
-    return { ok: true, version: ver + 1, kid: b.kid };
+    return { ok: true, version: ver + 1, kid: b.kid, ekid: nouvelle ? ekid : g.ekid };
   }
   throw new d.HttpError(404, "Introuvable");
 }

@@ -231,3 +231,10 @@ Les apps appellent `https://api.monaccompagnateur.ca` (domaine monaccompagnateur
 - Fusion : chaque fiche, appel et coche porte l'heure et l'auteur du changement; les écritures simultanées sont fusionnées (conflit 409, fusion, renvoi). Liste compressée (gzip) avant chiffrement.
 - Code de secours : la clé elle-même en base 32 (carte « Clé d'équipe »), pour rouvrir la liste si tous les téléphones sont perdus.
 - Copie chiffrée, enveloppes et attentes effacées avec le voyage (`purgeTrip`, 7 jours après la fin).
+
+## Nom chiffré dans les demandes d'accès (Loi 25)
+
+- La clé d'équipe porte aussi une paire ECDH d'équipe. Sa partie publique est remise aux voyageurs (`GET /api/acces/cle-equipe`, sans connexion); l'app du voyageur y chiffre son prénom et son nom (ECDH éphémère + AES-GCM). La partie privée voyage avec la clé d'équipe dans les enveloppes; les précédentes sont gardées (5) pour les demandes en cours.
+- Le Worker ne garde que `nomc` (chiffré) et `ekid`; `nom` reste vide. Un nom en clair est refusé dès qu'une clé d'équipe existe. La notification à l'accompagnateur est générique (sans nom).
+- La clé d'équipe de chaque voyage à venir est créée dès qu'un accompagnateur ouvre son app (accès accompagnateur); une clé d'avant ce changement est remplacée automatiquement (une fois). Sans clé d'équipe (aucun accompagnateur n'a encore ouvert son app), la demande arrive en clair : ouvrez l'accès accompagnateur avant de partager l'app d'un nouveau voyage.
+- Un téléphone sans la clé d'équipe affiche « 🔒 Nom chiffré » : il faut se faire donner la clé (Mon groupe) ou entrer le code de secours.

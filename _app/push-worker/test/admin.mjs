@@ -259,9 +259,23 @@ try {
   r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
   check(r.status === 200 && r.json.kid === null && r.json.membres.length === 2 && r.json.appareils.length === 2, "équipe : 2 accompagnateurs, 2 téléphones, pas encore de clé");
   const blob = { iv: b64u(12), data: b64u(300), z: 1 };
-  check((await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, cles: [{ appareil: aL, env: envl() }] }, julie)).status === 400, "nouvelle clé sans son propre téléphone : refusée");
-  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }] }, julie);
-  check(r.status === 200 && r.json.version === 1, `Julie crée la liste chiffrée (${r.status} ${r.json.erreur || ""})`);
+  check((await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, epub: pk(), cles: [{ appareil: aL, env: envl() }] }, julie)).status === 400, "nouvelle clé sans son propre téléphone : refusée");
+  check((await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }] }, julie)).status === 400, "nouvelle clé sans partie publique : refusée");
+  const ePub = pk();
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, epub: ePub, cles: [{ appareil: aJ, env: envl() }] }, julie);
+  check(r.status === 200 && r.json.version === 1 && /^[0-9a-f]{32}$/.test(r.json.ekid), `Julie crée la liste chiffrée (${r.status} ${r.json.erreur || ""})`);
+  const ekid1 = r.json.ekid;
+  // Demandes d'accès : le nom arrive chiffré pour l'équipe
+  r = await call("GET", "/api/acces/cle-equipe?trip=st-anton-mars2027");
+  check(r.status === 200 && r.json.ekid === ekid1 && r.json.pub.x === ePub.x, "clé publique d'équipe offerte aux voyageurs, sans connexion");
+  const nomc = { epk: { x: b64u(32), y: b64u(32) }, iv: b64u(12), data: b64u(40) };
+  check((await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "Paul En-Clair", pub })).status === 409, "nom en clair refusé une fois la clé d'équipe en place");
+  check((await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nomc, ekid: "0".repeat(32), pub })).status === 409, "nom chiffré pour une ancienne clé : à refaire");
+  r = await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nomc, ekid: ekid1, pub });
+  check(r.status === 200, `demande avec nom chiffré (${r.status} ${r.json.erreur || ""})`);
+  const demC = r.json.id;
+  r = await call("GET", "/api/acces/demandes?trip=st-anton-mars2027", null, julie);
+  { const d = r.json.demandes.find((x) => x.id === demC); check(d && d.nom === "" && d.nomc.data === nomc.data && d.ekid === ekid1, "le service ne garde que le nom chiffré"); }
   r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
   check(r.json.kid === "a".repeat(16) && r.json.cle && r.json.appareils.find((a) => a.id === aJ).cle && !r.json.appareils.find((a) => a.id === aL).cle, "Julie a sa clé; Luc pas encore");
   r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aL, null, luc);
@@ -281,10 +295,10 @@ try {
   check((await call("GET", "/api/groupe?trip=st-anton-mars2027", null, luc)).status === 403, "accompagnateur retiré : plus de liste");
   r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
   check(r.json.rotation === true, "le téléphone de Julie voit qu'il faut changer la clé");
-  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }, { appareil: aL, env: envl() }] }, julie);
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, epub: pk(), cles: [{ appareil: aJ, env: envl() }, { appareil: aL, env: envl() }] }, julie);
   check(r.status === 400, "la nouvelle clé ne peut pas aller à un téléphone retiré");
-  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }] }, julie);
-  check(r.status === 200, "nouvelle clé : liste rechiffrée");
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, epub: pk(), cles: [{ appareil: aJ, env: envl() }] }, julie);
+  check(r.status === 200 && r.json.ekid !== ekid1, "nouvelle clé : liste rechiffrée, nouvelle clé publique d'équipe");
   r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
   check(r.json.rotation === false && r.json.kid === "c".repeat(16) && r.json.cle, "plus besoin de changer la clé");
   await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["julie.b", "luc.t"] }, ADMIN);
