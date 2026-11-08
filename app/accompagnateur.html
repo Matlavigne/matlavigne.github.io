@@ -330,7 +330,7 @@ function dessiner(){
 async function pastilleDem(d){d=Math.max(0,d|0);
   try{if(!window.caches)return;const c=await caches.open('voyage-badge');
     await c.put(new Request('/app/__pastille-dem__'),new Response(String(d)));
-    let a=0;try{const r=await c.match(new Request('/app/__pastille__'));a=r?parseInt(await r.text(),10)||0:0;}catch(e){}
+    let a=0;for(const k of ['/app/__pastille__','/app/__pastille-acces__']){try{const r=await c.match(new Request(k));a+=r?parseInt(await r.text(),10)||0:0;}catch(e){}}
     if(navigator.setAppBadge)await (a+d>0?navigator.setAppBadge(a+d):navigator.clearAppBadge());}catch(e){}
 }
 let DEMV=null,DEMS=[];

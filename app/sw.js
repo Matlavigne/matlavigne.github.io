@@ -1,6 +1,6 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mon accompagnateur » (voyageurs, accompagnateurs, administration) : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
-const CACHE = "app-v4";
+const CACHE = "app-v5";
 const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n.startsWith("app-") && n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
@@ -25,15 +25,15 @@ var EN = {
 function tellClients(msg) {
   return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (l) { l.forEach(function (c) { c.postMessage(msg); }); });
 }
-// Pastille de l'icône : annonces non lues + demandes d'accès en attente (accompagnateur)
+// Pastille de l'icône : annonces non lues + demandes d'accès en attente (accompagnateur) + accès approuvés pas encore vus (voyageur)
 function lireN(c, k) { return c.match(new Request(k)).then(function (r) { return r ? r.text() : "0"; }).then(function (t) { return parseInt(t, 10) || 0; }); }
 function pastillePlus(kind) {
   if (!self.navigator || !self.navigator.setAppBadge) return Promise.resolve();
-  var A = "/app/__pastille__", D = "/app/__pastille-dem__", key = kind === "demande" ? D : A;
+  var A = "/app/__pastille__", D = "/app/__pastille-dem__", P = "/app/__pastille-acces__", key = kind === "demande" ? D : kind === "acces" ? P : A;
   return caches.open("voyage-badge").then(function (c) {
     return lireN(c, key).then(function (n) { return c.put(new Request(key), new Response(String(n + 1))); })
-      .then(function () { return Promise.all([lireN(c, A), lireN(c, D)]); })
-      .then(function (v) { return self.navigator.setAppBadge(v[0] + v[1]); });
+      .then(function () { return Promise.all([lireN(c, A), lireN(c, D), lireN(c, P)]); })
+      .then(function (v) { return self.navigator.setAppBadge(v[0] + v[1] + v[2]); });
   }).catch(function () {});
 }
 self.addEventListener("push", function (event) {
@@ -41,7 +41,7 @@ self.addEventListener("push", function (event) {
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
   var title = data.title || "Votre voyage";
   var options = { body: data.body || "Nouvelle annonce du groupe.", tag: data.tag || "voyage", renotify: true, icon: "/app/icon-192.png", data: { url: data.url || "/app/", kind: data.kind, id: data.id } };
-  var badge = (data.kind === "annonce" || data.kind === "demande") ? pastillePlus(data.kind) : Promise.resolve();
+  var badge = (data.kind === "annonce" || data.kind === "demande" || data.kind === "acces") ? pastillePlus(data.kind) : Promise.resolve();
   var show = caches.open("voyage-badge").then(function (c) { return c.match("/app/__langue__"); })
     .then(function (r) { return r ? r.text() : "fr"; }).catch(function () { return "fr"; })
     .then(function (lang) {

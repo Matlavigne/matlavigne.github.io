@@ -1240,7 +1240,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <div class="card"><h3>Réglages</h3><p>Alertes du voyage, installation de l’app, apparence et langue : touchez la roue dentée en haut à droite.</p><p><a class="btn light" href="#reglages">Ouvrir les réglages</a></p></div>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-08 12:45</span><br><span class="small">© 2026 Mathieu Lavigne · Tous droits réservés</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-08 12:49</span><br><span class="small">© 2026 Mathieu Lavigne · Tous droits réservés</span></p>
 </section>
 <section class="view" id="v-reglages" hidden aria-labelledby="t-reglages">
   <a class="back" href="#accueil" id="reg-back">← Retour</a>
@@ -1531,7 +1531,7 @@ function pastille(n){n=Math.max(0,n|0);
     caches.open('voyage-badge').then(async c=>{
       await c.put(new Request(new URL('__pastille__',ici).href),new Response(String(n)));
       await c.put(new Request(new URL('/app/__pastille__',location.origin).href),new Response(String(n)));
-      let d=0;try{const r=await c.match(new Request(new URL('/app/__pastille-dem__',location.origin).href));d=r?parseInt(await r.text(),10)||0:0;}catch(e){}
+      let d=0;for(const k of ['/app/__pastille-dem__','/app/__pastille-acces__']){try{const r=await c.match(new Request(new URL(k,location.origin).href));d+=r?parseInt(await r.text(),10)||0:0;}catch(e){}}
       if(navigator.setAppBadge)await (n+d>0?navigator.setAppBadge(n+d):navigator.clearAppBadge());
     }).catch(()=>{});}catch(e){}
 }

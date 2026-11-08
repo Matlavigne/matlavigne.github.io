@@ -407,8 +407,17 @@ async function ouvrirCle(c){
   return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u(c.iv)},k,b64u(c.data))));
 }
 let verifEnCours=false;
+/* Pastille « accès approuvé » : effacée dès que l’app a ouvert les accès (le voyage est dans la liste) */
+async function pastilleAccesVue(){
+  try{if(!window.caches)return;const c=await caches.open('voyage-badge');
+    await c.put(new Request('/app/__pastille-acces__'),new Response('0'));
+    let n=0;for(const k of ['/app/__pastille__','/app/__pastille-dem__']){try{const r=await c.match(new Request(k));n+=r?parseInt(await r.text(),10)||0:0;}catch(e){}}
+    if(navigator.setAppBadge)await (n>0?navigator.setAppBadge(n):navigator.clearAppBadge());}catch(e){}
+}
 async function verifierDemandes(manuel){
-  if(verifEnCours||!DEM.some(d=>d.statut==='attente'))return;verifEnCours=true;
+  if(verifEnCours)return;
+  if(!DEM.some(d=>d.statut==='attente')){if(!document.hidden)pastilleAccesVue();return;}
+  verifEnCours=true;const avant=DEM.length;
   try{for(const d of DEM.filter(x=>x.statut==='attente')){
     let r;try{r=await api('GET','/api/acces/etat?id='+encodeURIComponent(d.id),null,d.jeton);}catch(x){if(x.status===404){d.statut='refus';}continue;}
     if(r.statut==='refus'){d.statut='refus';continue;}
@@ -420,6 +429,7 @@ async function verifierDemandes(manuel){
     msg(T('Accès approuvé ✓')+' <b>'+esc(nomDe(d.trip))+'</b>','ok');
   }
   DEM=DEM.filter(d=>d.statut!=='fait');saveDem();dessiner();
+  if(!document.hidden&&(DEM.length<avant||!DEM.some(d=>d.statut==='attente')))pastilleAccesVue();
   if(manuel&&DEM.some(d=>d.statut==='attente'))msg(T('Toujours en attente d’approbation.'),'info');}
   finally{verifEnCours=false;}
 }
