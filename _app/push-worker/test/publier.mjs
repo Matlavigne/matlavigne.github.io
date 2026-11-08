@@ -1,19 +1,20 @@
 // Test de la publication depuis l'éditeur : wrangler dev + faux GitHub local.
-// Vérifie qu'une clé d'éditeur ne peut écrire que <son voyage>/voyage.json.
+// Vérifie qu'un compte accompagnateur ne peut écrire que <son voyage>/voyage.json (et rien sans compte).
 import { spawn, execFileSync } from "node:child_process";
 import http from "node:http";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TRIPS_TEST, premierAdmin, accompagnateur } from "./outils.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GH_PORT = 9912, WORKER_PORT = 8798;
 const W = `http://127.0.0.1:${WORKER_PORT}`;
 const ORIGIN = "https://monaccompagnateur.ca";
 const A = "solden-voyage-2027", B = "st-anton-mars2027";
-const KEY_A = "cle-a-" + crypto.randomBytes(6).toString("hex");
-const KEY_B = "cle-b-" + crypto.randomBytes(6).toString("hex");
+const ADMIN_TOKEN = "adm-" + crypto.randomBytes(8).toString("hex");
+let KEY_A, KEY_B;
 const GH_TOKEN = "github_pat_test_" + crypto.randomBytes(6).toString("hex");
 const REPO = "Matlavigne/matlavigne.github.io";
 
@@ -59,7 +60,8 @@ await new Promise((r) => gh.listen(GH_PORT, "127.0.0.1", r));
 // ---------- Worker ----------
 fs.writeFileSync(path.join(root, ".dev.vars"), [
   "VAPID_PUBLIC_KEY=x",
-  `EDITOR_TOKENS=${JSON.stringify({ [A]: KEY_A, [B]: KEY_B })}`,
+  `ADMIN_TOKEN=${ADMIN_TOKEN}`,
+  TRIPS_TEST,
   `GITHUB_TOKEN=${GH_TOKEN}`,
   `GITHUB_API=http://127.0.0.1:${GH_PORT}`,
 ].join("\n") + "\n");
@@ -81,20 +83,25 @@ const call = async (method, p, body, key) => {
 };
 
 try {
+  // Deux accompagnateurs : l'un a Sölden, l'autre St. Anton
+  const adm = await premierAdmin(call, ADMIN_TOKEN);
+  KEY_A = await accompagnateur(call, adm, "julie.b", [A]);
+  KEY_B = await accompagnateur(call, adm, "marc.g", [B]);
   console.log("\nLecture");
+  check((await call("GET", `/api/voyage?trip=${A}`, null, "jeton-sans-compte-123456")).status === 401, "ancienne clé d'éditeur (sans compte) : refusée");
   let r = await call("GET", `/api/voyage?trip=${A}`);
-  check(r.status === 401, `sans clé : refusé (${r.status})`);
+  check(r.status === 401, `sans compte : refusé (${r.status})`);
   r = await call("GET", `/api/voyage?trip=${A}`, null, KEY_B);
-  check(r.status === 403, `clé de St. Anton sur Sölden : refusée (${r.status})`);
+  check(r.status === 403, `compte de St. Anton sur Sölden : refusée (${r.status})`);
   r = await call("GET", `/api/voyage?trip=${A}`, null, KEY_A);
-  check(r.status === 200 && r.json.sha === files.get(`${A}/voyage.json`).sha && JSON.parse(r.json.content).chiffre, "clé de Sölden : contenu et sha reçus");
+  check(r.status === 200 && r.json.sha === files.get(`${A}/voyage.json`).sha && JSON.parse(r.json.content).chiffre, "compte de Sölden : contenu et sha reçus");
   check(r.cors === ORIGIN, "CORS autorisé pour monaccompagnateur.ca");
   const shaA = r.json.sha;
 
   console.log("\nPublication");
   const nouveau = JSON.stringify(enc({ t: A, v: 2 }));
   r = await call("POST", "/api/publier", { trip: A, content: nouveau, sha: shaA }, KEY_B);
-  check(r.status === 403, `clé de St. Anton ne publie pas Sölden (${r.status})`);
+  check(r.status === 403, `compte de St. Anton ne publie pas Sölden (${r.status})`);
   r = await call("POST", "/api/publier", { trip: "../" + A, content: nouveau, sha: shaA }, KEY_A);
   check(r.status === 400, `voyage « ../ » refusé (${r.status})`);
   r = await call("POST", "/api/publier", { trip: "inconnu-2099", content: nouveau }, KEY_A);
@@ -113,7 +120,7 @@ try {
   r = await call("POST", "/api/publier", { trip: A, content: "x".repeat(700 * 1024), sha: r.json.sha }, KEY_A);
   check(r.status === 413, `contenu trop gros refusé (${r.status})`);
   r = await call("POST", "/api/publier", { trip: B, content: JSON.stringify(enc({ t: B, v: 2 })), sha: files.get(`${B}/voyage.json`).sha }, KEY_B);
-  check(r.status === 200 && writes.at(-1).path === `${B}/voyage.json`, "la clé de St. Anton publie St. Anton");
+  check(r.status === 200 && writes.at(-1).path === `${B}/voyage.json`, "le compte de St. Anton publie St. Anton");
 } finally {
   wr.kill("SIGINT");
   gh.close();

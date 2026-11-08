@@ -1,140 +1,145 @@
-# Alertes du voyage : Worker de notifications
+# Serveur de monaccompagnateur.ca (Worker Cloudflare)
 
-Ce Worker Cloudflare envoie des notifications aux téléphones des voyageurs pour les apps de monaccompagnateur.ca.
+Le Worker répond à `https://api.monaccompagnateur.ca`. L'ancienne adresse `monaccompagnateur-push.monaccompagnateur.workers.dev` reste active (`workers_dev = true`). Il gère :
+- les **comptes** : accompagnateurs et administrateurs, double authentification obligatoire ;
+- la **publication** du contenu des voyages sur GitHub ;
+- les **alertes**, c'est-à-dire les notifications web aux téléphones ;
+- les **demandes d'accès** des voyageurs (approbation) ;
+- la copie chiffrée de **Mon groupe**.
 
-Il ne voit jamais le contenu du voyage. Il garde seulement deux choses : les abonnements des téléphones (une adresse technique d'Apple, de Google ou de Mozilla, sans nom) et le calendrier des annonces (un identifiant et une heure). Le texte affiché sur le téléphone est générique, par exemple « Nouvelle annonce du groupe. Touchez pour la lire. ». L'app déchiffre ensuite l'annonce elle-même, avec la phrase du voyage, comme aujourd'hui.
+Le site et les apps sont décrits dans [`../README.md`](../README.md).
 
-```
-Éditeur ──publie──▶ GitHub Pages (contenu chiffré)
-   │
-   └─ calendrier (id + heure) ──▶ Worker ──cron chaque minute──▶ Apple / Google ──▶ téléphones
-                                     ▲
-App du voyageur ── abonnement ───────┘
-```
+**Principe :** le Worker ne lit jamais le contenu des voyages ni les renseignements des voyageurs.
+- Le contenu est chiffré dans le navigateur avec la phrase du voyage.
+- La liste du groupe est chiffrée avec la clé d'équipe des accompagnateurs.
+- Le nom dans une demande d'accès est chiffré pour l'équipe.
+- Les notifications portent un texte générique.
 
-## Contenu
+## Fichiers
 
 | Fichier | Rôle |
 |---|---|
-| `src/index.js` | Routes de l'API, envoi planifié, purge automatique |
-| `src/webpush.js` | Signature VAPID et chiffrement aes128gcm (WebCrypto, sans dépendance) |
-| `schema.sql` | Tables D1 : abonnements, calendrier, livraisons |
-| `wrangler.toml` | Configuration et liste des voyages |
-| `scripts/generate-keys.mjs` | Génère la paire VAPID et le jeton de l'éditeur |
-| `client/push-client.js` | À inclure dans l'app : bouton « Activer les alertes » |
-| `client/sw-push.js` | À importer dans le service worker de l'app |
-| `client/editor-push.js` | À inclure dans l'éditeur : synchronise le calendrier à la publication |
-| `test/e2e.mjs` | Test de bout en bout en local (`npm test`) |
+| `src/index.js` | routes : publication, alertes, demandes d'accès, administration, cron (envois et purge) |
+| `src/auth.js` | comptes, mots de passe (PBKDF2), double authentification (TOTP), sessions |
+| `src/equipe.js` | Mon groupe partagé : appareils, enveloppes de la clé d'équipe, copie chiffrée |
+| `src/webpush.js` | notifications web : signature VAPID et chiffrement aes128gcm (WebCrypto, sans dépendance) |
+| `schema.sql` | tables de base (abonnements, calendrier, livraisons); les autres tables se créent seules |
+| `wrangler.toml` | configuration (adresse, base D1, cron, variables) |
+| `scripts/setup.mjs` | installation initiale des clés VAPID (**une seule fois**) |
+| `scripts/cle-admin.mjs` | `npm run cle-config` : clé de première configuration (secret `ADMIN_TOKEN`) |
+| `scripts/secours-admin.mjs` | `npm run secours-admin -- <usager>` : réinitialise le mot de passe et la double authentification d'un compte |
+| `test/*.mjs` | tests de bout en bout en local (`npm test`) |
 
-## 1. Déployer le Worker (une seule fois, environ 10 minutes)
-
-La base D1 `monaccompagnateur-push` est déjà créée, avec ses tables, et son identifiant est dans `wrangler.toml`. Il faut Node.js 20 ou plus.
+## Opérations courantes
 
 ```bash
-git clone https://github.com/Matlavigne/matlavigne.github.io
-cd matlavigne.github.io/_app/push-worker
-npm install
-npx wrangler login
-npm run setup
+cd _app/push-worker
+git pull
+npm install          # la première fois, ou après une mise à jour de wrangler
+npm run deploy       # après chaque changement du code du Worker
+npm test             # avant de déployer (environ 5 minutes)
 ```
 
-`npm run setup` déploie le Worker, génère la paire VAPID et un jeton d'éditeur par voyage, puis les enregistre comme secrets dans Cloudflare. À la fin, il affiche les jetons d'éditeur : gardez-les dans votre gestionnaire de mots de passe. Il affiche aussi l'adresse du Worker, par exemple `https://monaccompagnateur-push.<compte>.workers.dev`. Mettez-la dans `_app/config.json`.
+**Ne relancez jamais `npm run setup`** sur le Worker en service : de nouvelles clés VAPID désabonneraient tous les téléphones.
 
-Pour les mises à jour suivantes du code du Worker, lancez `npm run deploy`. **Ne relancez pas `npm run setup`** : de nouvelles clés VAPID désabonneraient tous les téléphones.
+**Secrets** (dans Cloudflare, jamais dans le dépôt) :
 
-### Ajouter un voyage
+| Secret | Rôle |
+|---|---|
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_JWK` | notifications |
+| `GITHUB_TOKEN` | jeton GitHub « fine-grained », dépôt `matlavigne.github.io` seulement, *Contents : Read and write*; à renouveler avant son expiration (`npx wrangler secret put GITHUB_TOKEN`) |
+| `ADMIN_TOKEN` | clé de première configuration; refusée dès qu'un administrateur existe |
 
-Ajoutez un bloc `[vars.TRIPS.<nom-du-dossier>]` dans `wrangler.toml`, par exemple pour St. Anton. Ajoutez son jeton au secret `EDITOR_TOKENS` : relancez `npx wrangler secret put EDITOR_TOKENS` et collez le JSON complet de tous les voyages (les anciens jetons, plus le nouveau, généré par exemple avec `npm run keys`). Puis lancez `npm run deploy`.
+L'ancien secret `EDITOR_TOKENS` ne sert plus : `npx wrangler secret delete EDITOR_TOKENS`.
 
-Chaque accompagnateur reçoit le jeton de ses propres voyages seulement. Une clé `"*"` dans `EDITOR_TOKENS` sert de jeton administrateur pour tous les voyages.
+**Téléphone d'authentification perdu, sans code de secours :** `npm run secours-admin -- <nom d'usager>` donne un mot de passe temporaire et retire la double authentification, qu'il faudra réactiver.
 
-## 2. Brancher les apps
+## Comptes
 
-C'est déjà fait dans le code commun. Il suffit de mettre l'adresse du Worker dans `_app/config.json` (`"pushWorker": "https://…workers.dev"`), puis de lancer `node _app/build.mjs` à la racine du site et de publier. Le bouton « Activer les alertes » apparaît dans l'onglet Infos, et la section « Alertes sur les téléphones » dans l'éditeur. Les étapes ci-dessous décrivent ce que le code commun fait déjà.
+- Un compte par accompagnateur. L'administrateur lui confie un ou plusieurs voyages. La même session sert à l'accès accompagnateur, à l'éditeur, à Mon groupe et à l'administration.
+- **Double authentification obligatoire pour tous** (app d'authentification). Elle ne peut pas être retirée soi-même ; l'administrateur peut la réinitialiser. Sans elle, le compte ne peut ni publier ni voir ses voyages.
+- Mot de passe temporaire à la création, à changer à la première connexion (10 caractères minimum). Après 5 essais ratés, le compte est bloqué 15 minutes. Chaque compte reçoit 8 codes de secours à usage unique.
+- Rien en clair dans la base : mots de passe (PBKDF2), sessions et codes de secours (SHA-256).
+- Sessions : 12 heures pour un administrateur, 30 jours pour un accompagnateur.
+- **Profil** (nom, cellulaire, courriel) : repris par l'éditeur dans la liste des accompagnateurs du voyage, publiée chiffrée.
 
-## 2 bis. Détail du branchement (pour référence)
+**Première configuration** (une fois) :
+1. Lancez `npm run cle-config`, puis `npm run deploy`.
+2. Sur `/admin` › « Première configuration », entrez la clé, créez votre compte et activez la double authentification.
 
-1. Copier `push-client.js` et `sw-push.js` à côté de `index.html` et du service worker.
-2. En haut du service worker existant :
-   ```js
-   self.VOYAGE_PUSH = {
-     worker: "https://monaccompagnateur-push.<compte>.workers.dev",
-     trip: "solden-voyage-2027",
-     icon: "icons/icon-192.png",
-   };
-   importScripts("sw-push.js");
-   ```
-   Le service worker change, il faut donc changer son numéro de version de cache pour que les téléphones le reprennent.
-3. Dans l'app, à l'endroit voulu (accueil, fin de l'installation, section Annonces) :
-   ```html
-   <div id="alertes"></div>
-   <script src="push-client.js"></script>
-   <script>
-     VoyagePush.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
-     VoyagePush.mountButton(document.getElementById("alertes"));
-   </script>
-   ```
-   Le bouton gère lui-même les cas particuliers : iPhone pas encore installé à l'écran d'accueil, alertes refusées, navigateur non compatible.
-4. **Recharger le contenu à la réception d'une alerte.** Quand une alerte arrive ou est touchée, le service worker envoie un message à l'app :
-   ```js
-   navigator.serviceWorker.addEventListener("message", (e) => {
-     if (e.data && e.data.type === "voyage-push") rechargerContenu(); // votre fonction existante
-   });
-   ```
-   **Important :** ce rechargement doit aller chercher le fichier de contenu sur le réseau (`fetch(url, { cache: "no-store" })`), pas dans le cache du service worker. Sinon, le voyageur touche l'alerte et voit l'ancienne version. Si la stratégie actuelle sert le contenu « cache d'abord », il faut passer à « réseau d'abord, cache si hors ligne » pour ce fichier.
+## Publication
 
-## 3. Brancher l'éditeur
+L'éditeur chiffre le contenu avec la phrase du voyage, puis l'envoie (`POST /api/publier`, session d'un compte qui a le voyage). Le Worker écrit **uniquement** `<voyage>/voyage.json` avec son jeton GitHub. Chaque publication est signée « Éditeur <voyage> » dans l'historique.
 
-```html
-<script src="editor-push.js"></script>
-<script>
-  VoyagePushEditor.init({ worker: "https://monaccompagnateur-push.<compte>.workers.dev", trip: "solden-voyage-2027" });
-</script>
-```
+Garde-fous :
+- le chemin est construit par le Worker ;
+- le voyage doit être connu ;
+- le contenu doit être un JSON valide de 600 Ko au plus ;
+- une version en clair est refusée si la version en ligne est protégée ;
+- un conflit est signalé si le fichier a changé depuis l'ouverture (409).
 
-Après chaque publication réussie, envoyez la liste **complète** des annonces :
+## Administration (`/admin`, administrateur avec double authentification)
 
-```js
-await VoyagePushEditor.sync(annonces.map((a) => ({
-  id: a.id,                  // identifiant stable : ne change pas quand on corrige le texte
-  at: a.afficherA,           // heure ISO avec fuseau, ex. "2027-03-07T08:00:00+01:00"
-  kind: "annonce",           // ou "rappel"
-})));
-```
+- **Créer un voyage** : le navigateur chiffre le contenu de départ, puis le Worker écrit en **un seul commit** :
+  - la fiche `_app/voyages/<id>.json` ;
+  - le contenu chiffré `<id>/voyage.json` ;
+  - la photo (`_app/voyages/photos/<id>.jpg`) ;
+  - au choix, l'entrée de `voyages.json`.
 
-Le jeton est demandé une seule fois, puis gardé dans le navigateur de l'accompagnateur.
+  Le voyage est enregistré dans la base D1 (table `trips`). Le robot GitHub génère ensuite l'app.
+- **Photo d'en-tête**, **accompagnateurs** (un ou plusieurs comptes par voyage), **comptes** (création, voyages, mot de passe, double authentification, suppression).
+- **Clore** : efface les abonnements, le calendrier, les demandes d'accès et la copie chiffrée de Mon groupe ; l'app reste en ligne.
+- **Supprimer** (en tapant l'adresse) : retire en un commit l'app, la fiche, la photo, l'icône et le dictionnaire, puis efface tout dans la base. Le voyage reste récupérable dans l'historique GitHub.
 
-Règles appliquées par le Worker :
-- Une annonce ne part jamais avant **3 minutes** après la publication, le temps que GitHub Pages mette le site à jour.
-- Une annonce déjà envoyée n'est jamais renvoyée, même si on la modifie. Pour réalerter le groupe, il faut créer une nouvelle annonce.
-- Une annonce retirée de la liste avant son heure est déprogrammée.
-- Une annonce nouvelle dont l'heure est passée depuis plus de 15 minutes est ignorée. Ça évite d'alerter pour tout l'historique la première fois.
+Sölden 2027, créé avant l'administration, est encore décrit dans `wrangler.toml` (`[vars.TRIPS]`). Les voyages suivants sont dans la base.
 
-Outils utiles dans la console de l'éditeur, ou à brancher sur des boutons :
-- `VoyagePushEditor.test()` : envoie « Les alertes du voyage fonctionnent » à tout le groupe dans la minute.
-- `VoyagePushEditor.status()` : nombre de téléphones abonnés et livraisons des dernières alertes.
-- `VoyagePushEditor.purge()` : efface tout pour ce voyage.
+## Alertes (notifications)
 
-## 4. Tester avant le voyage
+- **Abonnement** (`/api/subscribe`) : l'app du voyageur s'abonne dans Réglages › Alertes, ou automatiquement quand son accès est approuvé. Le Worker garde une adresse anonyme d'Apple ou de Google, sans nom.
+- **Calendrier** (`/api/schedule`) : à chaque publication, l'éditeur envoie la liste complète des annonces (identifiant et heure, jamais le texte). Le cron, chaque minute, envoie un texte générique, par exemple « Nouvelle annonce du groupe ». L'app déchiffre ensuite l'annonce elle-même.
+- **Règles d'envoi** :
+  - jamais avant **3 minutes** après la publication (le temps que GitHub Pages se mette à jour) ;
+  - jamais deux fois la même annonce ;
+  - une annonce retirée avant son heure est déprogrammée ;
+  - une annonce nouvelle dont l'heure est passée depuis plus de 15 minutes est ignorée.
+- **Plafond** : 40 envois par passage du cron ; la suite part une minute plus tard. Les abonnements expirés (404 ou 410) sont supprimés.
+- **Outils de l'éditeur** (section Alertes) : alerte de test, nombre d'abonnés, état des envois.
+- **Pastille** sur l'icône : annonces non lues, demandes d'accès en attente (accompagnateur), accès approuvé pas encore vu (voyageur).
 
-- **iPhone :** iOS 16.4 ou plus. Ajouter l'app à l'écran d'accueil, l'ouvrir depuis l'icône, puis toucher « Activer les alertes ». Dans Safari seul, les alertes ne sont pas possibles.
-- **Android :** Chrome. Les alertes fonctionnent même sans installation, mais l'installation reste recommandée.
-- Lancer `VoyagePushEditor.test()` et vérifier la réception écran verrouillé, app fermée, puis en touchant l'alerte.
-- Programmer une annonce dans 10 minutes et vérifier qu'elle arrive à l'heure.
-- Mettre un téléphone en mode avion, envoyer un test, puis le rallumer : l'alerte arrive à la reconnexion, jusqu'à 12 heures plus tard.
+## Accès par approbation
 
-Le meilleur moment pour faire activer les alertes au groupe : pendant la réunion Teams avant le départ, tous ensemble.
+1. **Le voyageur demande l'accès.** Dans `/app/`, il ouvre « Ajouter un voyage », entre son prénom et son nom, active les notifications et touche « Demander l'accès ». Son téléphone crée une paire ECDH P-256 (partie privée non exportable, dans IndexedDB). Le nom est **chiffré pour l'équipe d'accompagnateurs** avec la clé publique d'équipe (`GET /api/acces/cle-equipe`). `POST /api/acces/demande` reçoit le nom chiffré, la clé publique du téléphone et l'abonnement éventuel. Il renvoie un identifiant et un jeton, gardé haché.
+2. **Les accompagnateurs sont avertis** par une notification générique, s'ils ont activé « Alertes des demandes » (`/api/acces/alertes`, table `comptes_subs`). Leur app déchiffre les noms et les compare à la liste du groupe, sur le téléphone seulement.
+3. **L'approbation.** L'app de l'accompagnateur dérive la clé du voyage depuis la phrase et la chiffre pour le téléphone de chaque personne approuvée (`POST /api/acces/decision`). Le voyageur reçoit « Accès approuvé » et est abonné aux alertes du voyage. Son app récupère la clé chiffrée (`GET /api/acces/etat`) et le voyage s'ouvre.
+4. **Retirer un accès.** Le statut passe à `retire` et le téléphone est désabonné. L'app du voyageur efface le voyage à sa prochaine ouverture.
+5. **Phrase changée.** La page des demandes l'indique. « Leur envoyer la nouvelle clé » rechiffre la clé pour les voyageurs approuvés, mais pas pour les personnes retirées.
 
-## Confidentialité (texte suggéré pour l'app)
+Limites : 10 demandes par heure et par adresse IP pour un voyage, et 400 demandes en attente par voyage. Sans clé d'équipe (aucun accompagnateur n'a encore ouvert son app pour ce voyage), le nom arrive en clair. Un nom en clair est refusé dès qu'une clé d'équipe existe.
 
-> Si vous activez les alertes, votre téléphone reçoit une adresse de notification anonyme d'Apple ou de Google. Elle est conservée uniquement pour vous envoyer les alertes de ce voyage et est effacée automatiquement 7 jours après le retour. Aucun nom, numéro ni contenu du voyage n'y est associé. Vous pouvez désactiver les alertes à tout moment dans l'app.
+## Mon groupe partagé (chiffré de bout en bout)
 
-## Limites et coûts
+- **Clé d'équipe** (`app/equipe.js`) : 32 octets aléatoires (AES-256-GCM), plus une paire ECDH d'équipe, dont la partie publique sert à chiffrer les noms des demandes. Elle n'existe que sur les téléphones des accompagnateurs du voyage.
+- **Appareils** : chaque téléphone d'accompagnateur a sa paire ECDH P-256, enregistrée sur son compte (`POST /api/equipe/appareil`, table `equipe_appareils`).
+- **Création** : le premier accompagnateur qui ouvre son app ou Mon groupe crée la clé (`PUT /api/groupe`, table `groupes`).
+- **Don de la clé** : un nouveau téléphone attend avec un code de vérification. Un collègue compare le code et touche « Donner la clé » (`POST /api/equipe/cles`, enveloppes dans `equipe_cles`). Le collègue est averti par notification.
+- **Accès** : seulement les comptes assignés au voyage, avec double authentification. Un administrateur non assigné n'y a pas accès.
+- **Accompagnateur retiré** : la clé change au prochain passage d'un collègue (`rotation`), et la liste s'efface du téléphone retiré.
+- **Fusion** : chaque fiche, appel et coche porte l'heure et l'auteur du changement. Les écritures simultanées se fusionnent (conflit 409, fusion, renvoi). La liste est compressée (gzip) avant le chiffrement.
+- **Code de secours** : la clé en base 32 (carte « Clé d'équipe »). Il change avec la clé.
 
-- **Forfait gratuit Cloudflare :** il couvre largement un groupe. Le cron tourne chaque minute (1 440 passages par jour) et chaque passage envoie au plus 40 alertes. Au-delà, la suite part au passage suivant, une minute plus tard.
-- **Délai :** comptez 0 à 1 minute de cron, plus quelques secondes à quelques minutes chez Apple ou Google. Une heure d'annonce est une cible, pas une garantie à la seconde.
-- **Abonnements expirés :** ils sont supprimés automatiquement dès qu'Apple ou Google répond qu'ils n'existent plus (codes 404 ou 410).
-- **Purge automatique :** tout le voyage est effacé 7 jours après la date `end` du voyage.
+## Données gardées dans la base D1
+
+| Table | Contenu | Effacé |
+|---|---|---|
+| `trips` | voyages créés par l'administration | à la suppression (marqué supprimé) |
+| `users`, `sessions`, `defis` | comptes, sessions, défis de connexion | suppression du compte, expiration |
+| `subscriptions`, `announcements`, `deliveries` | abonnements anonymes, calendrier (id + heure), livraisons | clôture, suppression, ou 7 jours après la fin |
+| `demandes` | nom **chiffré**, clé publique du téléphone, jeton haché, statut | idem |
+| `comptes_subs` | abonnements des accompagnateurs aux alertes des demandes | désactivation, adresse expirée |
+| `groupes`, `equipe_cles`, `equipe_attente` | Mon groupe **chiffré**, enveloppes de la clé d'équipe | clôture, suppression, ou 7 jours après la fin |
+| `equipe_appareils` | clés publiques des téléphones des accompagnateurs | — |
+
+Sont lisibles dans la base : les noms d'usager et les profils des accompagnateurs (nom, cellulaire, courriel). Rien de lisible n'y concerne les voyageurs.
 
 ## Tests
 
@@ -142,99 +147,16 @@ Le meilleur moment pour faire activer les alertes au groupe : pendant la réunio
 npm test
 ```
 
-Le test démarre le Worker en local avec une base D1 locale et un faux service de push. Ce faux service vérifie la signature VAPID et déchiffre chaque message comme le ferait un téléphone. Le test couvre aussi les refus (origine, jeton, clés), le délai de publication, le plafond par passage, l'absence de renvoi, les abonnements expirés et la purge.
+Chaque suite démarre le Worker en local (`wrangler dev`, base D1 locale), avec un faux GitHub et un faux service de notifications :
+- **`e2e.mjs`** : alertes. Le faux service vérifie la signature VAPID et déchiffre chaque message comme un téléphone. Sont aussi couverts les refus, les délais, le plafond, l'absence de renvoi, les abonnements expirés et la purge.
+- **`publier.mjs`** : publication. Un compte ne peut écrire que son voyage.
+- **`comptes.mjs`** : comptes, double authentification et sessions.
+- **`admin.mjs`** : administration, accompagnateurs, demandes d'accès, alertes des demandes, retrait d'un accès, Mon groupe partagé, noms chiffrés et suppression.
 
-## Publication par clé d'éditeur (un accompagnateur = un voyage)
+`test/outils.mjs` contient les voyages de test, le code TOTP et l'ouverture de sessions. Avec `SERVIR=1 node test/admin.mjs`, le Worker de test reste en marche pour les essais dans le navigateur.
 
-Les accompagnateurs n'ont pas de jeton GitHub. Dans l'éditeur, ils entrent la **clé de l'éditeur** de leur voyage (la même que le « jeton des alertes »). L'éditeur chiffre le contenu avec la phrase du voyage, puis l'envoie au Worker (`POST /api/publier`). Le Worker vérifie la clé et écrit **uniquement** `<voyage>/voyage.json` dans le dépôt, avec le seul jeton GitHub, gardé comme secret.
+## Limites et coûts
 
-Garde-fous du Worker : chemin construit par le Worker (jamais reçu de l'éditeur), voyage connu dans `wrangler.toml`, contenu JSON de forme valide et de 600 Ko au plus, refus d'une version en clair si la version en ligne est protégée, refus si le fichier a changé depuis l'ouverture de l'éditeur (409). Chaque publication apparaît dans l'historique GitHub au nom « Éditeur <voyage> ».
-
-Installation (une fois) :
-
-1. Sur github.com, créez un jeton « fine-grained » : dépôt `matlavigne.github.io` seulement, permission **Contents : Read and write**, rien d'autre. Expiration : la plus longue que vous acceptez (à renouveler ensuite).
-2. Dans ce dossier : `npx wrangler secret put GITHUB_TOKEN`, collez le jeton.
-3. `npm run deploy`.
-
-Clés : `npm run cle -- <voyage>` crée ou remplace la clé d'un voyage (l'ancienne cesse de fonctionner aussitôt). Le mode administrateur de l'éditeur (jeton GitHub personnel) reste disponible pour vous.
-
-Tests : `npm test` (alertes et publication, avec un faux GitHub local).
-
-## Administration (monaccompagnateur.ca/admin)
-
-Créer un voyage sans coder, remettre ou remplacer la clé d'un accompagnateur, clore un voyage après le retour.
-
-- La page `admin/index.html` se connecte avec un **compte** (voir « Comptes » plus bas). Seul un administrateur avec double authentification peut créer ou clore un voyage.
-- À la création, le navigateur chiffre le contenu de départ avec la phrase du voyage; le Worker écrit en **un seul commit** la fiche `_app/voyages/<id>.json`, le contenu chiffré `<id>/voyage.json`, la photo éventuelle (`_app/voyages/photos/<id>.jpg`) et, au choix, l'entrée de la page d'accueil (`voyages.json`). Il enregistre le voyage et sa clé d'éditeur (hachée) dans la base D1 : pas besoin de modifier `wrangler.toml` ni de redéployer.
-- Le robot GitHub (`.github/workflows/generer-apps.yml`) prépare ensuite les images (photo recadrée ou illustration, icônes) et génère l'app. Essai à blanc possible depuis l'onglet Actions (« Run workflow », case « Essai à blanc »).
-- Clore un voyage efface ses abonnements aux alertes et sa clé d'éditeur; l'app reste en ligne.
-- Supprimer un voyage (confirmation : taper son adresse) retire en un seul commit l'app, la fiche, la photo, l'icône, le dictionnaire anglais et l'entrée de la page d'accueil, puis efface ses alertes, sa clé et les accès des accompagnateurs. Récupérable au besoin dans l'historique GitHub.
-
-Les nouvelles stations se préparent encore à la main (fiche `_app/stations/<id>.json`, dictionnaire anglais, silhouette de l'icône); elles apparaissent ensuite dans le menu de l'administration.
-
-## Comptes : nom d'usager, mot de passe et double authentification
-
-Chaque accompagnateur a son compte; l'administrateur lui confie un ou plusieurs voyages. La même connexion sert à `/admin` et à l'éditeur de chaque voyage (session partagée sur monaccompagnateur.ca).
-
-- **Administrateur** : double authentification obligatoire (app d'authentification : Google Authenticator, 1Password, Authy…). Session de 12 h.
-- **Accompagnateur** : publie seulement les voyages qui lui sont confiés. Double authentification obligatoire aussi (activée à la première connexion; impossible de la retirer soi-même, l'administrateur peut la réinitialiser). Session de 30 jours.
-- Mot de passe temporaire à la création ou à la réinitialisation : la personne le remplace à sa première connexion (10 caractères minimum).
-- 5 essais ratés : compte bloqué 15 minutes. Codes de secours (8, à usage unique) remis à l'activation de la double authentification.
-- Rien n'est stocké en clair : mots de passe (PBKDF2), sessions et codes de secours (SHA-256) dans la base D1.
-
-Première configuration (une fois) :
-
-1. `npm run cle-config` : crée la clé de première configuration (secret `ADMIN_TOKEN`). Gardez-la dans votre gestionnaire de mots de passe.
-2. `npm run deploy`.
-3. Sur `monaccompagnateur.ca/admin` › « Première configuration » : collez la clé, choisissez votre nom d'usager et votre mot de passe, puis activez la double authentification et conservez les codes de secours. La clé ne sert plus ensuite (elle est refusée dès qu'un administrateur existe).
-4. Onglet « Comptes » : créez les comptes des accompagnateurs et cochez leurs voyages. Transmettez le message affiché par un canal privé.
-
-Téléphone perdu et plus de codes de secours : `npm run secours-admin -- <nom d'usager>` réinitialise le mot de passe et retire la double authentification de ce compte (directement dans la base, depuis votre ordinateur).
-
-Les anciennes **clés d'éditeur** par voyage (`npm run cle`) fonctionnent encore (« Ancienne méthode » dans l'éditeur). Le jeton GitHub personnel reste disponible en mode administrateur.
-
-Tests : `npm test` (alertes, publication, administration, comptes).
-
-## App de l'accompagnateur (monaccompagnateur.ca/accompagnateur)
-
-Page installable (icône « Accompagnateur » sur l'écran d'accueil) où chaque accompagnateur retrouve, après connexion avec son compte, tous les voyages qui lui sont confiés (l'administrateur les voit tous) :
-
-- voyages à venir et en cours d'abord, avec les dates et un compte à rebours (« Départ dans 12 jours », « En cours · jour 3 sur 9 »), puis les voyages passés;
-- boutons App du voyage, Éditeur, Mon groupe et Partager l'app (lien de la page d'installation);
-- « Mon groupe » (`/accompagnateur/groupe.html?v=<voyage>`) : liste du groupe (import CSV ou saisie) et présences, gardées dans cette app sur le téléphone. L'app du voyage n'a plus aucune page d'accompagnateur; une ancienne liste qui y serait restée s'exporte depuis ses Réglages.
-- nombre de téléphones abonnés aux alertes;
-- réglages : apparence (auto, clair, sombre) et langue, partagés avec les apps des voyages.
-
-Le Worker répond à `GET /api/mes-voyages` (session de compte; mot de passe temporaire changé; double authentification pour l'administrateur). Les dates viennent des champs publics de `<voyage>/voyage.json`.
-
-## Adresse du Worker
-
-Les apps appellent `https://api.monaccompagnateur.ca` (domaine monaccompagnateur.ca géré dans le DNS de Cloudflare; le site reste sur GitHub Pages en « DNS only »). L'ancienne adresse `monaccompagnateur-push.monaccompagnateur.workers.dev` reste active (`workers_dev = true`) pour les téléphones qui n'ont pas encore la nouvelle version des apps.
-
-## Accès par approbation (sans phrase pour le voyageur)
-
-- Le voyageur, dans l'app `/app/` : « Ajouter un voyage » › prénom, nom, notifications › « Demander l'accès ». Son téléphone crée une paire de clés ECDH P-256 (clé privée non exportable, dans IndexedDB). `POST /api/acces/demande` (nom, clé publique, abonnement aux notifications facultatif) renvoie un identifiant et un jeton (gardé haché).
-- L'accompagnateur, dans l'accès accompagnateur : bouton « Demandes d'accès » du voyage (`GET /api/acces/demandes`). Les noms sont comparés à la liste du groupe sur son téléphone seulement. À l'approbation, son app dérive la clé du voyage depuis la phrase et la chiffre pour la clé publique de chaque téléphone (ECDH + AES-GCM); `POST /api/acces/decision` la transmet : le Worker ne peut pas la lire.
-- Le Worker envoie la notification « Accès approuvé » et abonne le téléphone aux alertes du voyage. Le voyageur récupère la clé chiffrée (`GET /api/acces/etat`, avec son jeton) et l'app s'ouvre déverrouillée.
-- Limites : 10 demandes par heure et par adresse IP pour un voyage, 400 demandes en attente par voyage. Les demandes sont effacées avec le voyage (clôture, suppression ou 7 jours après la fin).
-
-- Alertes des demandes : l'accompagnateur touche « Activer » (liste de ses voyages ou Réglages) dans l'app installée; `POST /api/acces/alertes` garde l'abonnement de ce téléphone (table `comptes_subs`). Chaque nouvelle demande avertit les accompagnateurs du voyage, ou les administrateurs s'il n'y en a aucun. La notification ouvre la liste des demandes du voyage.
-- Retirer un accès : « Déjà traitées » › Retirer (`decision` avec `retirer: true`). Statut `retire`, plus de clé, désabonné des alertes du voyage; l'app du voyageur efface le voyage (clé et contenu) à sa prochaine ouverture. « Redonner » le rétablit.
-- Changement de phrase : chaque approbation retient le sel de la clé envoyée (`sel`). Si la phrase change dans l'éditeur, la page des demandes l'indique et « Leur envoyer la nouvelle clé » la rechiffre pour chaque voyageur approuvé; leur app la reprend à la prochaine ouverture. Les personnes retirées ne la reçoivent pas : c'est la coupure certaine.
-
-## Mon groupe partagé entre accompagnateurs (chiffré de bout en bout)
-
-- `app/equipe.js` (dans Mon groupe et l'accès accompagnateur). Clé d'équipe : 32 octets aléatoires, AES-256-GCM, gardée seulement sur les téléphones (IndexedDB `equipe-<voyage>`).
-- Chaque téléphone a sa paire ECDH P-256 (`equipe-appareil`, partie privée non exportable) enregistrée sur le compte (`POST /api/equipe/appareil`, table `equipe_appareils`).
-- Le premier accompagnateur qui ouvre Mon groupe crée la clé et la copie chiffrée (`PUT /api/groupe`, table `groupes`). Un nouveau téléphone attend : un collègue compare le code de vérification (calculé des deux côtés à partir de la clé publique) et touche « Donner la clé » (`POST /api/equipe/cles`, enveloppes ECDH dans `equipe_cles`). Le collègue est averti par notification (alertes des demandes activées).
-- Accès réservé aux comptes assignés au voyage avec double authentification (l'administrateur non assigné n'y a pas accès). Un accompagnateur retiré : `GET /api/equipe` répond `rotation`, le premier téléphone restant change la clé et rechiffre; la liste s'efface du téléphone retiré.
-- Fusion : chaque fiche, appel et coche porte l'heure et l'auteur du changement; les écritures simultanées sont fusionnées (conflit 409, fusion, renvoi). Liste compressée (gzip) avant chiffrement.
-- Code de secours : la clé elle-même en base 32 (carte « Clé d'équipe »), pour rouvrir la liste si tous les téléphones sont perdus.
-- Copie chiffrée, enveloppes et attentes effacées avec le voyage (`purgeTrip`, 7 jours après la fin).
-
-## Nom chiffré dans les demandes d'accès (Loi 25)
-
-- La clé d'équipe porte aussi une paire ECDH d'équipe. Sa partie publique est remise aux voyageurs (`GET /api/acces/cle-equipe`, sans connexion); l'app du voyageur y chiffre son prénom et son nom (ECDH éphémère + AES-GCM). La partie privée voyage avec la clé d'équipe dans les enveloppes; les précédentes sont gardées (5) pour les demandes en cours.
-- Le Worker ne garde que `nomc` (chiffré) et `ekid`; `nom` reste vide. Un nom en clair est refusé dès qu'une clé d'équipe existe. La notification à l'accompagnateur est générique (sans nom).
-- La clé d'équipe de chaque voyage à venir est créée dès qu'un accompagnateur ouvre son app (accès accompagnateur); une clé d'avant ce changement est remplacée automatiquement (une fois). Sans clé d'équipe (aucun accompagnateur n'a encore ouvert son app), la demande arrive en clair : ouvrez l'accès accompagnateur avant de partager l'app d'un nouveau voyage.
-- Un téléphone sans la clé d'équipe affiche « 🔒 Nom chiffré » : il faut se faire donner la clé (Mon groupe) ou entrer le code de secours.
+- **Coût** : le forfait gratuit de Cloudflare couvre largement l'usage (cron chaque minute, D1, requêtes).
+- **Délai des alertes** : de 0 à 1 minute de cron, plus le délai d'Apple ou de Google. Un téléphone hors ligne reçoit l'alerte à sa reconnexion, jusqu'à 12 heures plus tard.
+- **iPhone** : iOS 16.4 ou plus, app installée sur l'écran d'accueil et ouverte depuis son icône.

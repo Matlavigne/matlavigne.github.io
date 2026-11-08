@@ -1,119 +1,134 @@
-# Apps de voyage : code commun et bibliothèque de stations
+# monaccompagnateur.ca : site et apps
 
-Toutes les apps de voyage partagent **un seul code**. Chaque voyage n'est qu'un dossier du site (`/solden-voyage-2027/`, `/st-anton-mars2027/`…) avec son contenu, et chaque station a **une fiche** réutilisable par tous les voyages qui y vont.
+Ce dossier contient le code commun des apps de voyage et les fiches des stations et des voyages. Le serveur (comptes, alertes, accès, publication) est décrit dans [`push-worker/README.md`](push-worker/README.md).
+
+## Vue d'ensemble
 
 ```
-_app/
-  gabarit/            le code commun (index, éditeur, installation, affiche, service worker, manifeste)
-  stations/           une fiche par station : soelden.json, stanton.json…
-  voyages/            une fiche par voyage : titre, dates, station, textes de partage
-  build.mjs           génère les fichiers de chaque voyage
-solden-voyage-2027/   ← dossier publié du voyage
-  voyage.json         contenu du voyage (éditeur), chiffré par la phrase
-  hero.webp, og.jpg, icônes
-  index.html, editeur.html, … ← GÉNÉRÉS, ne pas modifier à la main
+monaccompagnateur.ca (GitHub Pages, ce dépôt)          api.monaccompagnateur.ca (Worker Cloudflare + base D1)
+├── /                  page d'accueil (voyages.json)    ├── comptes, double authentification, sessions
+├── /app/              app unique « Mon accompagnateur » ├── publication de <voyage>/voyage.json sur GitHub
+│   ├── index.html         Mes voyages (voyageurs)      ├── alertes (notifications web) et calendrier
+│   ├── accompagnateur.html accès accompagnateur        ├── demandes d'accès (approbation)
+│   ├── groupe.html        Mon groupe                   └── Mon groupe : copie chiffrée, enveloppes de clé
+│   ├── equipe.js          clé d'équipe, chiffrement, synchronisation de Mon groupe
+│   ├── garde.js           installation obligatoire sur téléphone
+│   └── sw.js              service worker (cache, notifications, pastille)
+├── /admin/            administration (comptes, voyages)
+├── /<voyage>/         app d'un voyage (GÉNÉRÉE) : index, editeur, installer, affiche, voyage.json chiffré
+└── _app/              ce dossier (non publié : GitHub Pages ignore les dossiers qui commencent par « _ »)
+    ├── gabarit/           code commun des apps de voyage
+    ├── stations/          une fiche par station
+    ├── voyages/           une fiche par voyage (+ photos/)
+    ├── i18n/              dictionnaires anglais
+    ├── icones/            préparation des icônes et des photos (robot)
+    ├── build.mjs          génère les dossiers des voyages
+    └── push-worker/       le serveur
 ```
 
-Le dossier `_app` n'est pas publié par GitHub Pages, car les dossiers qui commencent par `_` sont ignorés.
+**Une seule app installée.** Le manifeste `/app/manifest.webmanifest` a la portée « / » : les apps des voyages, l'accès accompagnateur, Mon groupe, l'éditeur et l'administration s'ouvrent tous dans la même app d'écran d'accueil. C'est essentiel sur iPhone, où chaque app installée et Safari gardent des données séparées (clés, session, liste du groupe).
 
-## Les trois couches
+| Qui | Où | Quoi |
+|---|---|---|
+| Voyageur | `/app/` | ses voyages; « Ajouter un voyage » : demande d'accès (approbation) ou phrase du voyage |
+| Accompagnateur | `/app/accompagnateur.html` (roue dentée › Accès accompagnateur) | ses voyages, demandes d'accès, Mon groupe, éditeur, profil, alertes des demandes |
+| Administrateur | `/admin/` (bouton « Administration ») | comptes, création, photo, accompagnateurs, clôture, suppression des voyages |
+
+## Les trois couches d'un voyage
 
 1. **Fiche de la station** (`_app/stations/<id>.json`). Elle contient :
    - les domaines et leurs flux Intermaps, avec les limites de carte et le plan officiel ;
-   - les points météo et les webcams ;
-   - les pistes suggérées ;
+   - les points météo, les webcams et les pistes suggérées ;
    - la neige, les avalanches et les urgences du pays ;
    - les faits pratiques, les phrases utiles et la prise électrique ;
    - les adresses de base, avec un `id` chacune.
-2. **Fiche du voyage** (`_app/voyages/<id>.json`). Elle contient la station choisie, le titre, les dates, le nom court de l'app, les textes de partage et le crédit de la photo.
-3. **Contenu de l'accompagnateur** (`<id>/voyage.json`, rempli avec l'éditeur). Il contient le programme, les annonces, l'hôtel, les vols, les bagages et ses adresses. Pour les adresses de la station :
+2. **Fiche du voyage** (`_app/voyages/<id>.json`). Elle contient la station, le titre, les dates, le nom court de l'app, les textes de partage et le crédit de la photo. Elle est écrite par l'administration.
+3. **Contenu du voyage** (`<id>/voyage.json`, rempli avec l'éditeur). Il contient le programme, les annonces, l'hôtel, les vols, les bagages, les accompagnateurs et les adresses. Tout ce contenu est **chiffré avec la phrase du voyage** (PBKDF2 600 000 tours, AES-256-GCM) dans le navigateur avant la publication. Seuls le titre, les dates, la météo, les webcams et les plans restent publics. Pour les adresses de la station :
    - `{ "ref": "id-station", "masquer": true }` retire une adresse de la station ;
    - `{ "ref": "id-station", "coupDeCoeur": true, "description": "…" }` la modifie ;
-   - une adresse sans `ref` s'ajoute à la liste.
+   - une adresse sans `ref` s'ajoute.
 
-   Les points météo et les webcams du voyage, s'il y en a, remplacent ceux de la station.
+   Les points météo et les webcams du voyage remplacent ceux de la station.
 
-## Générer après une modification
+## Générer les apps
 
-Après avoir changé le gabarit ou une fiche (station ou voyage) :
+Un robot GitHub (`.github/workflows/generer-apps.yml`) génère les apps à chaque poussée qui touche `_app/` :
+- il prépare les images (photo recadrée ou illustration, icônes) avec `_app/icones/preparer.py` ;
+- il lance `node _app/build.mjs` ;
+- il publie le résultat.
+
+Pour générer à la main :
 
 ```bash
 node _app/build.mjs                       # tous les voyages
-node _app/build.mjs st-anton-mars2027     # un seul
+node _app/build.mjs solden-voyage-2027    # un seul
 ```
 
-Puis faites un commit des dossiers modifiés. Le script :
-- vérifie la fiche de la station (champs requis, domaines, fuseau, expressions de secteur, points météo, webcams) et refuse de générer si quelque chose cloche ;
-- ne réécrit que les fichiers dont le contenu change ;
-- change le numéro de cache du service worker seulement dans ce cas, ce qui oblige les téléphones à prendre la nouvelle version.
+Le script :
+- vérifie la fiche de la station et refuse de générer si quelque chose cloche ;
+- ne réécrit que les fichiers qui changent ;
+- change alors le numéro de cache du service worker, pour que les téléphones prennent la nouvelle version ;
+- écrit `app/liste.json` (identifiants et noms des voyages, pour « Ajouter un voyage »).
 
-L'éditeur, lui, n'écrit que `voyage.json` : aucune génération n'est nécessaire pour publier une annonce.
+Les jetons `{{NOM}}` du gabarit ne contiennent pas de chiffres. L'éditeur n'écrit que `voyage.json` : publier une annonce ne demande aucune génération.
 
-## Ajouter une station
+## Ajouter un voyage ou une station
 
-1. Copier une fiche existante dans `_app/stations/<nouvel-id>.json`.
-2. Remplacer les domaines. Un domaine a `nom`, `feed` (le flux Intermaps `…/data?lang=en`), `bounds` (les coins sud-ouest et nord-est de la carte), `plan` (le plan officiel intégrable) et `meteoNom`.
-   - Si plusieurs domaines partagent **le même flux** (comme Ski Arlberg), chacun doit avoir une expression `secteur` : la liste des noms de remontées et de pistes qui lui appartiennent.
-   - Sans flux Intermaps, laissez `feed` vide : l'onglet Ski affiche alors seulement le plan et le lien officiel.
-   - `etatLien` (facultatif) : page officielle de l'état des remontées, proposée quand l'état en direct manque.
-3. Indiquer `devises` : les codes des monnaies du séjour, par exemple `["CHF", "EUR"]`. Le convertisseur de l’onglet Infos les compare au dollar canadien.
-4. Remplacer les points météo, les webcams, la neige, l'avalanche, les urgences et les faits. Pour un autre pays, il faut aussi le fuseau, la prise électrique et les phrases utiles.
-5. Lancer `node _app/build.mjs` : les erreurs de la fiche s'affichent.
-
-## Ajouter un voyage
-
-1. Créer `_app/voyages/<id>.json` à partir d'un voyage existant, avec `station` réglé sur l'id de la fiche.
-2. Créer le dossier `<id>/` avec `hero.webp`, `og.jpg` et les icônes. `voyage.json` peut être copié d'un voyage précédent, puis vidé dans l'éditeur.
-3. Lancer `node _app/build.mjs <id>`, puis faire un commit.
-4. L'app est à `https://monaccompagnateur.ca/<id>/`, et l'éditeur à `…/<id>/editeur.html`.
+- **Voyage** : `monaccompagnateur.ca/admin` › Nouveau voyage. L'administration chiffre le contenu de départ, écrit la fiche, la photo et l'entrée de la page d'accueil en un seul commit, puis le robot génère l'app en 2 à 4 minutes. Ouvrez ensuite l'accès accompagnateur une fois : ça crée la clé d'équipe du voyage, qui sert à chiffrer les noms des demandes d'accès.
+- **Station** (à la main) :
+  1. Copiez une fiche dans `_app/stations/<id>.json`.
+  2. Remplacez les domaines. Un domaine a `nom`, `feed` (le flux Intermaps `…/data?lang=en`, vide s'il n'y en a pas), `bounds`, `plan` et `meteoNom`.
+     - Si plusieurs domaines partagent un même flux, chacun a une expression `secteur`.
+     - `etatLien` (facultatif) pointe vers la page officielle de l'état des remontées.
+  3. Indiquez `devises` (par exemple `["CHF", "EUR"]`) et remplacez la météo, les webcams, la neige, l'avalanche, les urgences et les faits. Pour un autre pays, ajoutez aussi le fuseau, la prise et les phrases.
+  4. Ajoutez le dictionnaire `_app/i18n/stations/<id>.json` et la silhouette de la montagne dans `MONTAGNES` de `_app/icones/icones.py`.
+  5. Lancez `node _app/build.mjs` : les erreurs de la fiche s'affichent. La station apparaît ensuite dans l'administration.
 
 ## Éditeur
 
-Les accompagnateurs se connectent dans « Connexion pour publier » avec leur compte (nom d'usager, mot de passe, code de double authentification au besoin); voir `push-worker/README.md`, section « Comptes ».
+`/<voyage>/editeur.html`, ouvert depuis l'accès accompagnateur :
+- **Connexion pour publier** : se fait avec un compte (nom d'usager, mot de passe, double authentification). Chaque compte ne publie que ses voyages.
+- **Phrase du voyage** : gardée sur l'appareil, elle sert à chiffrer et à ouvrir le contenu.
+- **Tableau de bord** : tuiles et « Prêt pour le départ ».
+- **Contenu** : programme en ligne du temps, carte avec pistes pour placer un point, annonces programmées. Les annonces déclenchent les alertes à la publication.
+- **Accompagnateurs** : coordonnées reprises de leurs comptes.
 
-Tous les voyages sont dans le dépôt `Matlavigne/matlavigne.github.io`. L'éditeur écrit dans `<id>/voyage.json`. Le dépôt et le dossier sont fixés : ils ne se saisissent plus.
+## Données gardées sur le téléphone
 
-Le jeton GitHub doit avoir le droit *Contents : Read and write* sur `matlavigne.github.io`. Un jeton limité à l'ancien dépôt du voyage ne suffit plus.
+| Clé (localStorage, sauf mention) | Contenu |
+|---|---|
+| `<voyage>-cle-v1` | clé de déchiffrement du voyage (`{salt, k}`) |
+| `<voyage>-donnees-v1`, `-documents-v1` | contenu déchiffré gardé pour l'ouverture hors ligne |
+| `monaccompagnateur-mes-voyages`, `-demandes`, `-acces` | liste des voyages, demandes d'accès en cours, accès approuvés (pour un retrait ou une nouvelle clé) |
+| `monaccompagnateur-session` | session du compte (accompagnateur, administrateur) |
+| `monaccompagnateur-theme`, `-langue` | apparence et langue |
+| `<voyage>-groupe-local-v1`, `-presences-v1`, `-groupe-doc-v1` | Mon groupe (liste, appels, document fusionnable) |
+| IndexedDB `monaccompagnateur` › `cles` | `appareil` (paire ECDH du voyageur), `equipe-appareil` (paire ECDH de l'accompagnateur), `equipe-<voyage>` (clé d'équipe) |
 
-## Passage depuis les anciens dépôts (une seule fois)
+## Installation obligatoire sur téléphone (`app/garde.js`)
 
-Les anciens dépôts `solden-voyage-2027` et `st-anton-mars2027` publient encore leur propre site à la même adresse. Un site de dépôt l'emporte sur le dossier du même nom dans `matlavigne.github.io`. Après la fusion de cette branche dans `main` :
+Sur iPhone, iPad et Android, Mes voyages, l'app du voyage, l'accès accompagnateur et Mon groupe ne s'ouvrent que dans l'app installée. Ouverts dans Safari ou Chrome, la page devient inerte et `garde.js` affiche les étapes d'installation. Dans Facebook ou Messenger, il propose plutôt d'ouvrir le lien dans Safari ou Chrome.
 
-1. Dans chacun des deux anciens dépôts : **Settings → Pages → Unpublish site** (ou mettre la source à « None »).
-2. Attendre une ou deux minutes, puis ouvrir `https://monaccompagnateur.ca/solden-voyage-2027/?verif`.
-3. Archiver les anciens dépôts (**Settings → Archive**) pour ne plus les modifier par erreur.
+Ce n'est pas une protection de sécurité : ça garantit que tout le monde utilise l'app (données, clés, notifications).
 
-Les adresses, les phrases du voyage, le contenu chiffré et la clé accompagnateur ne changent pas.
+Exceptions :
+- les ordinateurs ;
+- l'administration, l'éditeur, la page d'installation et la confidentialité ;
+- le **mode dépannage** : « Je suis administrateur » mène à une connexion admin avec double authentification, puis ce navigateur est ouvert pendant 12 heures, avec un bandeau « Terminer ».
 
-## Liste du groupe
-
-Aucune donnée des voyageurs n'est dans le dépôt. La liste du groupe se gère dans l'app, sur le téléphone de l'accompagnateur (Infos › Accès accompagnateur) : import d'un CSV (Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre) ou saisie à la main. Elle est gardée dans le stockage local du téléphone et n'est jamais envoyée sur Internet.
-
-## Icônes
-
-Les icônes d'écran d'accueil de chaque voyage (montagne de la station, nom, année) se génèrent avec `python3 _app/icones/icones.py` (Chrome et la police Inter requis), puis `node _app/build.mjs` pour que les apps les rechargent. Pour une nouvelle station, ajoutez sa silhouette dans `MONTAGNES` du script. Champs facultatifs du voyage : `iconeNom`, `iconeAnnee`.
+Les anciennes adresses `/mes-voyages/` et `/accompagnateur/` redirigent vers `/app/`. L'ancien service worker de `/accompagnateur/` se désinstalle de lui-même.
 
 ## Anglais
 
-L'app et la page d'installation s'affichent en anglais quand le téléphone n'est pas en français (choix modifiable dans Infos › Langue · Language; `?lang=en` pour tester). Le code reste en français : `_app/i18n/runtime.js` traduit l'affichage à partir des dictionnaires, chaînes exactes et modèles (regex, groupes traduits à leur tour; un texte « a · b · c » est traduit morceau par morceau).
+Les apps s'affichent en anglais quand le téléphone n'est pas en français. Le choix se change dans Réglages › Langue, et `?lang=en` permet de tester. Le code reste en français : `_app/i18n/runtime.js` traduit l'affichage à partir des dictionnaires, qui contiennent des chaînes exactes et des modèles (regex). Un texte « a · b · c » est traduit morceau par morceau.
 
-- `_app/i18n/en.json` : interface commune.
-- `_app/i18n/stations/<station>.json` : textes de la fiche de station (urgences, faits, phrases utiles, points météo, webcams).
+Les dictionnaires :
+- `_app/i18n/en.json` : interface commune des apps de voyage ;
+- `_app/i18n/stations/<station>.json` : textes des fiches de station ;
 - `_app/i18n/voyages/<voyage>.json` : dates et crédits propres au voyage.
 
-Le contenu de l'accompagnateur (programme, annonces, hôtel…) et les descriptions des pistes et restos restent tels qu'écrits. Pour une nouvelle station, ajoutez son fichier dans `stations/`; une chaîne absente du dictionnaire reste simplement en français.
+Les pages de `/app/` ont leur petit dictionnaire intégré. Le contenu écrit par l'accompagnateur reste tel quel. Une chaîne absente du dictionnaire reste en français.
 
-## L'app unique « Mon accompagnateur » (monaccompagnateur.ca/app)
+## Icônes
 
-Une seule app installable (portée « / ») pour tout le monde :
-- **Voyageurs** : `/app/` liste leurs voyages. On ajoute un voyage par sa phrase (« Ajouter un voyage ») ou par le lien `/app/#v=<id>&cle=<phrase>`, celui du code QR des pages d'installation. L'app essaie la phrase sur les voyages de `app/liste.json` (généré par `build.mjs` : identifiants et noms seulement) et range la clé comme l'app du voyage la range (`<id>-cle-v1`) : le voyage s'ouvre déjà déverrouillé, dans la même app.
-- **Accompagnateurs** : roue dentée › « Accès accompagnateur » (`/app/accompagnateur.html`) : connexion par compte et double authentification, leurs voyages, Mon groupe (`/app/groupe.html?v=<id>`), éditeur, profil.
-- **Administrateur** : bouton « Administration » dans l'accès accompagnateur, qui ouvre `/admin/` dans la même app.
-
-Tout reste dans la même app d'écran d'accueil (iPhone) : phrases, session, liste du groupe et présences. Les pages des voyages pointent vers le manifeste de `/app/` : « Sur l'écran d'accueil » installe toujours l'app unique. Les anciennes adresses `/mes-voyages/` et `/accompagnateur/` redirigent vers `/app/`.
-
-## Installation obligatoire sur téléphone (app/garde.js)
-
-Sur iPhone, iPad et Android, Mes voyages, l'app du voyage, l'accès accompagnateur et Mon groupe ne s'ouvrent que dans l'app installée (ouverte depuis son icône). Dans Safari ou Chrome, `garde.js` (chargé à la fin du `<head>`) rend le reste de la page inerte et affiche les étapes d'installation; dans Facebook, Messenger, etc., il propose d'ouvrir le lien dans Safari ou Chrome. Ce n'est pas une protection de sécurité : c'est pour que tout le monde soit dans l'app (données, clés, notifications).
-
-Exceptions : ordinateurs; la page Administration, l'éditeur, la page d'installation et la confidentialité (non gardées); mode dépannage : « Je suis administrateur » sur l'écran de garde → connexion admin (2FA) → ce navigateur ouvre l'app pendant 12 heures, avec un bandeau « Terminer ».
+Les icônes d'écran d'accueil (montagne de la station, nom, année) se génèrent avec `python3 _app/icones/icones.py`, qui demande Chrome et la police Inter. Le robot le fait pour les nouveaux voyages. Champs facultatifs de la fiche du voyage : `iconeNom`, `iconeAnnee`.

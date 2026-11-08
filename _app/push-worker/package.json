@@ -3,12 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "keys": "node scripts/generate-keys.mjs",
     "dev": "wrangler dev --test-scheduled",
     "deploy": "wrangler deploy",
     "test": "node test/e2e.mjs && node test/publier.mjs && node test/admin.mjs && node test/comptes.mjs",
     "setup": "node scripts/setup.mjs",
-    "cle": "node scripts/cle.mjs",
     "cle-config": "node scripts/cle-admin.mjs",
     "secours-admin": "node scripts/secours-admin.mjs"
   },

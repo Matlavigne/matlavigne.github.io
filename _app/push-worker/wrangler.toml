@@ -35,30 +35,16 @@ PURGE_AFTER_DAYS = "7"
 GITHUB_REPO = "Matlavigne/matlavigne.github.io"
 GITHUB_BRANCH = "main"
 
-# Un bloc par voyage. Le nom doit correspondre au dossier de l'app sur monaccompagnateur.ca.
-# end : date de retour (les abonnements sont effacés 7 jours après).
+# Voyages : créés dans monaccompagnateur.ca/admin et gardés dans la base D1. Sölden 2027, créé avant
+# l'administration, est encore décrit ici (end : date de retour; les abonnements sont effacés 7 jours après).
 [vars.TRIPS.solden-voyage-2027]
 title = "Sölden 2027"
 url = "/solden-voyage-2027/"
 end = "2027-03-13"
 maxSubs = 300
 
-[vars.TRIPS.st-anton-mars2027]
-title = "St. Anton 2027"
-url = "/st-anton-mars2027/"
-end = "2027-03-14"
-maxSubs = 300
-
-[vars.TRIPS.zermatt-mars2027]
-title = "Zermatt 2027"
-url = "/zermatt-mars2027/"
-end = "2027-03-31"
-maxSubs = 300
-
-# Secrets (jamais dans ce fichier), installés par « npm run setup » :
-#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK, EDITOR_TOKENS
-# Secret ajouté pour la publication (npx wrangler secret put GITHUB_TOKEN) :
+# Secrets (jamais dans ce fichier) :
+#   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK : notifications (npm run setup, une seule fois)
 #   GITHUB_TOKEN : jeton GitHub « fine-grained », dépôt du site seulement, Contents : Read and write
-# Secret de l'administration (npm run cle-admin) :
-#   ADMIN_TOKEN
-# Les voyages créés depuis monaccompagnateur.ca/admin sont gardés dans la base D1 (pas besoin de les ajouter ici).
+#   ADMIN_TOKEN : clé de première configuration (npm run cle-config)
+# L'ancien secret EDITOR_TOKENS ne sert plus : npx wrangler secret delete EDITOR_TOKENS

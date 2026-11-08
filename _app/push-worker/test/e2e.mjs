@@ -6,13 +6,14 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TRIPS_TEST, premierAdmin } from "./outils.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PUSH_PORT = 9911, WORKER_PORT = 8799;
 const W = `http://127.0.0.1:${WORKER_PORT}`;
 const ORIGIN = "https://monaccompagnateur.ca";
 const TRIP = "solden-voyage-2027";
-const TOKEN = "jeton-de-test-" + crypto.randomBytes(6).toString("hex");
+const ADMIN_TOKEN = "adm-" + crypto.randomBytes(8).toString("hex");
 
 let failures = 0;
 function check(cond, label) {
@@ -30,7 +31,8 @@ const vapidPublicRaw = Buffer.concat([Buffer.from([4]), Buffer.from(pubJwk.x, "b
 fs.writeFileSync(path.join(root, ".dev.vars"), [
   `VAPID_PUBLIC_KEY=${vapidPublicRaw}`,
   `VAPID_PRIVATE_JWK=${JSON.stringify({ kty: "EC", crv: "P-256", x: privJwk.x, y: privJwk.y, d: privJwk.d })}`,
-  `EDITOR_TOKENS=${JSON.stringify({ [TRIP]: TOKEN })}`,
+  `ADMIN_TOKEN=${ADMIN_TOKEN}`,
+  TRIPS_TEST,
   `ALLOW_ANY_PUSH_HOST=1`,
   `MAX_PUSH_PER_RUN=5`,
   `PUBLISH_DELAY_SECONDS=2`,
@@ -129,12 +131,13 @@ async function call(method, p, body, headers = {}) {
   const r = await fetch(W + p, { method, headers: { "Content-Type": "application/json", Origin: ORIGIN, ...headers }, body: body ? JSON.stringify(body) : undefined });
   return { status: r.status, json: await r.json().catch(() => ({})), headers: r.headers };
 }
-const editor = { Authorization: `Bearer ${TOKEN}` };
+let editor = null;   // session d'un compte (administrateur avec double authentification)
 const cron = () => fetch(`${W}/__scheduled?cron=*+*+*+*+*`);
 const subOf = (d) => ({ endpoint: `http://127.0.0.1:${PUSH_PORT}/push/${d.name}`, keys: { p256dh: d.ecdh.getPublicKey().toString("base64url"), auth: d.auth.toString("base64url") } });
 
 try {
   await up();
+  editor = { Authorization: "Bearer " + await premierAdmin((m, p, b, k) => call(m, p, b, k ? { Authorization: "Bearer " + k } : {}), ADMIN_TOKEN) };
   console.log("\nAPI publique");
   let r = await call("GET", "/api/vapid");
   check(r.json.publicKey === vapidPublicRaw, "clé publique VAPID servie");
@@ -159,8 +162,10 @@ try {
   console.log("\nAuthentification de l'éditeur");
   r = await call("POST", "/api/schedule", { trip: TRIP, items: [] });
   check(r.status === 401, "sans jeton : 401");
-  r = await call("POST", "/api/schedule", { trip: TRIP, items: [] }, { Authorization: "Bearer mauvais" });
-  check(r.status === 403, "mauvais jeton : 403");
+  r = await call("POST", "/api/schedule", { trip: TRIP, items: [] }, { Authorization: "Bearer mauvais-jeton-sans-compte" });
+  check(r.status === 401, "ancienne clé d'éditeur ou jeton inconnu : 401");
+  r = await call("POST", "/api/schedule", { trip: TRIP, items: [] }, { Authorization: "Bearer s.session-inconnue" });
+  check(r.status === 401, "session inconnue : 401");
 
   console.log("\nCalendrier");
   const now = Date.now();

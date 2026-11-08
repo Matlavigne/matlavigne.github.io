@@ -1,5 +1,7 @@
--- Base D1 du Worker de notifications. Aucune donnée nominative :
--- un abonnement n'est qu'une adresse technique fournie par Apple, Google ou Mozilla.
+-- Base D1 du Worker : tables de base des alertes, à créer une fois (wrangler d1 execute … --file=schema.sql).
+-- Les autres tables (voyages, comptes, demandes d'accès, Mon groupe…) sont créées au besoin par le Worker :
+-- voir README.md › « Données gardées dans la base D1 ».
+-- Aucune donnée nominative ici : un abonnement n'est qu'une adresse technique fournie par Apple, Google ou Mozilla.
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   trip       TEXT NOT NULL,

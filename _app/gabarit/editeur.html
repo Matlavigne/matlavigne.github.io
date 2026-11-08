@@ -170,7 +170,7 @@ header{position:relative}
     <summary><h2>Alertes sur les téléphones</h2><span class="n" id="al-state">…</span></summary>
     <div class="body">
       <p class="small">À chaque publication, les annonces sont programmées : les voyageurs qui ont activé les alertes reçoivent « Nouvelle annonce du groupe » à l’heure de l’annonce, ou dès la publication si vous avez choisi « Immédiatement ». Dans les deux cas, la notification part au plus tôt 3 minutes après la publication, le temps que le site se mette à jour. Le texte de l’annonce n’est jamais envoyé au service d’alertes.</p>
-      <p><button type="button" class="light" id="al-test">Envoyer une alerte de test</button> <button type="button" class="light" id="al-status">Voir les abonnés et les envois</button> <button type="button" class="light" id="al-token">Changer le jeton des alertes</button></p>
+      <p><button type="button" class="light" id="al-test">Envoyer une alerte de test</button> <button type="button" class="light" id="al-status">Voir les abonnés et les envois</button></p>
       <div id="al-msg" class="small"></div>
     </div>
   </details>
@@ -201,26 +201,6 @@ header{position:relative}
         <div class="addbar"><a class="btn light" id="ac-admin" href="/admin/">Mon compte</a><button type="button" class="light" id="ac-out-b">Se déconnecter</button></div>
       </div>
       <p class="help" id="ek-msg"></p>
-      <details style="margin-top:12px" id="ek-old"><summary style="cursor:pointer;color:var(--blue);font-size:14px">Ancienne méthode : clé de l’éditeur</summary>
-        <p class="help">Si le responsable vous a remis une clé propre à ce voyage plutôt qu’un compte. Elle ne sert que si vous n’êtes pas connecté avec un compte.</p>
-        <div class="grid">
-          <div class="f full"><label for="ek-key">Clé de l’éditeur</label><input id="ek-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-          <label class="chk"><input type="checkbox" id="ek-show"> Afficher la clé</label>
-          <label class="chk"><input type="checkbox" id="ek-keep" checked> Mémoriser sur cet appareil</label>
-        </div>
-        <div class="addbar"><button type="button" id="ek-go">Utiliser la clé</button><button type="button" class="light" id="ek-forget">Oublier la clé</button></div>
-      </details>
-      <details style="margin-top:12px"><summary style="cursor:pointer;color:var(--blue);font-size:14px">Mode administrateur : jeton GitHub</summary>
-        <p class="help">Réservé au responsable de l’app. Sans clé de l’éditeur, l’éditeur publie avec ce jeton directement sur GitHub.</p>
-        <div class="grid">
-          <div class="f"><label for="cx-owner">Compte GitHub</label><input id="cx-owner" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-          <div class="f"><label for="cx-repo">Dépôt de l’app</label><input id="cx-repo" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-          <div class="f full"><label for="cx-token">Jeton d’accès GitHub</label><input id="cx-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></div>
-          <label class="chk full"><input type="checkbox" id="cx-keep" checked> Mémoriser le jeton sur cet appareil</label>
-        </div>
-        <div class="addbar"><button type="button" id="cx-test">Se connecter avec le jeton</button><button type="button" class="light" id="cx-forget">Oublier le jeton</button></div>
-        <p class="help" id="cx-msg"></p>
-      </details>
     </div>
   </details>
 
@@ -274,35 +254,18 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.par
 const STN=JSON.parse(document.getElementById('station-data').textContent),TRIP=JSON.parse(document.getElementById('trip-data').textContent),TZL=STN.fuseau;
 const DOM_OPTS=Object.entries(STN.domaines).map(([k,d])=>[k,d.long||d.nom]);
 const domNom=k=>STN.domaines[k]?.nom||k||'';
-/* Tous les voyages sont dans le même dépôt (TRIP.depot), chacun dans son dossier (TRIP.id) */
-const CX_KEY='editeur-connexion-v2';
-const cxOld=LS.get('editeur-connexion-v1',{});
-let cx=Object.assign({token:cxOld.token||''},LS.get(CX_KEY,{}),{owner:TRIP.depot.owner,repo:TRIP.depot.repo});
-const FILE=n=>'/contents/'+encodeURIComponent(TRIP.id)+'/'+n;
 const DRAFT_KEY=()=>'editeur-brouillon-'+TRIP.id;
 const PREVIEW_KEY='voyage-apercu-brouillon';
-$('#cx-owner').value=cx.owner;$('#cx-repo').value=cx.repo+' › '+TRIP.id;$('#cx-owner').readOnly=$('#cx-repo').readOnly=true;$('#cx-token').value=cx.token||'';
-function saveCx(){cx.token=$('#cx-token').value.trim();LS.set(CX_KEY,$('#cx-keep').checked?cx:{owner:cx.owner,repo:cx.repo});}
-const api=(path,opt={})=>fetch('https://api.github.com/repos/'+encodeURIComponent(cx.owner)+'/'+encodeURIComponent(cx.repo)+path,{...opt,headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(cx.token?{'Authorization':'Bearer '+cx.token}:{}),...(opt.headers||{})}});
-const b64enc=s=>{const b=new TextEncoder().encode(s);let x='';for(let i=0;i<b.length;i+=0x8000)x+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(x);};
-const b64dec=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,'')),c=>c.charCodeAt(0)));
-/* Clé de l’éditeur (propre à ce voyage) : la publication passe par le Worker, qui n’écrit que <voyage>/voyage.json.
-   Même clé que les alertes (VoyagePushEditor). Le jeton GitHub reste possible en mode administrateur. */
-const EK_KEY='voyage-push-jeton:'+TRIP.id;
-const ekGet=()=>{try{return localStorage.getItem(EK_KEY)||sessionStorage.getItem(EK_KEY)||'';}catch(e){return '';}};
-function ekSave(v){try{localStorage.removeItem(EK_KEY);sessionStorage.removeItem(EK_KEY);if(v)($('#ek-keep').checked?localStorage:sessionStorage).setItem(EK_KEY,v);}catch(e){}}
-$('#ek-key').value=ekGet();
-$('#ek-show').onchange=()=>{$('#ek-key').type=$('#ek-show').checked?'text':'password';};
-$('#ek-go').onclick=()=>{ekOff=false;ekSave($('#ek-key').value.trim());load();};
-$('#ek-forget').onclick=()=>{$('#ek-key').value='';ekSave('');canWrite=false;checkWrite();};
+// Anciennes méthodes de publication retirées (clé d’éditeur, jeton GitHub) : on efface ce qui en restait sur cet appareil
+try{['editeur-connexion-v1','editeur-connexion-v2','voyage-push-jeton:'+TRIP.id].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});}catch(e){}
 /* Compte monaccompagnateur : session partagée avec /admin (même site), nom d’usager + mot de passe + double authentification */
 const SK='monaccompagnateur-session';
 const sesGet=()=>{try{return localStorage.getItem(SK)||'';}catch(e){return '';}};
 function sesSet(v){try{if(v)localStorage.setItem(SK,v);else localStorage.removeItem(SK);}catch(e){}}
 let PROFIL=null,DEFI=null;
-const AUTH=()=>sesGet()||ekGet();
-let ekOff=false; // Worker sans publication (pas encore déployé ou non configuré) : on retombe sur le jeton GitHub
-const MODE=()=>TRIP.push&&AUTH()&&!ekOff?'cle':(cx.token?'github':'');
+/* Publication : seulement avec un compte (double authentification), par le Worker */
+const AUTH=()=>sesGet();
+const CONNECTE=()=>!!(TRIP.push&&sesGet());
 async function auth(method,path,body,withSes=true){const h={'Content-Type':'application/json'};if(withSes&&sesGet())h.Authorization='Bearer '+sesGet();
   const r=await fetch(TRIP.push.replace(/\/+$/,'')+path,{method,headers:h,body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;e.data=j;throw e;}return j;}
@@ -310,8 +273,8 @@ function acView(){const on=!!(sesGet()&&PROFIL);$('#ac-out').hidden=on;$('#ac-in
   if(on){const ok=PROFIL.role==='admin'||(PROFIL.trips||[]).includes(TRIP.id);
     $('#ac-who').innerHTML='Connecté : <b>'+esc(PROFIL.nom)+'</b> ('+esc(PROFIL.username)+(PROFIL.role==='admin'?', administrateur':'')+').'+(ok?'':' <b>Ce voyage ne vous est pas attribué</b> : demandez l’accès au responsable de l’app.')+(!PROFIL.deuxEtapes?' <b>Activez la double authentification</b> (obligatoire) dans « Mon compte » pour pouvoir publier.':'');
     $('#ac-mdpf').hidden=!PROFIL.doitChanger;}
-  $('#ek-old').open=!on&&!!ekGet();}
-async function acOpen(r){sesSet(r.session);PROFIL=r.profil;DEFI=null;$('#ac-codef').hidden=true;$('#ac-login').hidden=false;acView();ekOff=false;await load();checkWrite();}
+}
+async function acOpen(r){sesSet(r.session);PROFIL=r.profil;DEFI=null;$('#ac-codef').hidden=true;$('#ac-login').hidden=false;acView();await load();checkWrite();}
 $('#ac-login').addEventListener('submit',async e=>{e.preventDefault();$('#ek-msg').textContent='Connexion…';
   try{const r=await auth('POST','/api/auth/connexion',{username:$('#ac-user').value,password:$('#ac-pw').value},false);$('#ac-pw').value='';
     if(r.deuxEtapes){DEFI=r.defi;$('#ac-login').hidden=true;$('#ac-codef').hidden=false;$('#ac-code').value='';$('#ac-code').focus();$('#ek-msg').textContent='Entrez le code de votre app d’authentification.';}
@@ -332,14 +295,11 @@ async function wk(method,path,body){const r=await fetch(TRIP.push.replace(/\/+$/
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;e.data=j;throw e;}return j;}
 /* Version en ligne de voyage.json : { sha, txt } (txt null si le fichier n’existe pas). */
 async function remoteGet(){
-  if(MODE()==='cle'){const j=await wk('GET','/api/voyage?trip='+encodeURIComponent(TRIP.id));return {sha:j.sha,txt:j.content};}
-  if(MODE()==='github'){const r=await api(FILE('voyage.json')+'?ref=main',{cache:'no-store'});if(r.status===404)return {sha:null,txt:null};if(!r.ok){const e=Error('GitHub '+r.status);e.status=r.status;throw e;}const j=await r.json();return {sha:j.sha,txt:b64dec(j.content)};}
+  if(CONNECTE()){const j=await wk('GET','/api/voyage?trip='+encodeURIComponent(TRIP.id));return {sha:j.sha,txt:j.content};}
   return null;}
 /* Écrit voyage.json; renvoie le nouveau sha. */
 async function remotePut(file,prevSha){
-  if(MODE()==='cle'){const j=await wk('POST','/api/publier',{trip:TRIP.id,content:file,sha:prevSha||null});return j.sha;}
-  const r=await api(FILE('voyage.json'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Mise à jour du voyage depuis l’éditeur',content:b64enc(file),sha:prevSha||undefined,branch:'main'})});
-  if(!r.ok){const t=await r.text();throw Error(r.status+' '+t.slice(0,140));}return (await r.json()).content.sha;}
+  const j=await wk('POST','/api/publier',{trip:TRIP.id,content:file,sha:prevSha||null});return j.sha;}
 
 /* ---------- Phrase du voyage : chiffrement AES-GCM, clé PBKDF2 (le même procédé que l’app) ---------- */
 const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'];
@@ -378,15 +338,12 @@ const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','
 $('#ph-gen').onclick=()=>{const r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;};const w=[];while(w.length<3){const m=MOTS[r(MOTS.length)];if(!w.includes(m))w.push(m);}$('#ph-in').value=w.join('-');$('#ph-show').checked=true;$('#ph-in').type='text';savePh();phUi();if(V)changed();};
 $('#ph-in').value=LS.get(PH_KEY(),'')||'';
 
-/* ---------- Liste du groupe : gérée dans l’app, sur le téléphone de l’accompagnateur (rien de publié) ---------- */
-try{localStorage.removeItem('editeur-cle-groupe-'+TRIP.id);}catch(e){}
-const gDirty=()=>false;function gValidate(){return [];}
 
 /* ---------- État ---------- */
 let V=null,base='',sha=null,canWrite=false,remoteOk=false;
 function msg(id,t,cls){const e=$(id);if(!t){e.hidden=true;return;}e.hidden=false;e.className='msg '+(cls||'info');e.innerHTML=t;}
 const pretty=o=>JSON.stringify(o,null,2)+'\n';
-function dirty(){return (V&&(pretty(V)!==base||phDirty()))||gDirty();}
+function dirty(){return !!V&&(pretty(V)!==base||phDirty());}
 const vDirty=()=>!!V&&(pretty(V)!==base||phDirty());
 let saveT=0;
 function changed(){
@@ -400,13 +357,13 @@ async function load(){
   msg('#m-load','Chargement du contenu…','info');
   let txt=null,from='';
   remoteOk=false;
-  if(MODE()){
+  if(CONNECTE()){
     let g=null;
     try{g=await remoteGet();}
-    catch(e){if(MODE()==='cle'&&(e.status===404||e.status===503||!e.status)&&cx.token){ekOff=true;try{g=await remoteGet();}catch(e2){}}else{g=null;
-    if(e.status===401&&sesGet()&&!ekGet()){sesSet('');PROFIL=null;acView();}
-    if(e.status===401||e.status===403){msg('#m-load',MODE()==='cle'?(sesGet()?(e.status===401?'Session expirée : reconnectez-vous dans « Connexion pour publier ».':'Votre compte n’a pas accès à la publication de ce voyage (« Connexion pour publier »).'):'Clé de l’éditeur refusée pour ce voyage. Vérifiez-la dans « Connexion pour publier ».'):'Jeton refusé par GitHub. Vérifiez-le dans « Connexion pour publier ».','err');$('#s-connexion').open=true;}}}
-    if(g&&g.txt!=null){txt=g.txt;sha=g.sha;from=MODE()==='cle'?'le serveur':'GitHub';remoteOk=true;}
+    catch(e){
+      if(e.status===401){sesSet('');PROFIL=null;acView();}
+      if(e.status===401||e.status===403||e.status===428){msg('#m-load',e.status===401?'Session expirée : reconnectez-vous dans « Connexion pour publier ».':esc(e.message)+' (« Connexion pour publier »).','err');$('#s-connexion').open=true;}}
+    if(g&&g.txt!=null){txt=g.txt;sha=g.sha;from='le serveur';remoteOk=true;}
   }
   if(txt==null){try{const r=await fetch('voyage.json',{cache:'no-store'});if(r.ok){txt=await r.text();from='le site';}}catch(e){}}
   if(txt==null){msg('#m-load','Impossible de lire voyage.json. Vérifiez la connexion Internet.','err');return;}
@@ -420,8 +377,8 @@ async function load(){
     catch(e){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Phrase incorrecte : impossible d’ouvrir le contenu publié. Vérifiez la phrase dans « Phrase du voyage ».','err');$('#sections').innerHTML='';return;}
   }
   normAnn(V);base=pretty(V);phUi();
-  msg('#m-load','Contenu chargé depuis '+from+'.'+(remoteOk?'':MODE()==='cle'?' Publication refusée pour ce voyage : voir « Connexion pour publier ».':' Connectez-vous (« Connexion pour publier ») pour pouvoir publier.'),remoteOk?'ok':(MODE()?'warn':'info'));
-  if(remoteOk||!MODE())setTimeout(()=>msg('#m-load'),4000);
+  msg('#m-load','Contenu chargé depuis '+from+'.'+(remoteOk?'':CONNECTE()?' Publication refusée pour ce voyage : voir « Connexion pour publier ».':' Connectez-vous (« Connexion pour publier ») pour pouvoir publier.'),remoteOk?'ok':(CONNECTE()?'warn':'info'));
+  if(remoteOk||!CONNECTE())setTimeout(()=>msg('#m-load'),4000);
   const dr=LS.get(DRAFT_KEY(),null),ret=LS.get(RETOUR_KEY(),null);LS.del(RETOUR_KEY());
   const back=ret&&Date.now()-ret.at<12*36e5;
   if(back&&dr&&dr.data&&pretty(normAnn(dr.data))!==base){V=dr.data;}
@@ -438,7 +395,7 @@ async function load(){
    Elles ne sont publiées qu’à l’intérieur du contenu chiffré, comme le reste du voyage. */
 let accSync=false;
 async function syncAccompagnateurs(){
-  if(accSync||!V||!sesGet()||MODE()!=='cle')return;accSync=true;
+  if(accSync||!V||!CONNECTE())return;accSync=true;
   let L;try{L=(await wk('GET','/api/voyage/accompagnateurs?trip='+encodeURIComponent(TRIP.id))).accompagnateurs||[];}catch(e){return;}
   const cur=Array.isArray(V.accompagnateurs)?V.accompagnateurs:[];const avant=JSON.stringify(cur);
   const norm=x=>String(x||'').trim().toLowerCase();
@@ -451,20 +408,14 @@ async function syncAccompagnateurs(){
   msg('#m-res','Coordonnées des accompagnateurs mises à jour depuis leurs comptes (section « Accompagnateurs »). Touchez « Publier » pour les afficher aux voyageurs.','info');
 }
 async function checkWrite(){
-  $('#ek-msg').textContent='';$('#cx-msg').textContent='';
+  $('#ek-msg').textContent='';
   const ses=!!sesGet();
   setTimeout(()=>{if(canWrite)syncAccompagnateurs();},0);
-  if(MODE()==='cle'){canWrite=remoteOk&&!(ses&&PROFIL&&PROFIL.doitChanger);$('#cx-state').textContent=canWrite?(ses&&PROFIL?'✓ '+PROFIL.nom:'✓ connecté'):(ses?(PROFIL&&PROFIL.doitChanger?'mot de passe à changer':'accès refusé'):'clé refusée');
-    $('#ek-msg').textContent=canWrite?'Vous pouvez publier ce voyage.':ses?(PROFIL&&PROFIL.doitChanger?'Changez votre mot de passe temporaire pour pouvoir publier.':PROFIL&&!PROFIL.deuxEtapes?'Activez la double authentification (« Mon compte ») pour pouvoir publier.':'Votre compte ne peut pas publier ce voyage.'):'La clé n’a pas été acceptée pour ce voyage.';if(!canWrite)$('#s-connexion').open=true;return;}
-  if(!cx.token){canWrite=false;$('#cx-state').textContent='lecture seule';$('#ek-msg').textContent=TRIP.push?'Connectez-vous avec votre compte pour pouvoir publier.':'Entrez le jeton GitHub pour pouvoir publier.';$('#s-connexion').open=true;return;}
-  try{const r=await api('');if(!r.ok)throw Error(r.status);const j=await r.json();canWrite=!!j.permissions?.push;
-    $('#cx-state').textContent=canWrite?'✓ connecté (administrateur)':'lecture seule';
-    $('#cx-msg').textContent=canWrite?'Connecté à '+j.full_name+' avec droit de modification.':'Le jeton ne donne pas le droit de modifier '+j.full_name+'. Vérifiez la permission « Contents : Read and write ».';
-    if(!canWrite)$('#s-connexion').open=true;
-  }catch(e){canWrite=false;$('#cx-state').textContent='erreur';$('#cx-msg').textContent='Connexion impossible ('+e.message+'). Vérifiez le jeton.';$('#s-connexion').open=true;}
+  canWrite=CONNECTE()&&remoteOk&&!(PROFIL&&PROFIL.doitChanger);
+  $('#cx-state').textContent=canWrite?'✓ '+(PROFIL?PROFIL.nom:'connecté'):(ses?(PROFIL&&PROFIL.doitChanger?'mot de passe à changer':'accès refusé'):'non connecté');
+  $('#ek-msg').textContent=canWrite?'Vous pouvez publier ce voyage.':!ses?'Connectez-vous avec votre compte pour pouvoir publier.':PROFIL&&PROFIL.doitChanger?'Changez votre mot de passe temporaire pour pouvoir publier.':PROFIL&&!PROFIL.deuxEtapes?'Activez la double authentification (« Mon compte ») pour pouvoir publier.':'Votre compte ne peut pas publier ce voyage.';
+  if(!canWrite)$('#s-connexion').open=true;
 }
-$('#cx-test').onclick=()=>{saveCx();load();};
-$('#cx-forget').onclick=()=>{$('#cx-token').value='';saveCx();checkWrite();};
 
 /* ---------- Schéma des formulaires ---------- */
 const TZ=[['America/Montreal','Heure de Montréal'],['Europe/Zurich','Heure de Zurich'],['Europe/Vienna','Heure d’Autriche']];
@@ -664,9 +615,9 @@ $('#b-preview').onclick=()=>{if(!V)return;LS.set(PREVIEW_KEY,clean(V));
   leaving=true;location.href='./?brouillon';};
 $('#b-reset').onclick=()=>{const b=$('#b-reset');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tout annuler?';setTimeout(()=>{delete b.dataset.sure;b.textContent='Annuler';},3500);return;}delete b.dataset.sure;b.textContent='Annuler';V=JSON.parse(base);LS.del(DRAFT_KEY());render();changed();msg('#m-res','Modifications annulées.','info');};
 $('#b-pub').onclick=async()=>{
-  const errs=[...(V&&vDirty()?validate():[]),...gValidate()];
+  const errs=V&&vDirty()?validate():[];
   if(errs.length){msg('#m-res','<b>À corriger avant de publier :</b><ul style="margin:6px 0 0;padding-left:18px">'+errs.map(e=>`<li>${esc(e)}</li>`).join('')+'</ul>','err');window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(!MODE()||!canWrite){msg('#m-res','Connectez-vous avec la clé de l’éditeur de ce voyage (section « Connexion pour publier »).','err');$('#s-connexion').open=true;window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(!CONNECTE()||!canWrite){msg('#m-res','Connectez-vous avec votre compte (section « Connexion pour publier »).','err');$('#s-connexion').open=true;window.scrollTo({top:0,behavior:'smooth'});return;}
   const b=$('#b-pub');b.disabled=true;b.textContent='Publication…';
   try{
    const doV=vDirty();let avance=0;
@@ -874,31 +825,18 @@ acInit().then(load);
   "use strict";
 
   var conf = null;
-  var KEY = "voyage-push-jeton:";
 
-  function token(ask) {
-    var t = null;
-    if (conf.getToken) { t = conf.getToken(); if (t) return t; }
-    try { t = localStorage.getItem(KEY + conf.trip); } catch (e) {}
-    if (!t && ask !== false) {
-      t = window.prompt("Jeton des alertes pour " + conf.trip + " (fourni à la création du Worker) :");
-      if (t) { t = t.trim(); try { localStorage.setItem(KEY + conf.trip, t); } catch (e) {} }
-    }
-    return t;
-  }
+  function token() { return conf.getToken ? conf.getToken() : ""; }
 
   function call(method, path, body) {
     var t = token();
-    if (!t) return Promise.reject(new Error("Jeton des alertes manquant"));
+    if (!t) return Promise.reject(new Error("Connectez-vous avec votre compte (« Connexion pour publier »)"));
     return fetch(conf.worker.replace(/\/+$/, "") + path, {
       method: method,
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
       body: body ? JSON.stringify(body) : undefined,
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if ((r.status === 401 || r.status === 403) && !(conf.getToken && conf.getToken())) {
-          try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
-        }
         if (!r.ok) throw new Error(j.erreur || ("Erreur " + r.status));
         return j;
       });
@@ -927,9 +865,6 @@ acInit().then(load);
     purge: function () {
       return call("POST", "/api/purge", { trip: conf.trip });
     },
-    forgetToken: function () {
-      try { localStorage.removeItem(KEY + conf.trip); } catch (e) {}
-    },
   };
 })();
 
@@ -949,7 +884,6 @@ function pushSync(v){if(!PUSH_ON)return;VoyagePushEditor.sync(pushItems(v)).then
 if(PUSH_ON){
   $('#al-test').onclick=()=>VoyagePushEditor.test().then(()=>{$('#al-msg').textContent='Alerte de test envoyée : elle arrive sur les téléphones abonnés d’ici une minute.';}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
   $('#al-status').onclick=()=>VoyagePushEditor.status().then(r=>{$('#al-msg').innerHTML='<b>'+r.abonnements+'</b> téléphone(s) abonné(s).<br>'+(r.annonces||[]).slice(0,8).map(a=>esc(a.kind)+' · '+esc(new Date(a.envoi).toLocaleString('fr-CA',{timeZone:STN.fuseau,dateStyle:'medium',timeStyle:'short'}))+' · '+(a.termine?a.livrees+' reçue(s)'+(a.echecs?', '+a.echecs+' échec(s)':''):'en attente')).join('<br>');}).catch(e=>{$('#al-msg').textContent='Erreur : '+e.message;});
-  $('#al-token').onclick=()=>{VoyagePushEditor.forgetToken();$('#al-msg').textContent='Jeton oublié : il sera redemandé à la prochaine action.';};
 }
 </script>
 </body>

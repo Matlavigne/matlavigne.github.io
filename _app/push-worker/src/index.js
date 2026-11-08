@@ -1,8 +1,8 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // Worker des apps de voyage monaccompagnateur.ca : alertes et publication depuis l'éditeur.
 //
-// Publication : chaque accompagnateur a une clé d'éditeur propre à SON voyage (EDITOR_TOKENS).
-// Le Worker garde le seul jeton GitHub (secret GITHUB_TOKEN) et n'écrit que <voyage>/voyage.json.
+// Publication : seulement avec un compte accompagnateur (double authentification obligatoire), pour les voyages
+// qui lui sont confiés. Le Worker garde le seul jeton GitHub (secret GITHUB_TOKEN) et n'écrit que <voyage>/voyage.json.
 // Il reçoit le contenu déjà chiffré par l'éditeur : il ne voit pas la phrase du voyage.
 //
 // Le Worker ne voit jamais le contenu du voyage : il garde les abonnements des téléphones
@@ -38,13 +38,13 @@ function tomlTrips(env) {
   return typeof t === "string" ? JSON.parse(t) : t;
 }
 
-// Tables créées au besoin (voyages ajoutés par l'administration, clés d'éditeur)
+// Tables créées au besoin (voyages ajoutés par l'administration)
 let schemaOk = false;
 async function ensureSchema(env) {
   if (schemaOk) return;
   await env.DB.batch([
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS trips (id TEXT PRIMARY KEY, station TEXT, titre TEXT, url TEXT, fin TEXT, max_subs INTEGER, created_at INTEGER, clos INTEGER DEFAULT 0)`),
-    env.DB.prepare(`CREATE TABLE IF NOT EXISTS editor_keys (trip TEXT PRIMARY KEY, hash TEXT NOT NULL, created_at INTEGER NOT NULL)`),
+    env.DB.prepare("DROP TABLE IF EXISTS editor_keys"),   // anciennes clés d'éditeur (sans double authentification) : retirées
   ]);
   schemaOk = true;
 }
@@ -175,40 +175,17 @@ async function sha256(text) {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
 }
 
-const b64url = (u) => btoa(String.fromCharCode(...u)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-async function hashKey(k) { return b64url(await sha256("cle-editeur:" + k)); }
-const newKey = () => b64url(crypto.getRandomValues(new Uint8Array(24)));
 
-async function safeEqual(a, b) {
-  const [ha, hb] = await Promise.all([sha256(a), sha256(b)]);
-  let diff = 0;
-  for (let i = 0; i < ha.length; i++) diff |= ha[i] ^ hb[i];
-  return diff === 0;
-}
-
-// Jeton de l'éditeur : EDITOR_TOKENS = {"<voyage>": "<jeton>", "*": "<jeton admin facultatif>"}
+// Éditeur d'un voyage : session d'un compte (« s.… ») qui a la double authentification et à qui le voyage est confié
 async function requireEditor(env, req, trip) {
-  const auth = req.headers.get("Authorization") || "";
-  const m = auth.match(/^Bearer\s+(.+)$/);
-  if (!m) throw new HttpError(401, "Jeton manquant");
-  // Compte (nom d'usager + mot de passe) : session « s.… »
-  if (m[1].startsWith("s.")) {
-    const u = await sessionUser(env, req);
-    if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
-    if (userCanEdit(u, trip)) return;
-    if (!u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
-    throw new HttpError(403, "Ce compte n'a pas accès à ce voyage");
-  }
-  let tokens = {};
-  try { tokens = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch { tokens = {}; }
-  const candidates = [tokens[trip], tokens["*"]].filter(Boolean);
-  for (const t of candidates) if (await safeEqual(m[1], t)) return;
-  try {
-    await ensureSchema(env);
-    const row = await env.DB.prepare("SELECT hash FROM editor_keys WHERE trip = ?").bind(trip).first();
-    if (row && await safeEqual(await hashKey(m[1]), row.hash)) return;
-  } catch (e) { console.error("editor_keys", e); }
-  throw new HttpError(403, "Jeton refusé");
+  const m = (req.headers.get("Authorization") || "").match(/^Bearer\s+(s\.[A-Za-z0-9_-]+)$/);
+  if (!m) throw new HttpError(401, "Connectez-vous avec votre compte");
+  const u = await sessionUser(env, req);
+  if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
+  if (userCanEdit(u, trip)) return u;
+  if (u.must_change) throw new HttpError(428, "Changez d'abord votre mot de passe temporaire");
+  if (!u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
+  throw new HttpError(403, "Ce compte n'a pas accès à ce voyage");
 }
 
 async function requireTrip(env, trip) {
@@ -309,9 +286,6 @@ async function adminEtat(env) {
   await ensureSchema(env);
   const subs = await env.DB.prepare("SELECT trip, COUNT(*) AS n FROM subscriptions GROUP BY trip").all();
   const nSubs = Object.fromEntries((subs.results || []).map((r) => [r.trip, r.n]));
-  const keys = await env.DB.prepare("SELECT trip, created_at FROM editor_keys").all();
-  const kSet = Object.fromEntries((keys.results || []).map((r) => [r.trip, r.created_at]));
-  let toml = {}; try { toml = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch {}
   await ensureAuthSchema(env);
   const us = (await env.DB.prepare("SELECT username, nom, trips, role, actif FROM users").all()).results || [];
   const avec = (id) => us.filter((u) => u.actif && JSON.parse(u.trips || "[]").includes(id));
@@ -322,7 +296,7 @@ async function adminEtat(env) {
     let v; try { v = JSON.parse(j.text); } catch { continue; }
     const t = all[v.id] || {};
     if (t.supprime) continue; // supprimé : GitHub peut encore lister la fiche quelques instants
-    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, acces: acces(v.id), accompagnateurs: avec(v.id).map((u) => u.username), clos: !!t.clos });
+    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, acces: acces(v.id), accompagnateurs: avec(v.id).map((u) => u.username), clos: !!t.clos });
   }
   voyages.sort((a, b) => String(b.fin || "").localeCompare(String(a.fin || "")));
   return { stations, voyages };
@@ -374,16 +348,13 @@ async function adminCreer(env, b) {
     }
   }
   const commit = await commitFiles(env, files, `Nouveau voyage : ${titre} (${dates})`);
-  const cle = newKey(), now = Date.now();
+  const now = Date.now();
   await ensureSchema(env);
-  await env.DB.batch([
-    env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0) ON CONFLICT (id) DO UPDATE SET station = excluded.station, titre = excluded.titre, url = excluded.url, fin = excluded.fin, created_at = excluded.created_at, clos = 0").bind(id, station, appCourt, `/${id}/`, b.fin, now),
-    env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(id, await hashKey(cle), now),
-  ]);
+  await env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0) ON CONFLICT (id) DO UPDATE SET station = excluded.station, titre = excluded.titre, url = excluded.url, fin = excluded.fin, created_at = excluded.created_at, clos = 0").bind(id, station, appCourt, `/${id}/`, b.fin, now).run();
   // Accompagnateurs : un ou plusieurs comptes (b.comptes), ou l'ancien champ b.compte
   const voulus = Array.isArray(b.comptes) ? b.comptes : b.compte ? [b.compte] : [];
   const comptes = voulus.length ? await accesVoyage(env, id, voulus, false) : [];
-  return { ok: true, id, cle, compte: comptes[0] || null, comptes, commit, url: `https://monaccompagnateur.ca/${id}/` };
+  return { ok: true, id, comptes, commit, url: `https://monaccompagnateur.ca/${id}/` };
 }
 
 // Accompagnateurs d'un voyage : donne l'accès aux comptes listés; avec remplacer, le retire aux autres
@@ -402,14 +373,6 @@ async function accesVoyage(env, trip, usernames, remplacer = true) {
     await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(n), u.username).run();
   }
   return ok;
-}
-
-async function adminNouvelleCle(env, trip) {
-  await requireTrip(env, trip);
-  const cle = newKey();
-  await ensureSchema(env);
-  await env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(trip, await hashKey(cle), Date.now()).run();
-  return { ok: true, trip, cle };
 }
 
 // Suppression d'un voyage : l'app, sa fiche, sa photo, son icône, son dictionnaire, son entrée sur la page d'accueil
@@ -438,7 +401,6 @@ async function adminSupprimer(env, b) {
   await ensureSchema(env);
   // Marqué supprimé (clos = 2) plutôt qu'effacé : plus d'alertes, et absent de l'administration même si GitHub tarde à mettre sa liste à jour
   await env.DB.prepare(`INSERT INTO trips (id, titre, url, max_subs, created_at, clos) VALUES (?, ?, ?, 300, ?, 2) ON CONFLICT (id) DO UPDATE SET clos = 2`).bind(id, id, `/${id}/`, Date.now()).run();
-  await env.DB.prepare("DELETE FROM editor_keys WHERE trip = ?").bind(id).run();
   await ensureAuthSchema(env);
   const us = (await env.DB.prepare("SELECT username, trips FROM users").all()).results || [];
   for (const u of us) { const t = JSON.parse(u.trips || "[]"); if (t.includes(id)) await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(t.filter((x) => x !== id)), u.username).run(); }
@@ -602,17 +564,17 @@ async function handleAcces(req, env, path, url) {
       if (!d) continue;
       if (x.retirer) {
         // Accès retiré : plus de clé à reprendre, plus d'alertes du voyage; l'app du téléphone efface sa clé à la prochaine ouverture
-        await env.DB.prepare("UPDATE demandes SET statut = 'retire', cle = NULL, sel = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u ? u.username : "cle", d.id).run();
+        await env.DB.prepare("UPDATE demandes SET statut = 'retire', cle = NULL, sel = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u.username, d.id).run();
         if (d.sub) { try { await env.DB.prepare("DELETE FROM subscriptions WHERE trip = ? AND endpoint = ?").bind(b.trip, JSON.parse(d.sub).endpoint).run(); } catch (e) { /* rien */ } }
         retires++; continue;
       }
-      if (!x.ok) { await env.DB.prepare("UPDATE demandes SET statut = 'refus', cle = NULL, sel = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u ? u.username : "cle", d.id).run(); refus++; continue; }
+      if (!x.ok) { await env.DB.prepare("UPDATE demandes SET statut = 'refus', cle = NULL, sel = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u.username, d.id).run(); refus++; continue; }
       const cle = x.cle == null ? null : JSON.stringify(x.cle);
       if (cle && cle.length > 4000) throw new HttpError(400, "Clé chiffrée trop longue");
       const sel = typeof x.sel === "string" && /^[A-Za-z0-9+/=_-]{8,100}$/.test(x.sel) ? x.sel : null;
       // Nouvelle clé pour un voyageur déjà approuvé (la phrase a changé) : on garde la date d'approbation
       if (d.statut === "ok") { await env.DB.prepare("UPDATE demandes SET cle = ?, sel = ? WHERE id = ?").bind(cle, sel, d.id).run(); rekey++; continue; }
-      await env.DB.prepare("UPDATE demandes SET statut = 'ok', cle = ?, sel = ?, decided = ?, par = ? WHERE id = ?").bind(cle, sel, now, u ? u.username : "cle", d.id).run();
+      await env.DB.prepare("UPDATE demandes SET statut = 'ok', cle = ?, sel = ?, decided = ?, par = ? WHERE id = ?").bind(cle, sel, now, u.username, d.id).run();
       ok++;
       if (d.sub && d.statut !== "ok") {
         const s = JSON.parse(d.sub);
@@ -687,7 +649,6 @@ async function handleAdmin(req, env, path, url) {
   }
   if (req.method === "GET" && path === "/api/admin/etat") return adminEtat(env);
   if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
-  if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
   if (req.method === "POST" && path === "/api/admin/photo") return adminPhoto(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/acces") {
     const b = await readJson(req);
@@ -702,7 +663,6 @@ async function handleAdmin(req, env, path, url) {
     await ensureSchema(env);
     const t = (await trips(env))[b.trip] || {};
     await env.DB.prepare(`INSERT INTO trips (id, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, 300, ?, 1) ON CONFLICT (id) DO UPDATE SET clos = 1`).bind(b.trip, t.title || b.trip, t.url || `/${b.trip}/`, t.end || null, Date.now()).run();
-    await env.DB.prepare("DELETE FROM editor_keys WHERE trip = ?").bind(b.trip).run();
     return { ok: true };
   }
   throw new HttpError(404, "Introuvable");

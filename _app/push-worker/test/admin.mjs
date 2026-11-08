@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TRIPS_TEST, accompagnateur } from "./outils.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GH_PORT = 9914, WORKER_PORT = 8796;
@@ -63,7 +64,7 @@ await new Promise((r) => gh.listen(GH_PORT, "127.0.0.1", r));
 
 // ---------- Worker ----------
 fs.writeFileSync(path.join(root, ".dev.vars"), [
-  "VAPID_PUBLIC_KEY=x", ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN_TOKEN}`, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`, `EDITOR_TOKENS={}`,
+  "VAPID_PUBLIC_KEY=x", ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN_TOKEN}`, TRIPS_TEST, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`,
 ].join("\n") + "\n");
 fs.rmSync(path.join(root, ".wrangler"), { recursive: true, force: true });
 const env = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "1" };
@@ -111,8 +112,7 @@ try {
   check(r.status === 400, "station inconnue refusée");
   const before = commitCount;
   r = await call("POST", "/api/admin/voyages", nv, ADMIN);
-  check(r.status === 200 && r.json.cle && r.json.id === nv.id, `voyage créé, clé reçue (${r.status} ${r.json.erreur || ""})`);
-  const cle = r.json.cle;
+  check(r.status === 200 && r.json.id === nv.id && !("cle" in r.json), `voyage créé, sans clé d'éditeur (${r.status} ${r.json.erreur || ""})`);
   check(commitCount === before + 1, "un seul commit");
   const conf = JSON.parse(files.get(`_app/voyages/${nv.id}.json`));
   check(conf.station === "stanton" && conf.appCourt === "St. Anton 2028" && conf.affiche?.bagages?.soute?.length === 3, "fiche du voyage écrite, avec l'affiche par défaut");
@@ -121,25 +121,22 @@ try {
   check(files.get(`_app/voyages/photos/${nv.id}.jpg`)?.toString() === "faux jpeg", "photo écrite");
   check(JSON.parse(files.get("voyages.json")).voyages[0].app === `https://monaccompagnateur.ca/${nv.id}/`, "voyage ajouté en tête de la page d'accueil");
 
-  console.log("\nClé d'éditeur et alertes du nouveau voyage");
-  r = await call("GET", `/api/voyage?trip=${nv.id}`, null, cle);
-  check(r.status === 200 && JSON.parse(r.json.content).chiffre, "la clé ouvre le nouveau voyage dans l'éditeur");
-  check((await call("GET", `/api/voyage?trip=st-anton-mars2027`, null, cle)).status === 403, "la clé n'ouvre pas un autre voyage");
-  r = await call("POST", "/api/schedule", { trip: nv.id, items: [] }, cle);
+  console.log("\nÉditeur et alertes du nouveau voyage (compte accompagnateur)");
+  const paul = await accompagnateur(call, ADMIN, "paul.r", [nv.id]);
+  r = await call("GET", `/api/voyage?trip=${nv.id}`, null, paul);
+  check(r.status === 200 && JSON.parse(r.json.content).chiffre, "le compte de l'accompagnateur ouvre le nouveau voyage dans l'éditeur");
+  check((await call("GET", `/api/voyage?trip=st-anton-mars2027`, null, paul)).status === 403, "il n'ouvre pas un autre voyage");
+  r = await call("POST", "/api/schedule", { trip: nv.id, items: [] }, paul);
   check(r.status === 200, "programmation des alertes acceptée pour le nouveau voyage");
-  r = await call("POST", "/api/admin/cle", { trip: nv.id }, ADMIN);
-  check(r.status === 200 && r.json.cle && r.json.cle !== cle, "nouvelle clé générée");
-  check((await call("GET", `/api/voyage?trip=${nv.id}`, null, cle)).status === 403, "l'ancienne clé ne fonctionne plus");
-  check((await call("GET", `/api/voyage?trip=${nv.id}`, null, r.json.cle)).status === 200, "la nouvelle clé fonctionne");
-  const cle2 = r.json.cle;
+  check((await call("POST", "/api/admin/cle", { trip: nv.id }, ADMIN)).status === 404, "plus de clé d'éditeur à générer");
+  check((await call("GET", `/api/voyage?trip=${nv.id}`, null, "cle-editeur-ancienne-xyz")).status === 401, "une clé sans compte est refusée");
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   const v = r.json.voyages.find((x) => x.id === nv.id);
-  check(v && v.cle === "admin" && !v.clos, "le nouveau voyage apparaît dans la liste");
+  check(v && !v.clos && !("cle" in v), "le nouveau voyage apparaît dans la liste");
 
   console.log("\nClôture");
   r = await call("POST", "/api/admin/clore", { trip: nv.id }, ADMIN);
   check(r.status === 200, "voyage clos");
-  check((await call("GET", `/api/voyage?trip=${nv.id}`, null, cle2)).status === 403, "après la clôture, la clé ne fonctionne plus");
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(r.json.voyages.find((x) => x.id === nv.id)?.clos === true, "marqué clos dans la liste");
 

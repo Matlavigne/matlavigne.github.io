@@ -16,7 +16,6 @@ import { fileURLToPath } from "node:url";
 const APP = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(APP, "..");
 const SITE = "https://monaccompagnateur.ca";
-const DEPOT = { owner: "Matlavigne", repo: "matlavigne.github.io" };
 // Réglages du site : adresse du Worker des alertes (vide = alertes désactivées)
 const CONFIG = fs.existsSync(path.join(APP, "config.json")) ? JSON.parse(fs.readFileSync(path.join(APP, "config.json"), "utf8")) : {};
 const PUSH = String(CONFIG.pushWorker || "").replace(/\/+$/, "");
@@ -106,7 +105,7 @@ function build(tripId, version) {
 
   const { pistesSuggerees, ...stationPublic } = S;
   const ski = { picks: pistesSuggerees || {}, plans: Object.fromEntries(Object.entries(S.domaines).map(([k, d]) => [k, d.plan || ""])) };
-  const trip = { id: T.id, titre: T.titre, depot: DEPOT, push: PUSH };
+  const trip = { id: T.id, titre: T.titre, push: PUSH };
 
   // Traduction anglaise : dictionnaire commun + dictionnaire de la station (+ celui du voyage s'il existe)
   const dico = { exact: {}, regex: [] };

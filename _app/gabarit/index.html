@@ -1240,7 +1240,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div class="seg" role="group" aria-label="Langue · Language"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
     <p class="small" style="margin-top:8px">Auto : langue du téléphone · Auto: phone language</p>
   </div>
-  <div class="card" id="old-grp" hidden><h3>Liste du groupe sur ce téléphone</h3><p class="small">La liste du groupe se gère maintenant dans l’app Accompagnateur. Une liste importée ici auparavant est encore sur ce téléphone : exportez-la, puis importez-la dans l’app Accompagnateur (Mon groupe › Importer un CSV). Effacez-la ensuite d’ici.</p><p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="old-exp">Exporter la liste (CSV)</button><button type="button" class="light" id="old-del">Effacer de ce téléphone</button></p></div>
   <details class="card" id="credits"><summary style="cursor:pointer;font-weight:700;color:var(--pine)">Crédits et licences</summary>
     <ul class="ul small" style="margin-top:8px">
       <li>Météo et neige : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0)</li>
@@ -1605,15 +1604,6 @@ renderPasse();
 // Numéro WhatsApp : chiffres seulement; un numéro nord-américain à 10 chiffres reçoit l’indicatif 1
 
 /* Ancienne liste du groupe (avant l’app Accompagnateur) : à exporter puis effacer */
-(function(){const K=TRIP.id+'-groupe-local-v1';let g=null;try{g=JSON.parse(localStorage.getItem(K)||'null');}catch(e){}
-  if(!g||!Array.isArray(g.voyageurs)||!g.voyageurs.length)return;$('#old-grp').hidden=false;
-  $('#old-exp').onclick=async()=>{const q=v=>/[;"\n\r]/.test(v=String(v||''))?'"'+v.replace(/"/g,'""')+'"':v;
-    const csv='\ufeff'+[['Genre','Nom','Prénom','Cellulaire','Date de naissance','Autre'],...g.voyageurs.map(p=>[p.genre,p.nom,p.prenom,p.cellulaire,p.naissance,p.autre])].map(r=>r.map(q).join(';')).join('\r\n');
-    const name='groupe-'+TRIP.id+'.csv',blob=new Blob([csv],{type:'text/csv'});
-    try{const f=new File([blob],name,{type:'text/csv'});if(navigator.canShare?.({files:[f]})){await navigator.share({files:[f],title:name});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);};
-  let armed=false;$('#old-del').onclick=e=>{if(!armed){armed=true;e.target.textContent='Touchez encore pour effacer';setTimeout(()=>{armed=false;e.target.textContent='Effacer de ce téléphone';},3500);return;}
-    try{localStorage.removeItem(K);localStorage.removeItem(TRIP.id+'-presences-v1');}catch(x){}$('#old-grp').hidden=true;};})();
 /* ---------- Vols aller et retour ---------- */
 const SENS={aller:'Aller',retour:'Retour',correspondance:'Correspondance'};
 function volsList(){return (Array.isArray(V.vols)?V.vols:[]).map(v=>{

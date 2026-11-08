@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TRIPS_TEST } from "./outils.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GH_PORT = 9915, WORKER_PORT = 8795, W = `http://127.0.0.1:${WORKER_PORT}`, ORIGIN = "https://monaccompagnateur.ca";
@@ -21,7 +22,7 @@ function totp(secret, t = Date.now()) { const step = Math.floor(t / 30000); cons
 // faux GitHub minimal (lecture d'un voyage)
 const gh = http.createServer((req, res) => { res.writeHead(req.url.includes("voyage.json") ? 200 : 404, { "Content-Type": "application/json" }); res.end(JSON.stringify({ sha: "a".repeat(40), content: Buffer.from('{"chiffre":{"iv":"a","data":"b","salt":"c"}}').toString("base64") })); });
 await new Promise((r) => gh.listen(GH_PORT, "127.0.0.1", r));
-fs.writeFileSync(path.join(root, ".dev.vars"), ["VAPID_PUBLIC_KEY=x", `ADMIN_TOKEN=${ADMIN_TOKEN}`, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`, "EDITOR_TOKENS={}"].join("\n") + "\n");
+fs.writeFileSync(path.join(root, ".dev.vars"), ["VAPID_PUBLIC_KEY=x", `ADMIN_TOKEN=${ADMIN_TOKEN}`, TRIPS_TEST, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`].join("\n") + "\n");
 fs.rmSync(path.join(root, ".wrangler"), { recursive: true, force: true });
 const env = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "1" };
 execFileSync("npx", ["wrangler", "d1", "execute", "monaccompagnateur-push", "--local", "--file=schema.sql"], { cwd: root, env, stdio: "pipe" });
