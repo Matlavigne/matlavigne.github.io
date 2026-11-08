@@ -271,6 +271,7 @@ async function demarrer(){
   if(alActif()&&pushOk()&&Notification.permission==='granted')activerAlertes(false).catch(()=>{});
   try{DATA=await api('GET','/api/mes-voyages');}catch(x){msg(esc(x.message),'err');return;}
   await dates();dessiner();
+  pastilleDem(DATA.voyages.filter(v=>!v.clos).reduce((t,v)=>t+(v.demandes||0),0));
   const h=location.hash.match(/^#dem=(.+)$/);
   if(h){history.replaceState(null,'',location.pathname);const id=decodeURIComponent(h[1]);if(DATA.voyages.some(v=>v.id===id))ouvrirDem(id);}
 }
@@ -325,6 +326,13 @@ function dessiner(){
 }
 
 /* ---------- Demandes d’accès des voyageurs ---------- */
+/* Pastille de l’icône : demandes en attente (+ annonces non lues gardées par les voyages) */
+async function pastilleDem(d){d=Math.max(0,d|0);
+  try{if(!window.caches)return;const c=await caches.open('voyage-badge');
+    await c.put(new Request('/app/__pastille-dem__'),new Response(String(d)));
+    let a=0;try{const r=await c.match(new Request('/app/__pastille__'));a=r?parseInt(await r.text(),10)||0:0;}catch(e){}
+    if(navigator.setAppBadge)await (a+d>0?navigator.setAppBadge(a+d):navigator.clearAppBadge());}catch(e){}
+}
 let DEMV=null,DEMS=[];
 const nrm=t=>normPhrase(t).replace(/-/g,' ');
 function dansListe(id){try{const g=JSON.parse(localStorage.getItem(id+'-groupe-local-v1')||'null');return new Set((g&&g.voyageurs||[]).flatMap(p=>[nrm((p.prenom||'')+' '+(p.nom||'')),nrm((p.nom||'')+' '+(p.prenom||''))]));}catch(e){return new Set();}}
@@ -335,8 +343,10 @@ async function ouvrirDem(id){DEMV=DATA.voyages.find(x=>x.id===id);if(!DEMV)retur
   $('#dem-t').textContent=(LANG==='en'?'Access requests · ':'Demandes d’accès · ')+(DEMV.appCourt||DEMV.titre);$('#dem-msg').textContent='';$('#dem-list').innerHTML='<p class="small">…</p>';
   vue('v-dem');scrollTo(0,0);
   try{DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(id))).demandes||[];}catch(x){$('#dem-list').innerHTML=`<p class="small">${esc(x.message)}</p>`;return;}
-  dessinerDem();
+  dessinerDem();majTotalDem();
 }
+function majTotalDem(){if(!DATA||!DEMV)return;const v=DATA.voyages.find(x=>x.id===DEMV.id);if(v)v.demandes=DEMS.filter(d=>d.statut==='attente').length;
+  pastilleDem(DATA.voyages.filter(x=>!x.clos).reduce((t,x)=>t+(x.demandes||0),0));}
 function dessinerDem(){
   const L=dansListe(DEMV.id),fmt=t=>new Date(t).toLocaleString(LANG==='en'?'en-CA':'fr-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
   const att=DEMS.filter(d=>d.statut==='attente'),old=DEMS.filter(d=>d.statut!=='attente');
@@ -375,7 +385,7 @@ async function decider(ids,ok){
   if(!ids.length){$('#dem-msg').textContent=T('Cochez au moins une personne.');return;}
   if(ok==='retirer'){$('#dem-msg').textContent='…';
     try{const r=await api('POST','/api/acces/decision',{trip:DEMV.id,decisions:ids.map(id=>({id,retirer:true}))});
-      DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();
+      DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();majTotalDem();
       $('#dem-msg').textContent=LANG==='en'?'Access removed. The trip will disappear from that phone the next time the app opens.':'Accès retiré. Le voyage s’effacera de ce téléphone à la prochaine ouverture de l’app.';}
     catch(x){$('#dem-msg').textContent=x.message;}
     return;}
@@ -386,7 +396,7 @@ async function decider(ids,ok){
       decisions=[];for(const id of ids){const d=DEMS.find(x=>x.id===id);decisions.push({id,ok:true,cle:cle?await chiffrerPour(d.pub,cle):null,sel:cle?cle.salt:undefined});}}
     else decisions=ids.map(id=>({id,ok:false}));
     const r=await api('POST','/api/acces/decision',{trip:DEMV.id,decisions});
-    DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();
+    DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();majTotalDem();
     $('#dem-msg').textContent=ok&&r.renouvelees&&!r.approuvees?(LANG==='en'?`New key sent to ${r.renouvelees} traveller${r.renouvelees>1?'s':''}: their trip opens again the next time the app opens.`:`Nouvelle clé envoyée à ${r.renouvelees} voyageur${r.renouvelees>1?'s':''} : leur voyage se rouvre à la prochaine ouverture de l’app.`)
       :ok?(LANG==='en'?`${r.approuvees} approved · ${r.notifiees} notified right away.`:`${r.approuvees} approuvé${r.approuvees>1?'s':''} · ${r.notifiees} averti${r.notifiees>1?'s':''} par notification.`)
       :(LANG==='en'?`${r.refusees} declined.`:`${r.refusees} refusé${r.refusees>1?'s':''}.`);
