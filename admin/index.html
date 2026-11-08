@@ -129,7 +129,6 @@ textarea{font:inherit;font-size:14px;width:100%;min-height:150px;padding:10px;bo
           <div class="full"><span class="help" style="font-weight:600">Accompagnateurs (accès à l’éditeur et à Mon groupe)</span><div class="chips" id="f-comptes"></div><span class="help">Un ou plusieurs. Créez le compte dans l’onglet Comptes s’il n’existe pas encore; vous pourrez les ajouter ou les changer plus tard (bouton « Accompagnateurs » du voyage).</span></div>
           <label class="full">Photo d’en-tête (facultative)<input id="f-photo" type="file" accept="image/jpeg,image/png,image/webp"><span class="help">Paysage, au moins 1400 px de large. Sans photo : une illustration de la montagne de la station.</span></label>
           <label class="full" id="f-credit-l" hidden>Crédit de la photo<input id="f-credit" maxlength="300" placeholder="ex. Photo : Gaislachkogl, Sloth (CC BY 3.0)"></label>
-          <label class="full">Phrase du voyage<input id="f-phrase" autocapitalize="off" spellcheck="false"><span class="help">Elle protège le contenu de l’app. <a href="#" id="f-gen">Proposer une autre phrase</a></span></label>
           <label class="chk full"><input type="checkbox" id="f-accueil" checked> Afficher le voyage sur la page d’accueil du site</label>
         </div>
         <div class="row" style="margin-top:14px"><button type="submit" id="f-go">Créer le voyage</button><button type="button" class="light" id="f-cancel">Annuler</button></div>
@@ -179,21 +178,19 @@ async function api(method,path,body,auth=true){
 const VUES=['v-login','v-code','v-premier','v-mdp','v-2fa','v-app'];
 function vue(id){VUES.forEach(v=>{$('#'+v).hidden=v!==id;});}
 
-/* ---------- Phrase du voyage : même chiffrement que l’éditeur (PBKDF2 600 000 + AES-GCM) ---------- */
-const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'],ITER=600000;
+/* ---------- Clé du voyage : aléatoire, créée ici; le contenu de départ est chiffré avec (AES-256-GCM, comme l’éditeur).
+   Le serveur la garde (chiffrée au repos) et la remet aux accompagnateurs assignés : aucune phrase à transmettre. ---------- */
+const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'];
 const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
-async function encryptFile(o,phrase){
-  const salt=tob64(crypto.getRandomValues(new Uint8Array(16))),iv=crypto.getRandomValues(new Uint8Array(12));
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
-  const k=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(salt),iterations:ITER},base,{name:'AES-GCM',length:256},false,['encrypt']);
+const nouvelleCle=()=>({sel:tob64(crypto.getRandomValues(new Uint8Array(16))),k:tob64(crypto.getRandomValues(new Uint8Array(32)))});
+async function encryptFile(o,cle){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const k=await crypto.subtle.importKey('raw',unb64(cle.k),{name:'AES-GCM'},false,['encrypt']);
   const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o))));
   const out={};PUBLIC_KEYS.forEach(x=>{if(o[x]!==undefined)out[x]=o[x];});
-  out.chiffre={v:1,kdf:'PBKDF2-SHA256',iter:ITER,salt,iv:tob64(iv),data:tob64(ct)};return out;
+  out.chiffre={v:2,alg:'AES-256-GCM',salt:cle.sel,iv:tob64(iv),data:tob64(ct)};return out;
 }
-const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','gondole','telesiege','sapin','glacier','sommet','strudel','chalet','luge','flocon','bouquetin','edelweiss','yodel','refuge','lagopede','crepe','cime','corniche','vallon','bretzel','grenat','myrtille','lanterne','avalanche','dameuse','fartage','godille','schuss','slalom','tyrolienne'];
-function phrase(){const w=[];while(w.length<3){const a=new Uint32Array(1);crypto.getRandomValues(a);const m=MOTS[a[0]%MOTS.length];if(!w.includes(m))w.push(m);}return w.join('-');}
 
 
 /* ---------- Connexion ---------- */
@@ -395,11 +392,10 @@ function suggestions(){
 }
 ['titre','court','id','dates'].forEach(k=>$('#f-'+k).addEventListener('input',()=>{manuel[k]=true;suggestions();}));
 ['station','debut','fin','aconf'].forEach(k=>$('#f-'+k).addEventListener('change',suggestions));
-$('#f-gen').onclick=e=>{e.preventDefault();$('#f-phrase').value=phrase();};
 $('#b-new').onclick=()=>{
   manuel={};photo=null;$('#nv').reset();$('#f-credit-l').hidden=true;
   $('#f-station').innerHTML=ETAT.stations.map(s=>`<option value="${esc(s.id)}">${esc(s.nom)} · ${esc(s.lieu)}</option>`).join('');
-  $('#f-comptes').innerHTML=comptesChips([]);$('#f-phrase').value=phrase();$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
+  $('#f-comptes').innerHTML=comptesChips([]);$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
 };
 $('#f-cancel').onclick=()=>{$('#nv').hidden=true;};
 /* Photo d’en-tête d’un voyage existant (ajoutée ou remplacée) */
@@ -435,33 +431,30 @@ $('#nv').addEventListener('submit',async e=>{
   e.preventDefault();
   const s=ETAT.stations.find(x=>x.id===$('#f-station').value);
   const b={station:s?.id,titre:$('#f-titre').value.trim(),appCourt:$('#f-court').value.trim(),debut:$('#f-debut').value,fin:$('#f-fin').value,dates:$('#f-dates').value.trim(),id:$('#f-id').value.trim(),photo,credit:$('#f-credit').value.trim(),accueil:$('#f-accueil').checked,comptes:$$('#f-comptes input:checked').map(i=>i.value)};
-  const ph=$('#f-phrase').value.trim();
   if(!s||!b.titre||!b.appCourt||!b.debut||!b.fin||!b.dates||!b.id)return msg('Remplissez la station, le titre, le nom court, les deux dates et l’adresse.','err');
   if(b.fin<b.debut)return msg('Le dernier jour doit suivre le premier.','err');
-  if(normPhrase(ph).length<8)return msg('La phrase du voyage est trop courte.','err');
   const go=$('#f-go');go.disabled=true;go.textContent='Création…';
   try{
     const contenu={titre:b.titre,datesTexte:b.dates,sousTitre:'Voyage de ski en groupe',debut:b.debut,fin:b.fin,...($('#f-aconf').checked?{datesAConfirmer:true}:{}),
       programme:$('#f-aconf').checked?[]:joursProgramme(b.debut,b.fin,s.fuseau),annonces:[],accompagnateur:{nom:'',role:'Votre accompagnateur'}};
-    b.contenu=JSON.stringify(await encryptFile(contenu,ph));
+    b.cle=nouvelleCle();b.contenu=JSON.stringify(await encryptFile(contenu,b.cle));
     const r=await api('POST','/api/admin/voyages',b);
-    $('#nv').hidden=true;resultat(r,ph);chargerTout();
+    $('#nv').hidden=true;resultat(r);chargerTout();
   }catch(x){msg('Création impossible : '+esc(x.message),'err');}
   finally{go.disabled=false;go.textContent='Créer le voyage';}
 });
-function resultat(r,ph){
-  const app=r.url,inv=app+'installer.html#cle='+encodeURIComponent(ph),ed=app+'editeur.html';
-  const texte=`Voici l’accès à l’éditeur du voyage ${r.id} :\n- Éditeur : ${ed}\n- Connexion : votre nom d’usager et votre mot de passe${r.comptes&&r.comptes.length?' (compte '+r.comptes.join(', ')+')':''}\n- Phrase du voyage : ${ph}\n\nDans l’éditeur, ouvrez « Connexion pour publier », connectez-vous, puis entrez la phrase dans « Phrase du voyage » pour ouvrir le contenu.`;
+function resultat(r){
+  const app=r.url,inv=app+'installer.html',ed=app+'editeur.html';
+  const texte=`Voici l’accès au voyage ${r.id} :\n- Votre app : ${location.origin}/app/ (roue dentée › Accès accompagnateur)\n- Éditeur : ${ed}\n- Connexion : votre nom d’usager, votre mot de passe et votre code de double authentification${r.comptes&&r.comptes.length?' (compte '+r.comptes.join(', ')+')':''}\n\nAucune phrase à retenir : une fois connecté, le contenu du voyage s’ouvre directement.`;
   const x=$('#res');x.hidden=false;
   x.innerHTML=`<h2>Voyage créé ✓</h2>
   <p id="etat" class="msg info">Le robot prépare l’app (icône, photo, pages). Elle sera en ligne dans 2 à 4 minutes…</p>
   <p><b>Adresse de l’app :</b> <a href="${esc(app)}" target="_blank" rel="noopener">${esc(app)}</a></p>
-  <p><b>Phrase du voyage</b> (à donner aux voyageurs)</p><div class="secret">${esc(ph)}</div>
-  <p style="margin-top:12px"><b>Accès à l’éditeur :</b> ${r.comptes&&r.comptes.length?(r.comptes.length>1?'comptes ':'compte ')+'<b>'+esc(r.comptes.join(', '))+'</b>':'aucun accompagnateur pour l’instant (bouton « Accompagnateurs » du voyage)'}</p>
-  <p style="margin-top:12px"><b>Lien d’invitation des voyageurs</b> (ouvre l’app déjà déverrouillée)</p><div class="secret">${esc(inv)}</div>
+  <p style="margin-top:12px"><b>Accès à l’éditeur :</b> ${r.comptes&&r.comptes.length?(r.comptes.length>1?'comptes ':'compte ')+'<b>'+esc(r.comptes.join(', '))+'</b>':'aucun accompagnateur pour l’instant (bouton « Accompagnateurs » du voyage)'}. Le contenu est chiffré; sa clé est remise automatiquement aux accompagnateurs assignés.</p>
+  <p style="margin-top:12px"><b>Lien pour les voyageurs</b> (installer l’app et demander l’accès)</p><div class="secret">${esc(inv)}</div>
   <p style="margin-top:12px"><b>Message pour l’accompagnateur</b></p><textarea readonly id="txt">${esc(texte)}</textarea>
-  <p class="row" style="margin-top:10px"><button type="button" class="light" id="cp-txt">Copier le message</button><button type="button" class="light" id="cp-inv">Copier le lien d’invitation</button><button type="button" id="fin">J’ai noté la phrase</button></p>
-  <ol class="steps"><li>Gardez la phrase dans votre gestionnaire de mots de passe.</li><li>Une fois l’app en ligne, ouvrez l’éditeur pour remplir le programme, l’hôtel, les vols…</li></ol>`;
+  <p class="row" style="margin-top:10px"><button type="button" class="light" id="cp-txt">Copier le message</button><button type="button" class="light" id="cp-inv">Copier le lien pour les voyageurs</button><button type="button" id="fin">Fermer</button></p>
+  <ol class="steps"><li>Une fois l’app en ligne, ouvrez l’éditeur pour remplir le programme, l’hôtel, les vols…</li><li>Envoyez le lien aux voyageurs : ils demandent l’accès, et l’accompagnateur approuve.</li></ol>`;
   $('#cp-txt').onclick=()=>navigator.clipboard?.writeText(texte);$('#cp-inv').onclick=()=>navigator.clipboard?.writeText(inv);
   $('#fin').onclick=()=>{x.hidden=true;x.innerHTML='';};
   x.scrollIntoView({behavior:'smooth'});

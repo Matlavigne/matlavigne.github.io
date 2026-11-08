@@ -11,6 +11,7 @@
 
 import { sendPush, b64urlDecode } from "./webpush.js";
 import { handleEquipe, supprimerEquipe, clePubliqueEquipe } from "./equipe.js";
+import { lireCle, ecrireCle, effacerCle, cleValide, cleOuvre, envelopperPour, renouvelerVoyageurs, verifierMaitre } from "./cles.js";
 import { handleAuth, handleComptes, sessionUser, userCanEdit, requireAdminSession, purgeSessions, ensureAuthSchema } from "./auth.js";
 
 const KINDS = {
@@ -316,7 +317,11 @@ async function adminCreer(env, b) {
   const S = JSON.parse(stFile.text);
   if (typeof b.contenu !== "string") throw new HttpError(400, "Contenu du voyage manquant");
   const contenu = checkVoyage(b.contenu);
-  if (!contenu.chiffre) throw new HttpError(400, "Le contenu du nouveau voyage doit être protégé par une phrase");
+  if (!contenu.chiffre) throw new HttpError(400, "Le contenu du nouveau voyage doit être chiffré");
+  // Clé du voyage, créée par le navigateur de l'administrateur : elle doit ouvrir le contenu envoyé
+  const cle = cleValide(b.cle);
+  if (!cle || !(await cleOuvre(cle, contenu.v.chiffre))) throw new HttpError(400, "La clé du voyage n'ouvre pas le contenu envoyé");
+  await verifierMaitre(env);
 
   const credit = b.photo ? (str(b.credit, 300) ? esc(str(b.credit, 300)) : "Photo : monaccompagnateur.ca") : "Illustration : monaccompagnateur.ca";
   const config = {
@@ -348,6 +353,7 @@ async function adminCreer(env, b) {
     }
   }
   const commit = await commitFiles(env, files, `Nouveau voyage : ${titre} (${dates})`);
+  await ecrireCle(env, id, cle, "admin");
   const now = Date.now();
   await ensureSchema(env);
   await env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0) ON CONFLICT (id) DO UPDATE SET station = excluded.station, titre = excluded.titre, url = excluded.url, fin = excluded.fin, created_at = excluded.created_at, clos = 0").bind(id, station, appCourt, `/${id}/`, b.fin, now).run();
@@ -398,6 +404,7 @@ async function adminSupprimer(env, b) {
     return out;
   }, `Suppression du voyage ${id}`);
   await purgeTrip(env, id);
+  await effacerCle(env, id);
   await ensureSchema(env);
   // Marqué supprimé (clos = 2) plutôt qu'effacé : plus d'alertes, et absent de l'administration même si GitHub tarde à mettre sa liste à jour
   await env.DB.prepare(`INSERT INTO trips (id, titre, url, max_subs, created_at, clos) VALUES (?, ?, ?, 300, ?, 2) ON CONFLICT (id) DO UPDATE SET clos = 2`).bind(id, id, `/${id}/`, Date.now()).run();
@@ -408,8 +415,8 @@ async function adminSupprimer(env, b) {
 }
 
 // ---------- Accès par approbation ----------
-// Le voyageur demande l'accès avec son nom et la clé publique de son téléphone; l'accompagnateur approuve depuis son app,
-// qui chiffre la clé du voyage pour ce téléphone seulement. Le Worker transmet sans pouvoir lire.
+// Le voyageur demande l'accès avec son nom (chiffré pour l'équipe) et la clé publique de son téléphone; l'accompagnateur
+// approuve depuis son app, et le Worker remet la clé du voyage chiffrée pour ce téléphone seulement (voir cles.js).
 let demandesOk = false;
 async function ensureDemandes(env) {
   if (demandesOk) return;
@@ -559,6 +566,7 @@ async function handleAcces(req, env, path, url) {
     const c = cfg(env), now = Date.now();
     const list = Array.isArray(b.decisions) ? b.decisions.slice(0, 500) : [];
     let ok = 0, refus = 0, notifs = 0, retires = 0, rekey = 0;
+    const cleV = await lireCle(env, b.trip);
     for (const x of list) {
       const d = await env.DB.prepare("SELECT * FROM demandes WHERE id = ? AND trip = ?").bind(String(x.id || ""), b.trip).first();
       if (!d) continue;
@@ -569,9 +577,12 @@ async function handleAcces(req, env, path, url) {
         retires++; continue;
       }
       if (!x.ok) { await env.DB.prepare("UPDATE demandes SET statut = 'refus', cle = NULL, sel = NULL, decided = ?, par = ? WHERE id = ?").bind(now, u.username, d.id).run(); refus++; continue; }
-      const cle = x.cle == null ? null : JSON.stringify(x.cle);
+      // Clé gardée par le Worker : il l'enveloppe lui-même pour le téléphone du voyageur.
+      // (Ancien fonctionnement, voyage sans clé sur le serveur : l'app de l'accompagnateur envoie l'enveloppe.)
+      let cle = x.cle == null ? null : JSON.stringify(x.cle);
+      let sel = typeof x.sel === "string" && /^[A-Za-z0-9+/=_-]{8,100}$/.test(x.sel) ? x.sel : null;
+      if (cleV) { let pub = null; try { pub = JSON.parse(d.pub); } catch (e) { /* illisible */ } if (pub) { cle = JSON.stringify(await envelopperPour(pub, cleV)); sel = cleV.sel; } }
       if (cle && cle.length > 4000) throw new HttpError(400, "Clé chiffrée trop longue");
-      const sel = typeof x.sel === "string" && /^[A-Za-z0-9+/=_-]{8,100}$/.test(x.sel) ? x.sel : null;
       // Nouvelle clé pour un voyageur déjà approuvé (la phrase a changé) : on garde la date d'approbation
       if (d.statut === "ok") { await env.DB.prepare("UPDATE demandes SET cle = ?, sel = ? WHERE id = ?").bind(cle, sel, d.id).run(); rekey++; continue; }
       await env.DB.prepare("UPDATE demandes SET statut = 'ok', cle = ?, sel = ?, decided = ?, par = ? WHERE id = ?").bind(cle, sel, now, u.username, d.id).run();
@@ -810,6 +821,31 @@ async function handle(req, env) {
     });
   }
 
+  // Clé du contenu du voyage : seulement pour les comptes qui ont le voyage (double authentification)
+  if (req.method === "GET" && path === "/api/voyage/cle") {
+    const trip = url.searchParams.get("trip");
+    await requireTrip(env, trip);
+    await requireEditor(env, req, trip);
+    const c = await lireCle(env, trip);
+    return json(env, req, c ? { ok: true, sel: c.sel, k: c.k } : { ok: true, sel: null, k: null });
+  }
+  // Première remise de la clé d'un voyage qui n'en a pas encore sur le serveur (voyage chiffré autrefois avec une phrase) :
+  // acceptée seulement si elle ouvre le contenu en ligne. Pour changer de clé, l'éditeur publie avec la nouvelle (/api/publier).
+  if (req.method === "POST" && path === "/api/voyage/cle") {
+    const body = await readJson(req);
+    await requireTrip(env, body.trip);
+    const u = await requireEditor(env, req, body.trip);
+    const cle = cleValide(body.cle);
+    if (!cle) throw new HttpError(400, "Clé invalide");
+    const avant = await lireCle(env, body.trip);
+    if (avant && (avant.sel !== cle.sel || avant.k !== cle.k)) throw new HttpError(409, "Ce voyage a déjà une clé sur le serveur");
+    const actuel = await ghGetVoyage(env, body.trip);
+    let v = null; try { v = JSON.parse(actuel.content || "null"); } catch {}
+    if (!v || !v.chiffre || !(await cleOuvre(cle, v.chiffre))) throw new HttpError(400, "Cette clé n'ouvre pas le contenu en ligne");
+    if (!avant) await ecrireCle(env, body.trip, cle, u.username);
+    return json(env, req, { ok: true, renouveles: await renouvelerVoyageurs(env, body.trip, cle) });
+  }
+
   // Lecture du voyage.json à jour (avec son sha) pour l'éditeur
   if (req.method === "GET" && path === "/api/voyage") {
     const trip = url.searchParams.get("trip");
@@ -822,11 +858,22 @@ async function handle(req, env) {
   if (req.method === "POST" && path === "/api/publier") {
     const body = await readJson(req, MAX_VOYAGE_BYTES + 4096);
     await requireTrip(env, body.trip);
-    await requireEditor(env, req, body.trip);
+    const auteur = await requireEditor(env, req, body.trip);
     if (typeof body.content !== "string" || !body.content.length) throw new HttpError(400, "Contenu manquant");
     if (new TextEncoder().encode(body.content).length > MAX_VOYAGE_BYTES) throw new HttpError(413, "Contenu trop gros");
     if (body.sha != null && (typeof body.sha !== "string" || !/^[0-9a-f]{40}$/.test(body.sha))) throw new HttpError(400, "sha invalide");
     const neuf = checkVoyage(body.content);
+    // Le contenu chiffré doit s'ouvrir avec la clé du voyage gardée ici, ou avec la nouvelle clé envoyée (changement de clé)
+    const cleAvant = await lireCle(env, body.trip);
+    let cleNeuve = null;
+    if (body.cle != null) {
+      cleNeuve = cleValide(body.cle);
+      if (!cleNeuve || !neuf.chiffre || !(await cleOuvre(cleNeuve, neuf.v.chiffre))) throw new HttpError(400, "La nouvelle clé n'ouvre pas le contenu envoyé");
+      if (cleAvant && cleAvant.sel === cleNeuve.sel && cleAvant.k === cleNeuve.k) cleNeuve = null;
+      if (cleNeuve) await verifierMaitre(env);
+    } else if (cleAvant && neuf.chiffre && neuf.v.chiffre.salt !== cleAvant.sel) {
+      throw new HttpError(409, "Le contenu n'est pas chiffré avec la clé actuelle du voyage : rouvrez l'éditeur");
+    }
 
     const actuel = await ghGetVoyage(env, body.trip);
     if (actuel.sha && body.sha !== actuel.sha) throw new HttpError(409, "Le voyage a été modifié ailleurs depuis l'ouverture de l'éditeur", { sha_actuel: actuel.sha });
@@ -834,7 +881,7 @@ async function handle(req, env) {
     if (actuel.content && !neuf.chiffre) {
       let avant = null;
       try { avant = JSON.parse(actuel.content); } catch {}
-      if (avant && avant.chiffre) throw new HttpError(400, "Le voyage en ligne est protégé par une phrase : publication en clair refusée");
+      if (avant && avant.chiffre) throw new HttpError(400, "Le voyage en ligne est protégé : publication en clair refusée");
     }
 
     const g = github(env);
@@ -852,7 +899,10 @@ async function handle(req, env) {
     if (r.status === 409 || r.status === 422) throw new HttpError(409, "Le voyage a été modifié ailleurs pendant la publication");
     if (!r.ok) throw new HttpError(502, `GitHub a refusé la publication (${r.status})`);
     const j = await r.json();
-    return json(env, req, { ok: true, sha: j.content && j.content.sha, commit: j.commit && j.commit.sha });
+    // Nouvelle clé : gardée ici, puis envoyée aux voyageurs déjà approuvés (et seulement à eux)
+    let renouveles = 0;
+    if (cleNeuve) { await ecrireCle(env, body.trip, cleNeuve, auteur.username); renouveles = await renouvelerVoyageurs(env, body.trip, cleNeuve); }
+    return json(env, req, { ok: true, sha: j.content && j.content.sha, commit: j.commit && j.commit.sha, ...(cleNeuve ? { cleChangee: true, renouveles } : {}) });
   }
 
   // Effacement complet des données d'un voyage

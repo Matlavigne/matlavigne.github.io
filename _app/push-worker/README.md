@@ -9,8 +9,8 @@ Le Worker répond à `https://api.monaccompagnateur.ca`. L'ancienne adresse `mon
 
 Le site et les apps sont décrits dans [`../README.md`](../README.md).
 
-**Principe :** le Worker ne lit jamais le contenu des voyages ni les renseignements des voyageurs.
-- Le contenu est chiffré dans le navigateur avec la phrase du voyage.
+**Principe :** le Worker ne lit jamais les renseignements des voyageurs.
+- Le contenu du voyage est chiffré dans le navigateur avec la clé du voyage. Le Worker garde cette clé, chiffrée au repos avec la clé maîtresse (secret `CLE_MAITRE`), et ne la remet qu'aux comptes assignés au voyage et, chiffrée pour leur téléphone, aux voyageurs approuvés. Le contenu ne contient aucun renseignement sur les voyageurs.
 - La liste du groupe est chiffrée avec la clé d'équipe des accompagnateurs.
 - Le nom dans une demande d'accès est chiffré pour l'équipe.
 - Les notifications portent un texte générique.
@@ -21,11 +21,13 @@ Le site et les apps sont décrits dans [`../README.md`](../README.md).
 |---|---|
 | `src/index.js` | routes : publication, alertes, demandes d'accès, administration, cron (envois et purge) |
 | `src/auth.js` | comptes, mots de passe (PBKDF2), double authentification (TOTP), sessions |
+| `src/cles.js` | clé du contenu de chaque voyage : garde chiffrée au repos (AES-256-GCM, `CLE_MAITRE`), enveloppes pour les voyageurs, renouvellement |
 | `src/equipe.js` | Mon groupe partagé : appareils, enveloppes de la clé d'équipe, copie chiffrée |
 | `src/webpush.js` | notifications web : signature VAPID et chiffrement aes128gcm (WebCrypto, sans dépendance) |
 | `schema.sql` | tables de base (abonnements, calendrier, livraisons); les autres tables se créent seules |
 | `wrangler.toml` | configuration (adresse, base D1, cron, variables) |
 | `scripts/setup.mjs` | installation initiale des clés VAPID (**une seule fois**) |
+| `scripts/cle-maitre.mjs` | `npm run cle-maitre` : clé maîtresse (secret `CLE_MAITRE`), **une seule fois** |
 | `scripts/cle-admin.mjs` | `npm run cle-config` : clé de première configuration (secret `ADMIN_TOKEN`) |
 | `scripts/secours-admin.mjs` | `npm run secours-admin -- <usager>` : réinitialise le mot de passe et la double authentification d'un compte |
 | `test/*.mjs` | tests de bout en bout en local (`npm test`) |
@@ -49,6 +51,7 @@ npm test             # avant de déployer (environ 5 minutes)
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_JWK` | notifications |
 | `GITHUB_TOKEN` | jeton GitHub « fine-grained », dépôt `matlavigne.github.io` seulement, *Contents : Read and write*; à renouveler avant son expiration (`npx wrangler secret put GITHUB_TOKEN`) |
 | `ADMIN_TOKEN` | clé de première configuration; refusée dès qu'un administrateur existe |
+| `CLE_MAITRE` | chiffre au repos les clés des voyages. Installée une fois par `npm run cle-maitre`, qui affiche une copie de secours à garder dans le gestionnaire de mots de passe. **Ne la remplacez jamais** : les clés des voyages ne s'ouvriraient plus. |
 
 L'ancien secret `EDITOR_TOKENS` ne sert plus : `npx wrangler secret delete EDITOR_TOKENS`.
 
@@ -69,13 +72,15 @@ L'ancien secret `EDITOR_TOKENS` ne sert plus : `npx wrangler secret delete EDITO
 
 ## Publication
 
-L'éditeur chiffre le contenu avec la phrase du voyage, puis l'envoie (`POST /api/publier`, session d'un compte qui a le voyage). Le Worker écrit **uniquement** `<voyage>/voyage.json` avec son jeton GitHub. Chaque publication est signée « Éditeur <voyage> » dans l'historique.
+L'éditeur chiffre le contenu avec la clé du voyage (remise par `GET /api/voyage/cle`), puis l'envoie (`POST /api/publier`, session d'un compte qui a le voyage). Le Worker écrit **uniquement** `<voyage>/voyage.json` avec son jeton GitHub. Chaque publication est signée « Éditeur <voyage> » dans l'historique.
 
 Garde-fous :
 - le chemin est construit par le Worker ;
 - le voyage doit être connu ;
 - le contenu doit être un JSON valide de 600 Ko au plus ;
 - une version en clair est refusée si la version en ligne est protégée ;
+- le contenu chiffré doit porter la clé actuelle du voyage (`chiffre.salt`), sinon 409; pour changer de clé, l'éditeur envoie la nouvelle (`cle`), que le Worker vérifie sur le contenu avant de la garder et de l'envoyer aux voyageurs approuvés ;
+- `POST /api/voyage/cle` sert une seule fois par voyage chiffré autrefois avec une phrase : la clé n'est acceptée que si elle ouvre le contenu en ligne.
 - un conflit est signalé si le fichier a changé depuis l'ouverture (409).
 
 ## Administration (`/admin`, administrateur avec double authentification)
@@ -138,6 +143,7 @@ Limites : 10 demandes par heure et par adresse IP pour un voyage, et 400 demande
 | `comptes_subs` | abonnements des accompagnateurs aux alertes des demandes | désactivation, adresse expirée |
 | `groupes`, `equipe_cles`, `equipe_attente` | Mon groupe **chiffré**, enveloppes de la clé d'équipe | clôture, suppression, ou 7 jours après la fin |
 | `equipe_appareils` | clés publiques des téléphones des accompagnateurs | — |
+| `cles_voyage` | clé du contenu de chaque voyage, **chiffrée** avec `CLE_MAITRE` (lié au voyage et à l'identifiant de la clé) | suppression du voyage |
 
 Sont lisibles dans la base : les noms d'usager et les profils des accompagnateurs (nom, cellulaire, courriel). Rien de lisible n'y concerne les voyageurs.
 
@@ -151,9 +157,10 @@ Chaque suite démarre le Worker en local (`wrangler dev`, base D1 locale), avec 
 - **`e2e.mjs`** : alertes. Le faux service vérifie la signature VAPID et déchiffre chaque message comme un téléphone. Sont aussi couverts les refus, les délais, le plafond, l'absence de renvoi, les abonnements expirés et la purge.
 - **`publier.mjs`** : publication. Un compte ne peut écrire que son voyage.
 - **`comptes.mjs`** : comptes, double authentification et sessions.
+- **`cles.mjs`** : clé du voyage. Remise réservée aux comptes assignés, première remise, chiffrement au repos, publication avec la clé actuelle ou une nouvelle, enveloppe pour le voyageur approuvé et renouvellement automatique.
 - **`admin.mjs`** : administration, accompagnateurs, demandes d'accès, alertes des demandes, retrait d'un accès, Mon groupe partagé, noms chiffrés et suppression.
 
-`test/outils.mjs` contient les voyages de test, le code TOTP et l'ouverture de sessions. Avec `SERVIR=1 node test/admin.mjs`, le Worker de test reste en marche pour les essais dans le navigateur.
+`test/outils.mjs` contient les voyages de test, le code TOTP et l'ouverture de sessions. Avec `SERVIR=1 node test/admin.mjs`, le Worker de test reste en marche pour les essais dans le navigateur. `node test/navigateur.mjs` sert aussi le site en local (adresse de l'API réécrite) avec un voyage chiffré par une phrase, pour essayer l'éditeur et la remise de la clé.
 
 ## Limites et coûts
 

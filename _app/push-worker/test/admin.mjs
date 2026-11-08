@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TRIPS_TEST, accompagnateur } from "./outils.mjs";
+import { TRIPS_TEST, accompagnateur, chiffrerVoyage, nouvelleCle, CLE_MAITRE_TEST } from "./outils.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GH_PORT = 9914, WORKER_PORT = 8796;
@@ -64,7 +64,7 @@ await new Promise((r) => gh.listen(GH_PORT, "127.0.0.1", r));
 
 // ---------- Worker ----------
 fs.writeFileSync(path.join(root, ".dev.vars"), [
-  "VAPID_PUBLIC_KEY=x", ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN_TOKEN}`, TRIPS_TEST, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`,
+  "VAPID_PUBLIC_KEY=x", CLE_MAITRE_TEST, ...(process.env.SERVIR ? ["ALLOWED_ORIGINS=http://127.0.0.1:8092"] : []), `ADMIN_TOKEN=${ADMIN_TOKEN}`, TRIPS_TEST, `GITHUB_TOKEN=${GH_TOKEN}`, `GITHUB_API=http://127.0.0.1:${GH_PORT}`,
 ].join("\n") + "\n");
 fs.rmSync(path.join(root, ".wrangler"), { recursive: true, force: true });
 const env = { ...process.env, WRANGLER_SEND_METRICS: "false", CI: "1" };
@@ -76,9 +76,9 @@ const call = async (method, p, body, key) => {
   const r = await fetch(W + p, { method, headers: { "Content-Type": "application/json", Origin: ORIGIN, ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: r.status, json: await r.json().catch(() => ({})) };
 };
-const chiffre = JSON.stringify({ titre: "T", debut: "2028-02-05", fin: "2028-02-12", chiffre: { v: 1, salt: "c2Fs", iv: "aXY=", data: "ZGF0YQ==" } });
+const { cle: CLE_NV, contenu: chiffre } = await chiffrerVoyage({ titre: "T", programme: [] });
 const photo = "data:image/jpeg;base64," + Buffer.from("faux jpeg").toString("base64");
-const nv = { id: "st-anton-fevrier2028", station: "stanton", titre: "Gendronski St. Anton", appCourt: "St. Anton 2028", dates: "5 au 12 février 2028", debut: "2028-02-05", fin: "2028-02-12", contenu: chiffre, photo, credit: "Photo : <b>moi</b>", accueil: true };
+const nv = { id: "st-anton-fevrier2028", station: "stanton", titre: "Gendronski St. Anton", appCourt: "St. Anton 2028", dates: "5 au 12 février 2028", debut: "2028-02-05", fin: "2028-02-12", contenu: chiffre, cle: CLE_NV, photo, credit: "Photo : <b>moi</b>", accueil: true };
 
 if (process.env.SERVIR) {
   console.log("PRET " + ADMIN_TOKEN + " " + W);
@@ -108,6 +108,10 @@ try {
   check(r.status === 409, "adresse déjà prise refusée");
   r = await call("POST", "/api/admin/voyages", { ...nv, contenu: JSON.stringify({ programme: [] }) }, ADMIN);
   check(r.status === 400, "contenu en clair refusé");
+  r = await call("POST", "/api/admin/voyages", { ...nv, cle: undefined }, ADMIN);
+  check(r.status === 400, "sans la clé du voyage : refusé");
+  r = await call("POST", "/api/admin/voyages", { ...nv, cle: nouvelleCle() }, ADMIN);
+  check(r.status === 400, "avec une clé qui n'ouvre pas le contenu : refusé");
   r = await call("POST", "/api/admin/voyages", { ...nv, station: "inconnue" }, ADMIN);
   check(r.status === 400, "station inconnue refusée");
   const before = commitCount;
@@ -126,6 +130,9 @@ try {
   r = await call("GET", `/api/voyage?trip=${nv.id}`, null, paul);
   check(r.status === 200 && JSON.parse(r.json.content).chiffre, "le compte de l'accompagnateur ouvre le nouveau voyage dans l'éditeur");
   check((await call("GET", `/api/voyage?trip=st-anton-mars2027`, null, paul)).status === 403, "il n'ouvre pas un autre voyage");
+  r = await call("GET", `/api/voyage/cle?trip=${nv.id}`, null, paul);
+  check(r.status === 200 && r.json.sel === CLE_NV.sel && r.json.k === CLE_NV.k, "l'accompagnateur assigné reçoit la clé du voyage dès sa connexion");
+  check((await call("GET", `/api/voyage/cle?trip=st-anton-mars2027`, null, paul)).status === 403, "pas la clé d'un autre voyage");
   r = await call("POST", "/api/schedule", { trip: nv.id, items: [] }, paul);
   check(r.status === 200, "programmation des alertes acceptée pour le nouveau voyage");
   check((await call("POST", "/api/admin/cle", { trip: nv.id }, ADMIN)).status === 404, "plus de clé d'éditeur à générer");

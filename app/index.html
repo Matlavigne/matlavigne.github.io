@@ -400,7 +400,7 @@ async function verifierDemandes(manuel){
   finally{verifEnCours=false;}
 }
 /* Accès déjà approuvés : retirés par l’accompagnateur (on efface le voyage de ce téléphone)
-   ou nouvelle clé envoyée après un changement de phrase (on la prend). */
+   ou nouvelle clé envoyée après un changement de clé du voyage (on la prend). */
 const AK='monaccompagnateur-acces';
 let ACC=store.get(AK,[]);if(!Array.isArray(ACC))ACC=[];
 const saveAcc=()=>store.set(AK,ACC);

@@ -47,4 +47,5 @@ maxSubs = 300
 #   VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK : notifications (npm run setup, une seule fois)
 #   GITHUB_TOKEN : jeton GitHub « fine-grained », dépôt du site seulement, Contents : Read and write
 #   ADMIN_TOKEN : clé de première configuration (npm run cle-config)
+#   CLE_MAITRE : chiffre au repos les clés des voyages (npm run cle-maitre, une seule fois; ne jamais la remplacer)
 # L'ancien secret EDITOR_TOKENS ne sert plus : npx wrangler secret delete EDITOR_TOKENS

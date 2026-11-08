@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "wrangler dev --test-scheduled",
     "deploy": "wrangler deploy",
-    "test": "node test/e2e.mjs && node test/publier.mjs && node test/admin.mjs && node test/comptes.mjs",
+    "test": "node test/e2e.mjs && node test/publier.mjs && node test/admin.mjs && node test/comptes.mjs && node test/cles.mjs",
     "setup": "node scripts/setup.mjs",
     "cle-config": "node scripts/cle-admin.mjs",
-    "secours-admin": "node scripts/secours-admin.mjs"
+    "secours-admin": "node scripts/secours-admin.mjs",
+    "cle-maitre": "node scripts/cle-maitre.mjs"
   },
   "devDependencies": {
     "wrangler": "^4"
