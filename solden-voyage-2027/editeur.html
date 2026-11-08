@@ -788,6 +788,8 @@ async function openPicker(p){const it=getP(V,p);if(!it)return;
   document.body.appendChild(dlg);
   const map=L.map('pick-map',{zoomSnap:.5});
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  // Pistes et remontées par-dessus, comme dans l’onglet Carte de l’app
+  L.tileLayer('https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png',{maxZoom:19,maxNativeZoom:18,attribution:'pistes © OpenSnowMap'}).addTo(map);
   const hotel=(V.lieux||[]).find(l=>l.id==='hotel'&&typeof l.lat==='number');
   let pos=typeof it.lat==='number'&&typeof it.lng==='number'?[it.lat,it.lng]:null,mk=null;
   const pin=L.divIcon({className:'',html:'<div class="pick-pin"></div>',iconSize:[0,0]});
