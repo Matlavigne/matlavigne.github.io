@@ -1,7 +1,7 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mon accompagnateur » (voyageurs, accompagnateurs, administration) : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
-const CACHE = "app-v6";
-const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html", "equipe.js"];
+const CACHE = "app-v7";
+const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html", "equipe.js", "garde.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n.startsWith("app-") && n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {

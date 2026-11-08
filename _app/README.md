@@ -111,3 +111,9 @@ Une seule app installable (portée « / ») pour tout le monde :
 - **Administrateur** : bouton « Administration » dans l'accès accompagnateur, qui ouvre `/admin/` dans la même app.
 
 Tout reste dans la même app d'écran d'accueil (iPhone) : phrases, session, liste du groupe et présences. Les pages des voyages pointent vers le manifeste de `/app/` : « Sur l'écran d'accueil » installe toujours l'app unique. Les anciennes adresses `/mes-voyages/` et `/accompagnateur/` redirigent vers `/app/`.
+
+## Installation obligatoire sur téléphone (app/garde.js)
+
+Sur iPhone, iPad et Android, Mes voyages, l'app du voyage, l'accès accompagnateur et Mon groupe ne s'ouvrent que dans l'app installée (ouverte depuis son icône). Dans Safari ou Chrome, `garde.js` (chargé à la fin du `<head>`) rend le reste de la page inerte et affiche les étapes d'installation; dans Facebook, Messenger, etc., il propose d'ouvrir le lien dans Safari ou Chrome. Ce n'est pas une protection de sécurité : c'est pour que tout le monde soit dans l'app (données, clés, notifications).
+
+Exceptions : ordinateurs; la page Administration, l'éditeur, la page d'installation et la confidentialité (non gardées); mode dépannage : « Je suis administrateur » sur l'écran de garde → connexion admin (2FA) → ce navigateur ouvre l'app pendant 12 heures, avec un bandeau « Terminer ».
