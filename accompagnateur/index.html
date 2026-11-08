@@ -257,9 +257,31 @@ function dessiner(){
   if(passes.length)h+=`<p class="sect">${T('Voyages passés')}</p>`+passes.map(x=>carte(x.v)).join('');
   $('#list').innerHTML=h;
 }
+/* Partager l’app : lien de la page d’installation avec la phrase (#cle=…), qui ouvre l’app déjà déverrouillée.
+   La phrase n’est jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const normPhrase=p=>String(p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
+async function phraseOk(phrase,c){try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(c.iv)},key,unb64(c.data));return true;}catch(e){return false;}}
+const phGet=id=>{try{return JSON.parse(localStorage.getItem('editeur-phrase-'+id)||'""')||'';}catch(e){return '';}};
+async function phrasePour(v){
+  let ph=phGet(v.id);let j=null;
+  try{const r=await fetch('/'+v.id+'/voyage.json',{cache:'no-store'});if(r.ok)j=await r.json();}catch(e){}
+  if(!j||!j.chiffre)return '';                       // contenu non protégé : pas de phrase
+  if(ph&&await phraseOk(ph,j.chiffre))return ph;
+  ph=prompt((LANG==='en'?'Trip passphrase for ':'Phrase du voyage ')+(v.appCourt||v.titre)+(LANG==='en'?' (kept on this phone, as in the editor):':' (gardée sur ce téléphone, comme dans l’éditeur) :'));
+  if(ph==null)return null;
+  msg(LANG==='en'?'Checking the passphrase…':'Vérification de la phrase…','info');
+  if(!await phraseOk(ph,j.chiffre)){msg(LANG==='en'?'This passphrase does not open this trip.':'Cette phrase n’ouvre pas ce voyage.','err');return null;}
+  try{localStorage.setItem('editeur-phrase-'+v.id,JSON.stringify(ph.trim()));}catch(e){}
+  msg('');return ph.trim();
+}
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-share]');if(!b)return;
-  const v=DATA.voyages.find(x=>x.id===b.dataset.share);const url=location.origin+'/'+v.id+'/installer.html';
+  const v=DATA.voyages.find(x=>x.id===b.dataset.share);
+  b.disabled=true;const ph=await phrasePour(v);b.disabled=false;if(ph===null)return;
+  const url=location.origin+'/'+v.id+'/installer.html'+(ph?'#cle='+encodeURIComponent(ph):'');
   const txt=(LANG==='en'?'Install the trip app: ':'Installez l’app du voyage : ')+(v.appCourt||v.titre);
   try{if(navigator.share){await navigator.share({title:v.appCourt||v.titre,text:txt,url});return;}}catch(x){if(x.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(url);msg((LANG==='en'?'Link copied: ':'Lien copié : ')+esc(url),'ok');}catch(x){msg(esc(url),'info');}
