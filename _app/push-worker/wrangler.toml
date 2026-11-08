@@ -2,6 +2,11 @@ name = "monaccompagnateur-push"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
 
+# Adresses du Worker : api.monaccompagnateur.ca (domaine géré chez Cloudflare), et l'ancienne adresse
+# monaccompagnateur-push.monaccompagnateur.workers.dev, gardée active pour les téléphones pas encore à jour.
+workers_dev = true
+routes = [{ pattern = "api.monaccompagnateur.ca", custom_domain = true }]
+
 # Vérifie chaque minute les annonces à envoyer
 [triggers]
 crons = ["* * * * *"]
