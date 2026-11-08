@@ -40,7 +40,7 @@ jobs:
       - name: Voyage fictif (essai à blanc)
         if: ${{ inputs.essai }}
         run: |
-          python3 -c "import json;v=json.load(open('_app/voyages/st-anton-mars2027.json'));v['id']='essai-robot';json.dump(v,open('_app/voyages/essai-robot.json','w'),ensure_ascii=False)"
+          python3 -c "import json,glob;f=sorted(glob.glob('_app/voyages/*.json'))[0];v=json.load(open(f));v['id']='essai-robot';json.dump(v,open('_app/voyages/essai-robot.json','w'),ensure_ascii=False)"
       - name: Images des nouveaux voyages
         run: python3 _app/icones/preparer.py
       - name: Générer les apps
