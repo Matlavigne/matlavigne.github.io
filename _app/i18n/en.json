@@ -496,7 +496,22 @@
 "Accompagnateur": "Trip leader",
 "Courriel": "Email",
 "Voyage organisé par": "Trip organized by",
-"Tous droits réservés": "All rights reserved"
+"Tous droits réservés": "All rights reserved",
+"Crédits et licences": "Credits and licences",
+"Météo et neige :": "Weather and snow:",
+"Carte : ©": "Map: ©",
+"les contributeurs d’OpenStreetMap": "OpenStreetMap contributors",
+"Pistes sur la carte :": "Slopes on the map:",
+"Affichage de la carte :": "Map display:",
+"© Volodymyr Agafonkin (licence BSD)": "© Volodymyr Agafonkin (BSD licence)",
+"Plans des pistes, bulletins d’avalanche et liens officiels : leurs stations et organismes respectifs": "Piste maps, avalanche bulletins and official links: their respective resorts and agencies",
+"Taux de change :": "Exchange rates:",
+"(données de la Banque centrale européenne)": "(European Central Bank data)",
+"Codes QR : qrcode-generator © Kazuhiko Arase (licence MIT). QR Code est une marque déposée de DENSO WAVE.": "QR codes: qrcode-generator © Kazuhiko Arase (MIT licence). QR Code is a registered trademark of DENSO WAVE.",
+"Conception et développement de l’app : Mathieu Lavigne": "App design and development: Mathieu Lavigne",
+"© 2026 Mathieu Lavigne, tous droits réservés": "© 2026 Mathieu Lavigne, all rights reserved",
+"Code QR : qrcode-generator © Kazuhiko Arase (licence MIT)": "QR code: qrcode-generator © Kazuhiko Arase (MIT licence)",
+"QR Code est une marque déposée de DENSO WAVE": "QR Code is a registered trademark of DENSO WAVE"
 },
 "regex": [
 [
@@ -814,6 +829,14 @@
 [
 "^Appeler (.+)$",
 "Call $1"
+],
+[
+"^État des pistes et des remontées : (.+)$",
+"Slope and lift status: $1"
+],
+[
+"^Webcams : (.+)$",
+"Webcams: $1"
 ]
 ]
 }
