@@ -174,9 +174,17 @@ try {
   check(r.status === 200 && r.json.comptes.length === 2, `deux accompagnateurs sur le même voyage (${r.status} ${r.json.erreur || ""})`);
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(JSON.stringify(r.json.voyages.find((x) => x.id === "st-anton-mars2027").accompagnateurs.sort()) === '["julie.b","marc.g"]', "les deux apparaissent dans la liste des voyages");
+  r = await call("POST", "/api/auth/profil", { nom: "Julie Bouchard", cellulaire: "514 555-0101", courriel: "julie@example.com" }, julie);
+  check(r.status === 200 && r.json.profil.cellulaire === "514 555-0101", `profil : cellulaire et courriel enregistrés (${r.status} ${r.json.erreur || ""})`);
+  check((await call("POST", "/api/auth/profil", { courriel: "pas-un-courriel" }, julie)).status === 400, "courriel invalide refusé");
+  r = await call("GET", "/api/voyage/accompagnateurs?trip=st-anton-mars2027", null, julie);
+  check(r.status === 200 && r.json.accompagnateurs.some((x) => x.compte === "julie.b" && x.courriel === "julie@example.com") && r.json.accompagnateurs.length === 2, "l'éditeur reçoit les coordonnées des accompagnateurs du voyage");
+  check((await call("GET", "/api/voyage/accompagnateurs?trip=st-anton-mars2027")).status === 401, "coordonnées : pas sans connexion");
+  r = await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["julie.b", "marc.g", "admin"] }, ADMIN);
+  check(r.status === 200 && r.json.comptes.includes("admin"), "l'administrateur peut aussi être accompagnateur d'un voyage");
   r = await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["marc.g"] }, ADMIN);
   check((await call("GET", "/api/mes-voyages", null, julie)).json.voyages.length === 0, "accompagnatrice retirée : elle ne voit plus le voyage");
-  check((await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["mathieu"] }, ADMIN)).status === 400, "un compte administrateur ou inconnu est refusé");
+  check((await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["inconnu"] }, ADMIN)).status === 400, "un compte inconnu est refusé");
   check((await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: [] }, julie)).status === 403, "réservé à l'administrateur");
 
   console.log("\nSuppression");

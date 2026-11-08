@@ -58,9 +58,11 @@ export async function ensureAuthSchema(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS sessions (hash TEXT PRIMARY KEY, username TEXT NOT NULL, created INTEGER NOT NULL, expires INTEGER NOT NULL)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS defis (hash TEXT PRIMARY KEY, username TEXT NOT NULL, expires INTEGER NOT NULL)`),
   ]);
+  // Coordonnées de l'accompagnateur (affichées aux voyageurs, dans le contenu chiffré du voyage)
+  for (const col of ["cellulaire", "courriel"]) { try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col} TEXT`).run(); } catch (e) { /* déjà là */ } }
   ok = true;
 }
-const U = (r) => r && { username: r.username, nom: r.nom || r.username, role: r.role, trips: JSON.parse(r.trips || "[]"), doitChanger: !!r.must_change, deuxEtapes: !!r.totp_on, actif: !!r.actif, derniereConnexion: r.last_login || null };
+const U = (r) => r && { username: r.username, nom: r.nom || r.username, role: r.role, trips: JSON.parse(r.trips || "[]"), doitChanger: !!r.must_change, deuxEtapes: !!r.totp_on, actif: !!r.actif, derniereConnexion: r.last_login || null, cellulaire: r.cellulaire || "", courriel: r.courriel || "" };
 async function getUser(env, username) { return env.DB.prepare("SELECT * FROM users WHERE username = ?").bind(String(username || "").toLowerCase()).first(); }
 const normUser = (u) => { const s = String(u || "").trim().toLowerCase(); if (!/^[a-z0-9][a-z0-9._-]{2,39}$/.test(s)) throw new AuthError(400, "Nom d'usager : 3 à 40 caractères, lettres, chiffres, point, tiret"); return s; };
 
@@ -158,6 +160,14 @@ export async function handleAuth(req, env, path, readJson) {
   if (!me) throw new AuthError(401, "Session expirée : reconnectez-vous");
 
   if (path === "/api/auth/moi" && req.method === "GET") return { profil: U(me) };
+  if (path === "/api/auth/profil" && req.method === "POST") {
+    const t = (v, n) => { const x = String(v ?? "").trim(); if (x.length > n) throw new AuthError(400, "Texte trop long"); return x; };
+    const nom = t(body.nom, 80) || me.nom || me.username, cel = t(body.cellulaire, 30), mail = t(body.courriel, 120);
+    if (cel && !/^\+?[\d\s().-]{7,}$/.test(cel)) throw new AuthError(400, "Cellulaire : chiffres seulement (ex. 514 555-0100)");
+    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) throw new AuthError(400, "Courriel invalide");
+    await env.DB.prepare("UPDATE users SET nom = ?, cellulaire = ?, courriel = ? WHERE username = ?").bind(nom, cel, mail, me.username).run();
+    return { ok: true, profil: U({ ...me, nom, cellulaire: cel, courriel: mail }) };
+  }
   if (path === "/api/auth/deconnexion" && req.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE hash = ?").bind(await sha(m[1])).run();
     return { ok: true };

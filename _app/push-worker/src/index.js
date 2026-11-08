@@ -312,7 +312,7 @@ async function adminEtat(env) {
   let toml = {}; try { toml = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch {}
   await ensureAuthSchema(env);
   const us = (await env.DB.prepare("SELECT username, nom, trips, role, actif FROM users").all()).results || [];
-  const avec = (id) => us.filter((u) => u.actif && u.role !== "admin" && JSON.parse(u.trips || "[]").includes(id));
+  const avec = (id) => us.filter((u) => u.actif && JSON.parse(u.trips || "[]").includes(id));
   const acces = (id) => avec(id).map((u) => u.nom || u.username);
   const voyages = [];
   for (const f of vFiles.filter((f) => f.name.endsWith(".json"))) {
@@ -389,11 +389,10 @@ async function accesVoyage(env, trip, usernames, remplacer = true) {
   await ensureAuthSchema(env);
   const voulus = new Set((usernames || []).map((u) => String(u).toLowerCase()));
   const us = (await env.DB.prepare("SELECT username, trips, role FROM users").all()).results || [];
-  const inconnus = [...voulus].filter((u) => !us.some((x) => x.username === u && x.role !== "admin"));
+  const inconnus = [...voulus].filter((u) => !us.some((x) => x.username === u));
   if (inconnus.length) throw new HttpError(400, `Compte d'accompagnateur inconnu : ${inconnus.join(", ")}`);
   const ok = [];
   for (const u of us) {
-    if (u.role === "admin") continue;
     const t = JSON.parse(u.trips || "[]"), a = t.includes(trip), veut = voulus.has(u.username);
     if (veut) ok.push(u.username);
     if (veut === a || (!veut && !remplacer)) continue;
@@ -528,6 +527,14 @@ async function handle(req, env) {
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
   if (path.startsWith("/api/auth/")) return json(env, req, await handleAuth(req, env, path, readJson));
+  if (path === "/api/voyage/accompagnateurs" && req.method === "GET") {
+    // Pour l'éditeur : coordonnées des accompagnateurs du voyage, à inscrire dans le contenu chiffré
+    const trip = url.searchParams.get("trip") || "";
+    await requireTrip(env, trip); await requireEditor(env, req, trip);
+    await ensureAuthSchema(env);
+    const us = (await env.DB.prepare("SELECT username, nom, cellulaire, courriel, trips, actif FROM users").all()).results || [];
+    return json(env, req, { accompagnateurs: us.filter((u) => u.actif && JSON.parse(u.trips || "[]").includes(trip)).map((u) => ({ compte: u.username, nom: u.nom || u.username, cellulaire: u.cellulaire || "", courriel: u.courriel || "" })) });
+  }
   if (path === "/api/mes-voyages" && req.method === "GET") return json(env, req, await mesVoyages(env, req));
   if (path.startsWith("/api/admin/")) return json(env, req, await handleAdmin(req, env, path, url));
 

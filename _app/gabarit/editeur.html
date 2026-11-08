@@ -343,9 +343,26 @@ async function load(){
   $('#t').textContent='Éditeur · '+(V.titre||'voyage');
   render();changed();checkWrite();
 }
+/* Coordonnées des accompagnateurs : reprises de leurs comptes (nom, cellulaire, courriel) dans la liste du voyage.
+   Elles ne sont publiées qu’à l’intérieur du contenu chiffré, comme le reste du voyage. */
+let accSync=false;
+async function syncAccompagnateurs(){
+  if(accSync||!V||!sesGet()||MODE()!=='cle')return;accSync=true;
+  let L;try{L=(await wk('GET','/api/voyage/accompagnateurs?trip='+encodeURIComponent(TRIP.id))).accompagnateurs||[];}catch(e){return;}
+  const cur=Array.isArray(V.accompagnateurs)?V.accompagnateurs:[];const avant=JSON.stringify(cur);
+  const norm=x=>String(x||'').trim().toLowerCase();
+  let out=cur.filter(a=>!a.compte||L.some(x=>x.compte===a.compte)); // retiré du voyage dans l’administration : retiré ici
+  for(const x of L){let a=out.find(y=>y.compte===x.compte)||out.find(y=>!y.compte&&norm(y.nom)===norm(x.nom));
+    if(!a){a={nom:'',role:'Accompagnateur',cellulaire:'',courriel:''};out.push(a);}
+    Object.assign(a,{compte:x.compte,nom:x.nom||a.nom});if(x.cellulaire)a.cellulaire=x.cellulaire;if(x.courriel)a.courriel=x.courriel;}
+  if(JSON.stringify(out)===avant)return;
+  V.accompagnateurs=out;render();changed();
+  msg('#m-res','Coordonnées des accompagnateurs mises à jour depuis leurs comptes (section « Accompagnateurs »). Touchez « Publier » pour les afficher aux voyageurs.','info');
+}
 async function checkWrite(){
   $('#ek-msg').textContent='';$('#cx-msg').textContent='';
   const ses=!!sesGet();
+  setTimeout(()=>{if(canWrite)syncAccompagnateurs();},0);
   if(MODE()==='cle'){canWrite=remoteOk&&!(ses&&PROFIL&&PROFIL.doitChanger);$('#cx-state').textContent=canWrite?(ses&&PROFIL?'✓ '+PROFIL.nom:'✓ connecté'):(ses?(PROFIL&&PROFIL.doitChanger?'mot de passe à changer':'accès refusé'):'clé refusée');
     $('#ek-msg').textContent=canWrite?'Vous pouvez publier ce voyage.':ses?(PROFIL&&PROFIL.doitChanger?'Changez votre mot de passe temporaire pour pouvoir publier.':PROFIL&&!PROFIL.deuxEtapes?'Activez la double authentification (« Mon compte ») pour pouvoir publier.':'Votre compte ne peut pas publier ce voyage.'):'La clé n’a pas été acceptée pour ce voyage.';if(!canWrite)$('#s-connexion').open=true;return;}
   if(!cx.token){canWrite=false;$('#cx-state').textContent='lecture seule';$('#ek-msg').textContent=TRIP.push?'Connectez-vous avec votre compte pour pouvoir publier.':'Entrez le jeton GitHub pour pouvoir publier.';$('#s-connexion').open=true;return;}
@@ -383,7 +400,7 @@ const S=[
     child:{key:'items',titre:'Rendez-vous de la journée',label:i=>(i.heure||'—')+' · '+(i.titre||''),newItem:()=>({heure:'',titre:'',lieu:'',note:''}),fields:ITEM}},
   {id:'liens',titre:'Liens du groupe (WhatsApp, Facebook…)',type:'list',key:'liens',help:'Un lien vide reste caché dans l’app.',label:l=>(l.titre||l.type||'')+(l.url?'':' (vide)'),newItem:()=>({type:'autre',titre:'',url:''}),
     fields:[['type','Type','select',[['whatsapp','WhatsApp'],['facebook','Facebook'],['instagram','Instagram'],['site','Site web'],['autre','Autre']]],['titre','Titre','text'],['url','Lien','url','full'],['detail','Sous-titre (facultatif)','text','full']]},
-  {id:'accompagnateurs',titre:'Accompagnateurs',type:'list',key:'accompagnateurs',help:'Affichés aux voyageurs dans l’onglet Infos, dans cet ordre. Le cellulaire et le courriel sont facultatifs et visibles par tous les voyageurs.',label:a=>(a.nom||'Nouvel accompagnateur')+(a.role?' · '+a.role:''),newItem:()=>({nom:'',role:'Accompagnateur',cellulaire:'',courriel:''}),
+  {id:'accompagnateurs',titre:'Accompagnateurs',type:'list',key:'accompagnateurs',help:'Affichés aux voyageurs dans l’onglet Infos, dans cet ordre. Les accompagnateurs du voyage (administration) sont ajoutés automatiquement avec les coordonnées de leur compte (app Accompagnateur › Réglages › Mon profil). Le cellulaire et le courriel sont visibles par tous les voyageurs.',label:a=>(a.nom||'Nouvel accompagnateur')+(a.role?' · '+a.role:''),newItem:()=>({nom:'',role:'Accompagnateur',cellulaire:'',courriel:''}),
     fields:[['nom','Nom','text'],['role','Rôle (ex. Accompagnateur, Guide)','text'],['cellulaire','Cellulaire (facultatif, public : appel, texto, WhatsApp)','text'],['courriel','Courriel (facultatif, public)','text']]},
   {id:'hotel',titre:'Hôtel',type:'obj',key:'hotel',fields:[['nom','Nom','text'],['adresse','Adresse','text'],['points','Points importants (un par ligne)','lines','full']]},
   {id:'bagages',titre:'Bagages (app et affiche)',type:'obj',key:'bagages',fields:[['soute','En soute — une ligne par sac : nom | détail','pairs','full'],['noteSoute','Note sous la soute','textarea','full'],['cabine','En cabine — une ligne par sac : nom | détail','pairs','full'],['important','Encadré rouge','textarea','full'],['conseils','Conseils (un par ligne)','lines','full']]},

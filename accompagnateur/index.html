@@ -131,6 +131,17 @@ input{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--lin
       <p class="small" style="margin:8px 0 0">Auto : langue du téléphone · Auto: phone language</p>
     </div>
     <div class="card">
+      <h2 data-i>Mon profil</h2>
+      <p class="small" data-i>Affiché aux voyageurs de vos voyages (onglet Infos) : ils pourront vous appeler, vous texter, vous écrire sur WhatsApp ou par courriel. Cellulaire et courriel facultatifs.</p>
+      <form id="pf-f" autocomplete="on" style="margin-top:10px">
+        <label><span data-i>Nom affiché</span><input id="pf-nom" maxlength="80"></label>
+        <label><span data-i>Cellulaire</span><input id="pf-cel" type="tel" autocomplete="tel" placeholder="514 555-0100" maxlength="30"></label>
+        <label><span data-i>Courriel</span><input id="pf-mail" type="email" autocomplete="email" maxlength="120"></label>
+        <div><button type="submit" data-i>Enregistrer le profil</button></div>
+      </form>
+      <p class="small" id="pf-msg" style="margin:8px 0 0"></p>
+    </div>
+    <div class="card">
       <h2 data-i>Mon compte</h2>
       <p class="small" data-i>Mot de passe et double authentification se gèrent sur la page du compte.</p>
       <p style="margin:10px 0 0"><a class="btn light" href="/admin/" data-i>Gérer mon compte</a></p>
@@ -164,7 +175,7 @@ const EN={
 'Mon compte':'My account','Mot de passe et double authentification se gèrent sur la page du compte.':'Password and two-step verification are managed on the account page.',
 'Gérer mon compte':'Manage my account','Installer cette app':'Install this app',
 'iPhone : dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Android : menu ⋮ de Chrome, puis « Installer l’application ».':'iPhone: in Safari, tap Share, then “Add to Home Screen”. Android: Chrome ⋮ menu, then “Install app”.',
-'← Mes voyages':'← My trips','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
+'← Mes voyages':'← My trips','Mon profil':'My profile','Affiché aux voyageurs de vos voyages (onglet Infos) : ils pourront vous appeler, vous texter, vous écrire sur WhatsApp ou par courriel. Cellulaire et courriel facultatifs.':'Shown to your trips’ travellers (Info tab): they can call, text, WhatsApp or email you. Mobile and email are optional.','Nom affiché':'Display name','Cellulaire':'Mobile','Courriel':'Email','Enregistrer le profil':'Save profile','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
 'Les listes de groupe restent sur le téléphone de l’accompagnateur : elles ne passent jamais par Internet.':'Group lists stay on the trip leader’s phone: they never go over the Internet.',
 'App du voyage':'Trip app','Éditeur':'Editor','Mon groupe':'My group','Partager l’app':'Share the app',
 'Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming','Terminé':'Over','Clos':'Closed',
@@ -202,7 +213,11 @@ $('#mdp-f').addEventListener('submit',async e=>{e.preventDefault();msg('');
   try{await api('POST','/api/auth/mdp',{ancien:$('#m-old').value,nouveau:$('#m-new').value});$('#m-old').value=$('#m-new').value=$('#m-new2').value='';msg(LANG==='en'?'Password changed.':'Mot de passe changé.','ok');demarrer();}
   catch(x){msg(esc(x.message),'err');}});
 $('#b-out').onclick=async e=>{e.preventDefault();try{await api('POST','/api/auth/deconnexion',{});}catch(x){}setSession('');PROFIL=null;msg('');vue('v-login');};
-$('#gear').onclick=()=>{msg('');vue($('#v-reglages').hidden?'v-reglages':'v-app');scrollTo(0,0);};
+$('#gear').onclick=()=>{msg('');const r=$('#v-reglages').hidden;if(r&&PROFIL){$('#pf-nom').value=PROFIL.nom||'';$('#pf-cel').value=PROFIL.cellulaire||'';$('#pf-mail').value=PROFIL.courriel||'';$('#pf-msg').textContent='';}vue(r?'v-reglages':'v-app');scrollTo(0,0);};
+$('#pf-f').addEventListener('submit',async e=>{e.preventDefault();$('#pf-msg').textContent='';
+  try{const r=await api('POST','/api/auth/profil',{nom:$('#pf-nom').value,cellulaire:$('#pf-cel').value,courriel:$('#pf-mail').value});PROFIL=r.profil;$('#qui').innerHTML=(LANG==='en'?'Signed in: ':'Connecté : ')+'<b>'+esc(PROFIL.nom)+'</b>';
+    $('#pf-msg').textContent=LANG==='en'?'Saved. It will appear in your trips’ app the next time the editor publishes.':'Enregistré. Il apparaîtra dans l’app de vos voyages à la prochaine publication dans l’éditeur.';}
+  catch(x){$('#pf-msg').textContent=x.message;}});
 $('#r-back').onclick=()=>{vue('v-app');scrollTo(0,0);};
 
 async function demarrer(){

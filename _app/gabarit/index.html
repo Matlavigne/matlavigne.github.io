@@ -1935,6 +1935,8 @@ $('#m-hotel').addEventListener('click',()=>{initMap();const h=hotelPlace();if(h)
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopGps();else if(current==='carte'&&last)startGps();});
 
 /* ---------- Accompagnateurs du voyage (liste; ancien format : un seul objet « accompagnateur ») ---------- */
+/* Numéro à composer : 10 chiffres → +1…, 11 chiffres commençant par 1 → +1…, + conservé */
+const telIntl=t=>{const raw=String(t||'').trim(),d=raw.replace(/\D/g,'');if(raw.startsWith('+'))return '+'+d;if(d.length===10)return '+1'+d;if(d.length===11&&d[0]==='1')return '+'+d;return d;};
 const waNum=t=>{const raw=String(t||'');const d=raw.replace(/\D/g,'');return !raw.trim().startsWith('+')&&d.length===10?'1'+d:d;};
 function accompagnateurs(){const l=Array.isArray(V.accompagnateurs)?V.accompagnateurs:V.accompagnateur?[V.accompagnateur]:[];return l.filter(a=>a&&a.nom);}
 /* ---------- Liens du groupe ---------- */
@@ -1968,7 +1970,7 @@ function renderInfos(){
   const links=groupLinks();
   const org=V.organisateur||{};
   const orgTxt=org.nom?'Voyage organisé par '+(org.site?`<a href="${esc(org.site)}" target="_blank" rel="noopener">${esc(org.nom)}</a>`:esc(org.nom)):'';
-  const accActs=a=>{const tel=String(a.cellulaire||'').replace(/[^\d+]/g,'');
+  const accActs=a=>{const tel=telIntl(a.cellulaire);
     return tel||a.courriel?`<span class="acc-acts">${tel?`<a href="tel:${esc(tel)}">Appeler</a><a href="sms:${esc(tel)}">Texto</a><a href="https://wa.me/${esc(waNum(a.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a>`:''}${a.courriel?`<a href="mailto:${esc(a.courriel)}">${esc(a.courriel)}</a>`:''}</span>`:'';};
   $('#contact').innerHTML=(accs.length>1?`<h3>Vos accompagnateurs</h3>${accs.map(a=>`<div class="acc"><b>${esc(a.nom)}</b><span class="small">${esc(a.role||'Accompagnateur')}</span>${accActs(a)}</div>`).join('')}${orgTxt?`<p class="small" style="margin-top:8px">${orgTxt}</p>`:''}`
       :accs.length?`<h3>${esc(accs[0].nom)}</h3><p class="small">${esc(accs[0].role||'Votre accompagnateur')}${orgTxt?' · '+orgTxt.charAt(0).toLowerCase()+orgTxt.slice(1):''}</p>${accActs(accs[0])?`<div class="acc" style="border:0;padding-top:4px">${accActs(accs[0])}</div>`:''}`

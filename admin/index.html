@@ -257,7 +257,16 @@ $('#b-compte').onclick=()=>{onglet('moncompte');
   z.innerHTML=`<h2>Mon compte</h2><p><b>${esc(PROFIL.nom)}</b> · ${esc(PROFIL.username)} · ${PROFIL.role==='admin'?'administrateur':'accompagnateur'}</p>
   <p class="row"><button type="button" class="light" id="mc-mdp">Changer de mot de passe</button>
   ${PROFIL.deuxEtapes?'<span class="tag ok">Double authentification active</span>':'<button type="button" id="mc-2fa">Activer la double authentification</button>'}</p>
-  <p class="small">Téléphone d’authentification perdu et plus de codes de secours? ${PROFIL.role==='admin'?'Dans le dossier du Worker : <code>npm run secours-admin -- '+esc(PROFIL.username)+'</code>.':'Demandez à l’administrateur de réinitialiser votre double authentification.'}</p>`;
+  <p class="small">Téléphone d’authentification perdu et plus de codes de secours? ${PROFIL.role==='admin'?'Dans le dossier du Worker : <code>npm run secours-admin -- '+esc(PROFIL.username)+'</code>.':'Demandez à l’administrateur de réinitialiser votre double authentification.'}</p>
+  <h2 style="margin-top:18px">Mon profil d’accompagnateur</h2>
+  <p class="small">Affiché aux voyageurs de vos voyages (onglet Infos), après publication dans l’éditeur. Cellulaire et courriel facultatifs : appel, texto, WhatsApp et courriel.</p>
+  <form id="pf-f" class="grid" autocomplete="on"><label class="full">Nom affiché<input id="pf-nom" value="${esc(PROFIL.nom)}" maxlength="80"></label>
+  <label>Cellulaire<input id="pf-cel" type="tel" autocomplete="tel" value="${esc(PROFIL.cellulaire||'')}" placeholder="514 555-0100" maxlength="30"></label>
+  <label>Courriel<input id="pf-mail" type="email" autocomplete="email" value="${esc(PROFIL.courriel||'')}" maxlength="120"></label>
+  <div class="full"><button type="submit">Enregistrer le profil</button></div></form>`;
+  $('#pf-f').addEventListener('submit',async e=>{e.preventDefault();
+    try{const r=await api('POST','/api/auth/profil',{nom:$('#pf-nom').value,cellulaire:$('#pf-cel').value,courriel:$('#pf-mail').value});PROFIL=r.profil;msg('Profil enregistré. Il apparaîtra dans l’app de vos voyages à la prochaine publication dans l’éditeur.','ok');}
+    catch(x){msg(x.status===404&&/Introuvable/.test(x.message)?'Pas enregistré : redéployez le Worker (<code>npm run deploy</code>).':'Pas enregistré : '+esc(x.message),'err');}});
   $('#mc-mdp').onclick=()=>formMdp(false);
   if($('#mc-2fa'))$('#mc-2fa').onclick=()=>form2fa(false);
   if($('#mc-2fa-off'))$('#mc-2fa-off').onclick=async()=>{const pw=prompt('Votre mot de passe, pour confirmer :');if(!pw)return;
@@ -316,7 +325,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ---------- Comptes ---------- */
-const comptesChips=(sel)=>COMPTES.filter(c=>c.role!=='admin'&&c.actif).map(c=>`<label class="chk"><input type="checkbox" value="${esc(c.username)}"${sel.includes(c.username)?' checked':''}> ${esc(c.nom)}</label>`).join('')||'<span class="small">Aucun compte d’accompagnateur actif : créez-en un dans l’onglet Comptes.</span>';
+const comptesChips=(sel)=>COMPTES.filter(c=>c.actif).map(c=>`<label class="chk"><input type="checkbox" value="${esc(c.username)}"${sel.includes(c.username)?' checked':''}> ${esc(c.nom)}</label>`).join('')||'<span class="small">Aucun compte d’accompagnateur actif : créez-en un dans l’onglet Comptes.</span>';
 const tripsChips=(sel)=>ETAT.voyages.filter(v=>!v.clos).map(v=>`<label class="chk"><input type="checkbox" value="${esc(v.id)}"${sel.includes(v.id)?' checked':''}> ${esc(v.appCourt||v.id)}</label>`).join('')||'<span class="small">Aucun voyage actif.</span>';
 function dessinerComptes(){
   $('#clist').innerHTML=COMPTES.map(c=>{const moi=c.username===PROFIL.username;return `<div class="v">

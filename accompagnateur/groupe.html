@@ -166,7 +166,8 @@ const gFeteTxt=f=>f.age+' ans le '+new Intl.DateTimeFormat(LOC,{day:'numeric',mo
 function gAgeHtml(p){const a=gAge(p.naissance),f=gFete(p.naissance);if(a==null&&!f)return '';
   return f?`<span class="fete">${a!=null?esc(a+' ans · '):''}${esc(gFeteTxt(f))}</span>`:`<span class="age">${a} ans</span>`;}
 const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat(LOC,{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
-const gTel=t=>String(t||'').replace(/[^\d+]/g,'');
+/* Numéro à composer : 10 chiffres → +1…, 11 chiffres commençant par 1 → +1…, + conservé */
+const gTel=t=>{const raw=String(t||'').trim(),d=raw.replace(/\D/g,'');if(raw.startsWith('+'))return '+'+d;if(d.length===10)return '+1'+d;if(d.length===11&&d[0]==='1')return '+'+d;return d;};
 
 /* Lecture CSV : UTF-8 ou Windows-1252 (Excel), séparateur ; , ou tabulation, guillemets. */
 function gDecode(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf);}catch(e){return new TextDecoder('windows-1252').decode(buf);}}
