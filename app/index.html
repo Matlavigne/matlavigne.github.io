@@ -298,7 +298,13 @@ async function lien(){
   history.replaceState(null,'',location.pathname);
   if(vise&&!CATALOGUE.some(c=>c.id===vise))vise='';
   // Lien sans phrase : demande d’accès à l’accompagnateur (sauf si le voyage n’est pas protégé ou déjà ajouté)
-  if(vise&&!ph){if(MES.some(m=>m.id===vise))return '';try{const v=await publicDe(vise);if(!v.chiffre){garder(vise,v);dessiner();return '';}}catch(e){}ouvrirDemande(vise);return '';}
+  if(vise&&!ph){
+    let v=null;try{v=await publicDe(vise);}catch(e){}
+    if(v&&!v.chiffre){garder(vise,v);dessiner();return '';}
+    // Déjà ouvert sur ce téléphone avec la bonne clé : rien à demander. Sinon (pas de clé, ou phrase changée) : demande d’accès.
+    const k=store.get(vise+'-cle-v1',null);
+    if(k&&v&&v.chiffre&&k.salt===v.chiffre.salt){if(!MES.some(m=>m.id===vise))garder(vise,v);dessiner();return '';}
+    ouvrirDemande(vise);return '';}
   msg(LANG==='en'?'Adding your trip…':'Ajout de votre voyage…','info');
   try{const id=await ajouter(ph,vise);
     if(id){dessiner();vue('v-list');msg((LANG==='en'?'Added to your trips: ':'Ajouté à vos voyages : ')+'<b>'+esc(nomDe(id))+'</b>','ok');}
