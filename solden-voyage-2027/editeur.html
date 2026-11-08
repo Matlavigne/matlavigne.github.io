@@ -66,7 +66,67 @@ details.sec .body{padding:0 16px 16px;border-top:1px solid var(--line)}
 ol.steps{margin:8px 0 0;padding-left:20px;font-size:14px}ol.steps li{margin:5px 0}
 code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
 @media(max-width:560px){.grid{grid-template-columns:1fr}}
-.multi{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}.f .lab{font-size:13px;font-weight:600;color:var(--ink)}
+.multi{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px}
+/* Tableau de bord en tuiles */
+body:not(.focus) details.sec{display:none}
+body.focus #dash{display:none}
+body.focus details.sec:not(.cur){display:none}
+body.focus details.sec.cur>summary{display:none}
+body.focus details.sec.cur>.body{border-top:0;padding-top:4px}
+.fbar{position:sticky;top:0;z-index:40;background:var(--paper);padding:10px 0 4px;display:none;align-items:center;gap:10px}
+body.focus .fbar{display:flex}
+.fbar span{font-weight:700;font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dgrp{margin:18px 0 8px;font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;background:var(--white);border:1px solid var(--line);border-radius:16px;padding:12px 12px 11px;display:flex;flex-direction:column;gap:6px;min-height:104px;position:relative;box-shadow:0 1px 2px #0b3a780a}
+.tile:active{transform:scale(.98)}
+.tile .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:21px;line-height:1}
+.tile b{font-size:14.5px;line-height:1.2}
+.tile small{font-size:12px;color:var(--muted);line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tile .bd{position:absolute;top:10px;right:10px;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+.bd.ok{background:#e3f1e6;color:var(--green)}.bd.todo{background:#fbefdc;color:var(--amber)}.bd.n{background:var(--soft);color:var(--blue)}
+.ic.c1{background:#e6f0fb}.ic.c2{background:#fdf1e3}.ic.c3{background:#e8f5ec}.ic.c4{background:#f1ebfa}.ic.c5{background:#eef1f5}
+/* Prêt pour le départ */
+.ready{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0}
+.ready-hd{display:flex;align-items:center;gap:12px}
+.ring{--p:0;width:54px;height:54px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--p)*1%),#e4e9f0 0)}
+.ring span{width:42px;height:42px;border-radius:50%;background:var(--white);display:grid;place-items:center;font-weight:800;font-size:13px}
+.ready-hd b{font-size:17px}.ready-hd small{display:block;color:var(--muted);font-size:13px}
+.rl{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}
+@media(max-width:520px){.rl{grid-template-columns:1fr}}
+.rl button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:8px;align-items:flex-start;width:100%;padding:6px 0;font-size:14px;line-height:1.3}
+.rl i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:1px}
+.rl .y i{background:#e3f1e6;color:var(--green)}.rl .n i{background:#fbefdc;color:var(--amber)}
+.rl .n span{text-decoration:underline;text-decoration-color:#e7cfa8;text-underline-offset:3px}
+/* Programme en ligne du temps */
+.tl{position:relative;margin-top:12px}
+.tl-day{position:relative;padding-left:66px;margin-bottom:12px}
+.tl-day:before{content:"";position:absolute;left:27px;top:0;bottom:-12px;width:2px;background:var(--line)}
+.tl-day:last-child:before{bottom:0}
+.tl-date{position:absolute;left:0;top:0;width:56px;border-radius:12px;background:var(--blue);color:#fff;text-align:center;padding:6px 0 5px;line-height:1.05;z-index:1}
+.tl-date b{display:block;font-size:22px}.tl-date small{display:block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;opacity:.9}
+.tl-date.out{background:#9aa6b4}
+.tl-card{background:var(--white);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tl-hd{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px}
+.tl-hd b{flex:1;min-width:0;font-size:15px}.tl-hd small{color:var(--muted);font-size:12px;white-space:nowrap}
+.tl-items{list-style:none;margin:0;padding:0 12px 10px}
+.tl-items li{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-top:1px dashed var(--line);font-size:14px}
+.tl-h{flex:none;min-width:48px;text-align:center;font-weight:700;font-size:12px;color:var(--blue);background:var(--soft);border-radius:999px;padding:2px 7px}
+.tl-items .l{color:var(--muted);font-size:12.5px}
+.tl-tag{white-space:nowrap;display:inline-block;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 5px;margin-left:4px;background:#fbefdc;color:var(--amber)}.tl-tag.rdv{background:#e3eef7;color:#1e5a8c}
+.tl-edit{border-top:1px solid var(--line);padding:0 12px 12px;background:#fbfcfe}
+.tl-edit>.item{border:0;background:transparent;margin-top:6px}.tl-edit>.item>.hd{border-radius:10px}
+/* Carte pour placer un lieu */
+.mapdlg{position:fixed;inset:0;z-index:100;background:#0b1a2ecc;display:flex;align-items:center;justify-content:center;padding:calc(10px + env(safe-area-inset-top)) 10px 10px}
+.mapdlg .box{background:#fff;border-radius:16px;width:100%;max-width:760px;height:min(86vh,720px);display:flex;flex-direction:column;overflow:hidden}
+.mapdlg .top{padding:10px 12px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+.mapdlg .top input{flex:1;min-width:0;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.mapdlg #pick-map{flex:1;min-height:0}
+.mapdlg .bot{padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;border-top:1px solid var(--line)}
+.mapdlg .bot small{flex:1;color:var(--muted);font-size:12.5px}
+.mapdlg .res{max-height:150px;overflow:auto;border-bottom:1px solid var(--line)}
+.mapdlg .res button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:8px 12px;font-size:14px;border-top:1px solid var(--line)}
+.pick-pin{width:30px;height:30px;margin:-30px 0 0 -15px;background:var(--red);border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px #0006}.f .lab{font-size:13px;font-weight:600;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -75,6 +135,8 @@ code{background:var(--soft);border-radius:5px;padding:1px 5px;font-size:13px}
   <div id="m-load" class="msg info">Chargement…</div>
   <div id="m-draft" class="msg warn" hidden></div>
   <div id="m-res" class="msg" hidden></div>
+  <div class="fbar"><button type="button" class="light" id="f-back">← Tableau de bord</button><span id="f-title"></span></div>
+  <div id="dash"></div>
 
   <details class="sec" id="s-alertes" hidden>
     <summary><h2>Alertes sur les téléphones</h2><span class="n" id="al-state">…</span></summary>
@@ -300,7 +362,7 @@ function dirty(){return (V&&(pretty(V)!==base||phDirty()))||gDirty();}
 const vDirty=()=>!!V&&(pretty(V)!==base||phDirty());
 let saveT=0;
 function changed(){
-  const d=dirty();
+  const d=dirty();setTimeout(renderDash,0);
   $('#st').innerHTML=d?'<b>Modifications non publiées</b>':'Aucune modification';
   $('#b-pub').disabled=!d;$('#b-reset').disabled=!d;
   clearTimeout(saveT);saveT=setTimeout(()=>{if(d)LS.set(DRAFT_KEY(),{at:Date.now(),sha,data:V});else LS.del(DRAFT_KEY());},400);
@@ -478,15 +540,17 @@ function field(path,[k,lab,type,extra,extra2],obj){
     default:return wrap(`<input type="text" id="${id}" data-p="${P}" data-t="text" value="${esc(v)}">`);
   }
 }
-function listHtml(path,cfg,arr){
-  arr=arr||[];
-  const items=arr.map((it,i)=>{const p=[...path,i];return`<div class="item"><div class="hd"><b>${esc(cfg.label?cfg.label(it):'#'+(i+1))}</b>
+function itemHtml(path,cfg,arr,it,i){const p=[...path,i];return`<div class="item"><div class="hd"><b>${esc(cfg.label?cfg.label(it):'#'+(i+1))}</b>
     <button type="button" class="mini light" data-act="up" data-p="${esc(JSON.stringify(p))}" aria-label="Monter"${i===0?' disabled':''}>↑</button>
     <button type="button" class="mini light" data-act="down" data-p="${esc(JSON.stringify(p))}" aria-label="Descendre"${i===arr.length-1?' disabled':''}>↓</button>
     <button type="button" class="mini light" data-act="dup" data-p="${esc(JSON.stringify(p))}" aria-label="Dupliquer">⧉</button>
     <button type="button" class="mini danger" data-act="del" data-p="${esc(JSON.stringify(p))}" aria-label="Supprimer">✕</button></div>
     <div class="bd"><div class="grid">${cfg.fields.map(f=>field(p,f,it)).join('')}</div>
-    ${cfg.child?`<p class="help" style="margin-top:14px;font-weight:600;color:var(--ink)">${esc(cfg.child.titre)}</p>${listHtml([...p,cfg.child.key],cfg.child,it[cfg.child.key])}`:''}</div></div>`;}).join('');
+    ${cfg.fields.some(f=>f[0]==='lat')&&cfg.fields.some(f=>f[0]==='lng')?`<div class="addbar"><button type="button" class="light" data-pick="${esc(JSON.stringify(p))}">📍 ${typeof it.lat==='number'?'Déplacer sur la carte':'Placer sur la carte'}</button></div>`:''}
+    ${cfg.child?`<p class="help" style="margin-top:14px;font-weight:600;color:var(--ink)">${esc(cfg.child.titre)}</p>${listHtml([...p,cfg.child.key],cfg.child,it[cfg.child.key])}`:''}</div></div>`;}
+function listHtml(path,cfg,arr){
+  arr=arr||[];
+  const items=arr.map((it,i)=>itemHtml(path,cfg,arr,it,i)).join('');
   return items+`<div class="addbar"><button type="button" class="light" data-act="add" data-p="${esc(JSON.stringify(path))}" data-cfg="${esc(cfgId(cfg))}">+ Ajouter</button></div>`
     +(cfg.templates?`<p class="help" style="margin:12px 0 6px;font-weight:600;color:var(--ink)">Partir d’un modèle</p><div class="addbar tpl">${cfg.templates.map(([k,l])=>`<button type="button" class="light" data-tpl="${k}">${esc(l)}</button>`).join('')}</div><p class="help">Le modèle crée une annonce à publier maintenant. Remplacez les [mots entre crochets], ajustez l’heure de publication si besoin, puis « Publier ».</p>`:'');
 }
@@ -497,11 +561,13 @@ function render(){
   $('#sections').innerHTML=S.map(s=>{
     let body='',n='';
     if(s.type==='root')body=`<div class="grid">${s.fields.map(f=>field([],f,V)).join('')}</div>`;
-    else if(s.type==='obj')body=`<div class="grid">${s.fields.map(f=>field([s.key],f,V[s.key]||{})).join('')}</div>`;
+    else if(s.type==='obj')body=`<div class="grid">${s.fields.map(f=>field([s.key],f,V[s.key]||{})).join('')}</div>`+(s.id==='hotel'?(()=>{const h=(V.lieux||[]).find(l=>l.id==='hotel'&&typeof l.lat==='number');return `<div class="addbar"><button type="button" class="light" data-pick-hotel>📍 ${h?'Déplacer l’hôtel sur la carte':'Placer l’hôtel sur la carte'}</button></div><p class="help">${h?`Position : ${h.lat}, ${h.lng} (section « Lieux sur la carte »).`:'Le point de l’hôtel s’affiche sur la carte de l’app et sert au bouton « Voir sur la carte » (onglet Infos).'}</p>`;})():'');
     else if(s.type==='rootlines')body=`<div class="grid">${field([],[s.key,s.label,'lines'],V)}</div>`;
+    else if(s.id==='programme'){body=timelineHtml(s);n=(V[s.key]||[]).length;}
     else{body=listHtml([s.key],s,V[s.key]);n=(V[s.key]||[]).length;}
     return`<details class="sec" id="s-${s.id}"${open.has('s-'+s.id)?' open':''}><summary><h2>${esc(s.titre)}</h2><span class="n">${n!==''?n:''}</span></summary><div class="body">${s.help?`<p class="help">${esc(s.help)}</p>`:''}${body}</div></details>`;
   }).join('')+`<details class="sec" id="s-avance"${open.has('s-avance')?' open':''}><summary><h2>Avancé : météo, webcams, organisateur…</h2><span class="n">${extra.length}</span></summary><div class="body"><p class="help">Format technique (JSON). À modifier seulement si nécessaire : une erreur ici est signalée avant la publication.</p><div class="f full" style="margin-top:10px"><textarea class="raw" id="raw" data-t="raw">${esc(JSON.stringify(Object.fromEntries(extra.map(k=>[k,V[k]])),null,2))}</textarea></div><p class="help" id="raw-msg"></p></div></details>`;
+  applyFocus();renderDash();
 }
 
 /* ---------- Saisie ---------- */
@@ -593,6 +659,156 @@ $('#b-pub').onclick=async()=>{
 };
 addEventListener('beforeunload',e=>{if(!leaving&&dirty()){e.preventDefault();e.returnValue='';}});
 addEventListener('pageshow',e=>{if(e.persisted)leaving=false;});
+
+/* ---------- Tableau de bord en tuiles ---------- */
+const TILES=[
+  ['Communication',[['annonces','📣','c2'],['alertes','🔔','c2'],['liens','💬','c2'],['sondage','⭐','c2']]],
+  ['Le voyage',[['general','✏️','c1'],['depart','⏱️','c1'],['vols','✈️','c1'],['avant','🗓️','c1'],['programme','📅','c1'],['hotel','🏨','c1'],['accompagnateurs','🧑‍🤝‍🧑','c1']]],
+  ['Préparation',[['bagages','🧳','c3'],['documents','📄','c3']]],
+  ['Sur place',[['lieux','📍','c4'],['adresses','🍽️','c4'],['remontee','🚡','c4'],['infosSki','⛷️','c4']]],
+  ['Accès et réglages',[['connexion','👤','c5'],['phrase','🔑','c5'],['groupe','👥','c5'],['avance','⚙️','c5']]],
+];
+const nb=(n,un,plur)=>n?n+' '+(n>1?(plur||un+'s'):un):'';
+const jourTxt=d=>{const m=String(d||'').match(/^(\d{4})-(\d\d)-(\d\d)/);return m?new Date(+m[1],m[2]-1,+m[3]):null;};
+function tileSub(id){
+  if(!V)return '';
+  const L=k=>Array.isArray(V[k])?V[k]:[];
+  switch(id){
+    case 'annonces':{const a=L('annonces');return a.length?nb(a.length,'annonce')+' · dernière : '+String([...a].sort((x,y)=>String(y.date).localeCompare(String(x.date)))[0].date||'').replace('T',' '):'Aucune annonce';}
+    case 'alertes':return $('#al-state')?.textContent||'';
+    case 'liens':return nb(L('liens').filter(l=>l.url).length,'lien')||'Aucun lien';
+    case 'sondage':return V.sondage?.lien?'Lien ajouté':'Aucun sondage';
+    case 'general':return [V.titre,V.datesTexte].filter(Boolean).join(' · ');
+    case 'depart':return V.depart?.date?(V.depart.date+(V.depart.heure?' · '+V.depart.heure:'')):'À compléter';
+    case 'vols':return nb(L('vols').length,'vol')||'Aucun vol';
+    case 'avant':return nb(L('avantDepart').length,'rendez-vous','rendez-vous')||'Rien de prévu';
+    case 'programme':{const d=L('programme');return d.length?nb(d.length,'jour')+' · '+nb(d.reduce((t,x)=>t+(x.items||[]).length,0),'rendez-vous','rendez-vous'):'Aucun jour';}
+    case 'hotel':return V.hotel?.nom||'À compléter';
+    case 'accompagnateurs':return L('accompagnateurs').map(a=>a.nom).filter(Boolean).join(', ')||'À compléter';
+    case 'bagages':return V.bagages?'Soute et cabine':'—';
+    case 'documents':return nb((V.documents?.liste||[]).length,'document')||'—';
+    case 'lieux':return nb(L('lieux').length,'lieu')||'Aucun lieu';
+    case 'adresses':return nb(L('adresses').length,'adresse')||'Aucune adresse';
+    case 'remontee':return nb(L('derniereRemontee').length,'heure')||'—';
+    case 'infosSki':return nb(L('infosSki').length,'info')||'—';
+    case 'connexion':return $('#cx-state')?.textContent||'';
+    case 'phrase':return (phNow()||RAW?.chiffre)?'Contenu protégé':'Non protégé';
+    case 'groupe':return 'Dans l’app, sur ce téléphone';
+    case 'avance':return 'Météo, webcams, organisateur…';
+  }
+  return '';
+}
+function titleOf(id){const d=document.getElementById('s-'+id);return d?d.querySelector('summary h2')?.textContent||'':'';}
+/* Prêt pour le départ : ce qui manque avant d’envoyer l’invitation */
+function readiness(){
+  if(!V)return [];
+  const okD=x=>/^\d{4}-\d\d-\d\d$/.test(x||'');const L=k=>Array.isArray(V[k])?V[k]:[];
+  let jours=0,couverts=0;
+  if(okD(V.debut)&&okD(V.fin)){const a=jourTxt(V.debut),b=jourTxt(V.fin);jours=Math.round((b-a)/864e5)+1;
+    const dates=new Set(L('programme').map(d=>d.date));for(let t=+a;t<=+b;t+=864e5){const d=new Date(t);if(dates.has(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`))couverts++;}}
+  const vols=L('vols');const hotelPt=L('lieux').find(l=>l.id==='hotel');
+  const errs=validate();
+  return [
+    ['connexion',!!canWrite,'Connecté pour publier'],
+    ['phrase',!!(phNow()||RAW?.chiffre),'Contenu protégé par une phrase'],
+    ['general',okD(V.debut)&&okD(V.fin)&&!!V.datesTexte&&!/confirmer/i.test(V.datesTexte),'Titre et dates confirmés'],
+    ['depart',!!(V.depart?.date&&V.depart?.heure),'Heure du décollage (compte à rebours)'],
+    ['vols',vols.some(v=>v.sens==='aller')&&vols.some(v=>v.sens==='retour'),'Vols aller et retour'],
+    ['programme',jours>0&&couverts===jours,jours?`Programme : ${couverts} jour${couverts>1?'s':''} sur ${jours}`:'Programme jour par jour'],
+    ['hotel',!!(V.hotel?.nom&&V.hotel?.adresse),'Hôtel : nom et adresse'],
+    ['lieux',!!(hotelPt&&typeof hotelPt.lat==='number'),'Hôtel placé sur la carte'],
+    ['accompagnateurs',L('accompagnateurs').some(a=>a.nom),'Accompagnateurs'],
+    ['liens',L('liens').some(l=>l.url),'Lien du groupe (WhatsApp…)'],
+    ['annonces',L('annonces').length>0,'Annonce de bienvenue'],
+    ['annonces',errs.length===0,errs.length?`${errs.length} point${errs.length>1?'s':''} à corriger`:'Aucune erreur'],
+  ];
+}
+function renderDash(){
+  const el=$('#dash');if(!el)return;
+  if(!V){el.innerHTML='';return;}
+  const R=readiness(),ok=R.filter(r=>r[1]).length,pc=Math.round(ok/R.length*100);
+  const todo=new Set(R.filter(r=>!r[1]).map(r=>r[0]));
+  el.innerHTML=`<div class="ready"><div class="ready-hd"><div class="ring" style="--p:${pc}"><span>${ok}/${R.length}</span></div><div><b>${ok===R.length?'Prêt pour le départ ✓':'Prêt pour le départ ?'}</b><small>${ok===R.length?'Tout est en place. Envoyez l’invitation aux voyageurs (section Phrase du voyage).':'Touchez un point à compléter pour y aller.'}</small></div></div>
+    <ul class="rl">${R.map(([id,y,t])=>`<li class="${y?'y':'n'}"><button type="button" data-go="${id}"><i>${y?'✓':'!'}</i><span>${esc(t)}</span></button></li>`).join('')}</ul>${dirty()?'<p class="help" style="margin-top:8px"><b style="color:var(--amber)">Modifications non publiées</b> : touchez « Publier » en bas.</p>':''}</div>`
+  +TILES.map(([g,ts])=>`<p class="dgrp">${esc(g)}</p><div class="tiles">${ts.filter(([id])=>document.getElementById('s-'+id)&&!document.getElementById('s-'+id).hidden).map(([id,ic,c])=>{const n=document.querySelector('#s-'+id+'>summary .n')?.textContent||'';
+    return `<button type="button" class="tile" data-go="${id}"><span class="ic ${c}">${ic}</span><b>${esc(titleOf(id).replace(/\s*\(.*\)$/,''))}</b><small>${esc(tileSub(id))}</small>${todo.has(id)?'<span class="bd todo">à compléter</span>':/^\d+$/.test(n)&&+n?`<span class="bd n">${n}</span>`:''}</button>`;}).join('')}</div>`).join('');
+}
+let CUR=null,focusLock=false;
+function applyFocus(){$$('details.sec').forEach(d=>{const on=d.id===CUR;d.classList.toggle('cur',on);if(on&&!d.open){focusLock=true;d.open=true;focusLock=false;}});}
+function showSec(id,push=true){const d=document.getElementById(id);if(!d)return;CUR=id;document.body.classList.add('focus');applyFocus();
+  $('#f-title').textContent=titleOf(id.slice(2));if(push)history.pushState({sec:id},'');scrollTo(0,0);}
+function showDash(push=true){CUR=null;document.body.classList.remove('focus');applyFocus();renderDash();if(push&&history.state&&history.state.sec)history.back();scrollTo(0,0);}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();showSec('s-'+g.dataset.go);}});
+$('#f-back').onclick=()=>{if(history.state&&history.state.sec)history.back();else showDash(false);};
+addEventListener('popstate',e=>{if(e.state&&e.state.sec)showSec(e.state.sec,false);else{CUR=null;document.body.classList.remove('focus');applyFocus();renderDash();}});
+/* Une section ouverte par l’éditeur lui-même (connexion requise, phrase à entrer, modèle d’annonce…) s’affiche en plein écran */
+new MutationObserver(ms=>{if(focusLock)return;for(const m of ms){const d=m.target;if(d.matches&&d.matches('details.sec')&&d.open&&d.id!==CUR&&!d.hidden){showSec(d.id);break;}}}).observe(document.querySelector('main'),{subtree:true,attributes:true,attributeFilter:['open']});
+document.addEventListener('click',e=>{const sm=e.target.closest('details.sec.cur>summary');if(sm){e.preventDefault();$('#f-back').click();}});
+
+/* ---------- Programme en ligne du temps ---------- */
+const tlOpen=new Set();
+const JOURS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],MOISC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function timelineHtml(cfg){
+  const days=Array.isArray(V.programme)?V.programme:[];
+  const inTrip=d=>!V.debut||!V.fin||(d>=V.debut&&d<=V.fin);
+  return `<div class="tl">${days.map((d,i)=>{const dt=jourTxt(d.date),items=(d.items||[]);
+    const open=tlOpen.has(i);
+    return `<div class="tl-day"><div class="tl-date${d.date&&inTrip(d.date)?'':' out'}">${dt?`<small>${JOURS[dt.getDay()]}</small><b>${dt.getDate()}</b><small>${MOISC[dt.getMonth()]}</small>`:'<b>?</b><small>date</small>'}</div>
+      <div class="tl-card"><button type="button" class="tl-hd" data-tl="${i}"><b>${esc(d.titre||'Sans titre')}</b><small>${open?'Fermer ▴':'Modifier ▾'}</small></button>
+      ${items.length?`<ul class="tl-items">${items.map(it=>`<li><span class="tl-h">${esc(it.heure||'—')}</span><span><b>${esc(it.titre||'')}</b>${it.rdv?'<span class="tl-tag rdv">RDV</span>':''}${it.aConfirmer?'<span class="tl-tag">À confirmer</span>':''}${it.lieu?`<br><span class="l">${esc(it.lieu)}</span>`:''}</span></li>`).join('')}</ul>`:'<p class="help" style="margin:0 12px 10px">Aucun rendez-vous.</p>'}
+      ${open?`<div class="tl-edit">${itemHtml([cfg.key],cfg,days,d,i)}</div>`:''}</div></div>`;}).join('')}</div>
+    <div class="addbar"><button type="button" class="light" data-tl-add>+ Ajouter un jour</button></div>`;
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tl]');if(t){const i=+t.dataset.tl;tlOpen.has(i)?tlOpen.delete(i):tlOpen.add(i);render();return;}
+  if(e.target.closest('[data-tl-add]')){if(!Array.isArray(V.programme))V.programme=[];const last=V.programme[V.programme.length-1];
+    let date=V.debut||'';if(last&&/^\d{4}-\d\d-\d\d$/.test(last.date||'')){const d=jourTxt(last.date);d.setDate(d.getDate()+1);date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+    V.programme.push({date,fuseau:TZL,titre:'',items:[]});tlOpen.add(V.programme.length-1);render();changed();}
+});
+
+/* ---------- Placer un lieu sur la carte ---------- */
+let leafletP=null;
+function loadLeaflet(){ // Leaflet est déjà dans l’app du voyage : on le reprend de là (gardé hors ligne par l’app)
+  if(window.L)return Promise.resolve();
+  return leafletP||(leafletP=fetch('./',{cache:'force-cache'}).then(r=>r.text()).then(h=>{const d=new DOMParser().parseFromString(h,'text/html');
+    const css=d.getElementById('leaflet-css'),js=d.getElementById('leaflet-js');if(!css||!js)throw Error('carte indisponible');
+    const st=document.createElement('style');st.textContent=css.textContent;document.head.appendChild(st);
+    const sc=document.createElement('script');sc.textContent=js.textContent;document.head.appendChild(sc);if(!window.L)throw Error('carte indisponible');}).catch(e=>{leafletP=null;throw e;}));
+}
+function stationBounds(){const ds=Object.values(STN.domaines||{}).map(d=>d.bounds).filter(Boolean);if(!ds.length)return null;
+  return [[Math.min(...ds.map(b=>b[0][0])),Math.min(...ds.map(b=>b[0][1]))],[Math.max(...ds.map(b=>b[1][0])),Math.max(...ds.map(b=>b[1][1]))]];}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(b)openPicker(JSON.parse(b.dataset.pick));
+  if(e.target.closest('[data-pick-hotel]')){if(!Array.isArray(V.lieux))V.lieux=[];let i=V.lieux.findIndex(l=>l.id==='hotel');
+    if(i<0){V.lieux.unshift({id:'hotel',nom:V.hotel?.nom||'Hôtel',detail:V.hotel?.adresse||''});i=0;}openPicker(['lieux',i]);}});
+async function openPicker(p){const it=getP(V,p);if(!it)return;
+  try{await loadLeaflet();}catch(x){msg('#m-res','La carte n’a pas pu se charger (connexion Internet?). Vous pouvez entrer la latitude et la longitude à la main.','warn');return;}
+  const dlg=document.createElement('div');dlg.className='mapdlg';
+  dlg.innerHTML=`<div class="box"><div class="top"><input id="pick-q" placeholder="Chercher une adresse ou un lieu…" autocomplete="off"><button type="button" class="light" id="pick-s">Chercher</button></div><div class="res" id="pick-r" hidden></div><div id="pick-map"></div>
+    <div class="bot"><small id="pick-t">Touchez la carte pour placer « ${esc(it.nom||'le lieu')} ».</small><button type="button" class="light" id="pick-x">Annuler</button><button type="button" id="pick-ok" disabled>Placer ici</button></div></div>`;
+  document.body.appendChild(dlg);
+  const map=L.map('pick-map',{zoomSnap:.5});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  const hotel=(V.lieux||[]).find(l=>l.id==='hotel'&&typeof l.lat==='number');
+  let pos=typeof it.lat==='number'&&typeof it.lng==='number'?[it.lat,it.lng]:null,mk=null;
+  const pin=L.divIcon({className:'',html:'<div class="pick-pin"></div>',iconSize:[0,0]});
+  const put=ll=>{pos=[+ll[0].toFixed(6),+ll[1].toFixed(6)];if(mk)mk.setLatLng(pos);else mk=L.marker(pos,{icon:pin,draggable:true}).addTo(map).on('dragend',ev=>{const q=ev.target.getLatLng();put([q.lat,q.lng]);});
+    $('#pick-ok').disabled=false;$('#pick-t').textContent=`${pos[0]}, ${pos[1]} · glissez l’épingle pour ajuster`;};
+  if(pos){map.setView(pos,16);put(pos);}else if(hotel)map.setView([hotel.lat,hotel.lng],15);else{const sb=stationBounds();sb?map.fitBounds(sb):map.setView([46.8,8.2],7);}
+  setTimeout(()=>map.invalidateSize(),60);
+  map.on('click',ev=>put([ev.latlng.lat,ev.latlng.lng]));
+  const close=()=>{map.remove();dlg.remove();};
+  $('#pick-x').onclick=close;
+  $('#pick-ok').onclick=()=>{if(!pos)return;it.lat=pos[0];it.lng=pos[1];close();render();changed();};
+  const search=async()=>{const q=$('#pick-q').value.trim();if(!q)return;const r=$('#pick-r');r.hidden=false;r.innerHTML='<p class="help" style="padding:0 12px">Recherche…</p>';
+    try{const sb=stationBounds();const vb=sb?`&viewbox=${sb[0][1]-.3},${sb[1][0]+.3},${sb[1][1]+.3},${sb[0][0]-.3}`:'';
+      const j=await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=fr&q='+encodeURIComponent(q)+vb)).json();
+      r.innerHTML=j.length?j.map(x=>`<button type="button" data-ll="${x.lat},${x.lon}">${esc(x.display_name)}</button>`).join(''):'<p class="help" style="padding:0 12px">Aucun résultat. Touchez plutôt la carte.</p>';}
+    catch(x){r.innerHTML='<p class="help" style="padding:0 12px">Recherche indisponible. Touchez plutôt la carte.</p>';}};
+  $('#pick-s').onclick=search;$('#pick-q').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();search();}};
+  $('#pick-r').onclick=ev=>{const x=ev.target.closest('[data-ll]');if(!x)return;const [a,b2]=x.dataset.ll.split(',').map(Number);map.setView([a,b2],17);put([a,b2]);$('#pick-r').hidden=true;};
+  if(!pos&&p[0]==='lieux'&&it.id==='hotel'&&(V.hotel?.adresse||V.hotel?.nom)){$('#pick-q').value=[V.hotel.nom,V.hotel.adresse].filter(Boolean).join(', ');search();}
+}
+
 acInit().then(load);
 
 /* ---------- Alertes du voyage (push) ---------- */
