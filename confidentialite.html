@@ -39,7 +39,7 @@ footer a{color:inherit}
 <header><div class="wrap">
   <p class="back"><a href="/">← monaccompagnateur.ca</a></p>
   <h1>Politique de confidentialité</h1>
-  <p class="dates">En vigueur le 6 novembre 2026 · Dernière mise à jour : 6 novembre 2026</p>
+  <p class="dates">En vigueur le 6 novembre 2026 · Dernière mise à jour : 8 novembre 2026</p>
 </div></header>
 
 <main class="wrap">
@@ -50,7 +50,7 @@ footer a{color:inherit}
     <li><b>Aucun compte voyageur.</b> Pour recevoir l’accès à un voyage, l’app demande seulement votre prénom et votre nom, que votre accompagnateur approuve. Ni courriel ni numéro de téléphone. Pas besoin de Facebook ni de WhatsApp.</li>
     <li><b>Aucun cookie, aucune statistique de visite, aucune publicité.</b> Rien n’est vendu ni utilisé pour du profilage.</li>
     <li><b>Ce que vous entrez reste sur votre téléphone</b> : cases cochées, photo de la passe de ski, numéro de chambre, notes.</li>
-    <li><b>La liste du groupe</b> reste sur le téléphone de l’accompagnateur seulement. Elle n’est jamais publiée ni envoyée sur Internet.</li>
+    <li><b>La liste du groupe</b> n’est lisible que sur les téléphones des accompagnateurs du voyage. Quand elle est partagée entre eux, le service n’en garde qu’une copie chiffrée qu’il ne peut pas lire. Elle n’est jamais publiée.</li>
     <li><b>Le contenu du voyage</b> (programme, hôtel, annonces) est chiffré : il ne se lit qu’avec la phrase du voyage.</li>
   </ul>
 </div>
@@ -82,11 +82,12 @@ footer a{color:inherit}
   <p>Cette adresse est effacée quand vous désactivez les alertes, quand elle n’est plus valide, et au plus tard 7 jours après la fin du voyage.</p>
 
   <h3>La demande d’accès à un voyage</h3>
-  <p>Quand vous demandez l’accès à un voyage dans l’app, le service reçoit votre prénom et votre nom, une clé publique créée par votre téléphone et, si vous activez les notifications, l’adresse de notification anonyme fournie par Apple ou Google. Votre accompagnateur voit votre nom pour approuver votre demande; la comparaison avec la liste du groupe se fait sur son téléphone seulement. À l’approbation, la clé du voyage vous est envoyée chiffrée pour votre téléphone : le service ne peut pas la lire. Ces renseignements sont effacés au plus tard 7 jours après la fin du voyage.</p>
+  <p>Quand vous demandez l’accès à un voyage dans l’app, le service reçoit votre prénom et votre nom, une clé publique créée par votre téléphone et, si vous activez les notifications, l’adresse de notification anonyme fournie par Apple ou Google. Votre accompagnateur voit votre nom pour approuver votre demande; la comparaison avec la liste du groupe se fait sur son téléphone seulement, jamais sur le service. À l’approbation, la clé du voyage vous est envoyée chiffrée pour votre téléphone : le service ne peut pas la lire. Ces renseignements sont effacés au plus tard 7 jours après la fin du voyage.</p>
 
   <h3>La liste du groupe (accompagnateur seulement)</h3>
   <p>Pour joindre les voyageurs, faire l’appel et assurer la sécurité du groupe, l’accompagnateur utilise une liste comprenant : genre, nom, prénom, numéro de cellulaire, date de naissance et notes utiles au voyage. La date de naissance sert à repérer les mineurs et à souligner les anniversaires pendant le séjour.</p>
-  <p>Cette liste est fournie par l’organisateur du voyage ou saisie par l’accompagnateur. Elle est gardée <b>uniquement sur le téléphone de l’accompagnateur</b>, protégé par un code de verrouillage. Elle n’est jamais publiée, ni sur le site ni ailleurs, et les autres voyageurs n’y ont pas accès.</p>
+  <p>Cette liste est fournie par l’organisateur du voyage ou saisie par un accompagnateur. Elle n’est lisible que sur les <b>téléphones des accompagnateurs du voyage</b>, protégés par un code de verrouillage. Elle n’est jamais publiée, ni sur le site ni ailleurs, et les voyageurs n’y ont pas accès.</p>
+  <p>Quand plusieurs accompagnateurs encadrent un voyage, la liste et les présences sont partagées entre eux <b>chiffrées de bout en bout</b> (AES-256-GCM). La clé est aléatoire, créée sur le téléphone d’un accompagnateur, et ne passe d’un téléphone à l’autre que chiffrée pour le téléphone qui la reçoit, après comparaison d’un code de vérification. Le service garde une copie chiffrée, qu’il ne peut pas lire, et ne la remet qu’aux comptes accompagnateurs assignés au voyage (double authentification). Un accompagnateur retiré du voyage ne reçoit plus rien : la clé est changée et la liste est effacée de son téléphone à l’ouverture suivante. Chaque coche de présence indique l’accompagnateur qui l’a faite.</p>
 
   <h3>Les comptes des accompagnateurs</h3>
   <p>Chaque accompagnateur a un compte (nom d’usager, mot de passe et double authentification) pour modifier l’app de ses voyages. Le service garde son nom et, s’il les ajoute lui-même, son cellulaire et son courriel; le mot de passe n’est gardé que sous forme d’empreinte. Ces coordonnées sont affichées aux voyageurs de ses voyages, à l’intérieur du contenu chiffré, pour qu’ils puissent le joindre. L’accompagnateur peut les modifier ou les retirer en tout temps; le compte est supprimé à la fin de sa collaboration.</p>
@@ -125,13 +126,13 @@ footer a{color:inherit}
     <li><b>Sur votre téléphone :</b> jusqu’à ce que vous les effaciez ou désinstalliez l’app.</li>
     <li><b>Alertes :</b> au plus tard 7 jours après la fin du voyage.</li>
     <li><b>Demandes d’accès (nom, clé publique du téléphone) :</b> effacées par le service au plus tard 7 jours après la fin du voyage.</li>
-    <li><b>Liste du groupe :</b> effacée du téléphone de l’accompagnateur, ainsi que toute copie du fichier, au plus tard 30 jours après le retour.</li>
+    <li><b>Liste du groupe :</b> la copie chiffrée gardée par le service est effacée au plus tard 7 jours après la fin du voyage; la liste est effacée des téléphones des accompagnateurs, ainsi que toute copie du fichier, au plus tard 30 jours après le retour.</li>
   </ul>
 </div>
 
 <div class="card">
   <h2>6. Sécurité</h2>
-  <p>Le site est servi uniquement en HTTPS. Le contenu du voyage est chiffré avec la phrase du voyage, et la modification de l’app est réservée à l’accompagnateur. La liste du groupe ne quitte pas un téléphone protégé par un code de verrouillage. L’app n’utilise aucun outil de suivi.</p>
+  <p>Le site est servi uniquement en HTTPS. Le contenu du voyage est chiffré avec la phrase du voyage, et la modification de l’app est réservée à l’accompagnateur. La liste du groupe n’est lisible que sur les téléphones des accompagnateurs, protégés par un code de verrouillage : le service n’en voit qu’une copie chiffrée. L’app n’utilise aucun outil de suivi.</p>
 </div>
 
 <div class="card">

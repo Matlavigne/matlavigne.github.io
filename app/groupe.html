@@ -75,12 +75,19 @@ select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10
 .p-row .n{font-weight:700}.p-row .m{font-size:12px;color:var(--muted)}.p-row .t{margin-left:auto;font-size:13px;white-space:nowrap}
 [data-theme=dark] .fete{background:#5a4510;color:#ffe39a}[data-theme=dark] .p-row.on{background:#16301f;border-color:#2f6b41}[data-theme=dark] .pres-count .ok{color:#7fd39a}
 [data-theme=dark] input,[data-theme=dark] textarea,[data-theme=dark] select{background-color:#0f1824;border-color:var(--line)}
+#eq .card{margin-bottom:12px}.eq-l{display:flex;gap:10px;align-items:flex-start}.eq-l>span:first-child{font-size:20px;line-height:1.2}
+.eq-ok{background:#eef7f0;border-color:#b7d8bf}[data-theme=dark] .eq-ok{background:#16301f;border-color:#2f6b41}
+.eq-wait{background:#fdf3d8;border-color:#e0b44a}[data-theme=dark] .eq-wait{background:#3a3014;border-color:#7a6224}
+.eq-code{font:700 26px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;margin:6px 0}
+.eq-dev{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.eq-dev:first-of-type{border-top:0}.eq-dev b{display:block}.eq-dev code{font-weight:700;font-size:15px;letter-spacing:1px}.eq-dev button{margin-left:auto;flex:none}
+.eq-sec{font:600 14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;background:var(--soft);border-radius:10px;padding:10px 12px;margin:8px 0}
+.p-qui{font-size:12px;color:#246b3c;font-weight:600}[data-theme=dark] .p-qui{color:#7fd39a}
 </style>
 </head>
 <body>
 <header><div class="wrap"><a class="back" href="accompagnateur.html">← Accès accompagnateur</a><h1>Mon groupe</h1><p id="g-titre">&nbsp;</p></div></header>
 <main class="wrap">
-  <p class="small">La liste reste <b>sur ce téléphone seulement</b> : elle n’est jamais envoyée sur Internet, ni au site, ni aux voyageurs.</p>
+  <div id="eq"><p class="small">La liste reste <b>sur ce téléphone</b> tant qu’elle n’est pas partagée avec les autres accompagnateurs du voyage.</p></div>
   <div class="card" id="g-empty" hidden>
     <h3>Aucune liste sur ce téléphone</h3>
     <p class="small">Importez un fichier CSV (exporté d’Excel) ou ajoutez les personnes une à une. Colonnes : <b>Genre ; Nom ; Prénom ; Cellulaire ; Date de naissance ; Autre</b>. Une ligne d’en-tête est reconnue; sans en-tête, cet ordre est utilisé.</p>
@@ -116,16 +123,24 @@ select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10
       <div class="pres-count" id="p-count" role="status" aria-live="polite"></div>
       <div class="row" style="gap:8px;flex-wrap:wrap;display:flex;margin:0 0 10px"><button type="button" class="light" id="p-miss" aria-pressed="false">Seulement les absents</button><button type="button" class="light" id="p-reset">Tout décocher</button><button type="button" class="light" id="p-del">Supprimer cet appel</button></div>
       <div id="p-list"></div>
-      <p class="small">Les présences sont gardées sur ce téléphone seulement : chaque accompagnateur fait son propre appel.</p>
+      <p class="small" id="p-note">Les présences sont gardées sur ce téléphone seulement : chaque accompagnateur fait son propre appel.</p>
     </div>
     <div class="card g-tools">
       <h3>Gérer la liste</h3>
       <div class="g-acts"><button type="button" class="light" data-g-import>Importer un CSV</button><button type="button" class="light" id="g-export">Exporter une copie (CSV)</button><button type="button" class="light" id="g-wipe">Effacer la liste</button></div>
-      <p class="small">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. Après le retour (au plus tard 30 jours), touchez « Effacer la liste » et supprimez aussi vos copies du fichier, comme le prévoit la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
+      <p class="small" id="g-tools-n">Gardez une copie du fichier CSV : si les données du téléphone sont effacées ou si vous changez de téléphone, il suffit de le réimporter. Après le retour (au plus tard 30 jours), touchez « Effacer la liste » et supprimez aussi vos copies du fichier, comme le prévoit la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</p>
+    </div>
+    <div class="card" id="eq-cle" hidden>
+      <h3>Clé d’équipe</h3>
+      <p class="small">La liste et les présences sont chiffrées avec une clé aléatoire (AES-256) gardée seulement sur les téléphones des accompagnateurs du voyage. Le serveur conserve une copie chiffrée qu’il ne peut pas lire.</p>
+      <p class="small">Le <b>code de secours</b> est cette clé, écrite en clair. Gardez-le dans votre gestionnaire de mots de passe : il rouvre la liste si tous les téléphones qui ont la clé sont perdus. Ne l’envoyez à personne.</p>
+      <div class="g-acts"><button type="button" class="light" id="eq-sec-b">Afficher le code de secours</button></div>
+      <div id="eq-sec" hidden></div>
     </div>
   </div>
-  <p class="foot">La liste et les présences restent dans cette app, sur ce téléphone : elles ne passent jamais par Internet.<br>© 2026 Mathieu Lavigne · Tous droits réservés</p>
+  <p class="foot" id="foot-n">La liste et les présences restent dans cette app, sur ce téléphone, tant qu’elles ne sont pas partagées.<br>© 2026 Mathieu Lavigne · Tous droits réservés</p>
 </main>
+<script src="equipe.js"></script>
 <script>
 /* Liste du groupe d’un voyage, dans l’app de l’accompagnateur.
    Mêmes clés de stockage que l’ancienne page de l’app du voyage (<voyage>-groupe-local-v1, <voyage>-presences-v1). */
@@ -137,6 +152,7 @@ const LOC='fr-CA';
 const ID=new URLSearchParams(location.search).get('v')||'';
 if(!/^[a-z0-9][a-z0-9-]{1,62}$/.test(ID))location.replace('./');
 const TRIP={id:ID};
+const EQ={mode:'',compte:store.get('monaccompagnateur-compte',''),noms:{},res:null};   // partage avec l’équipe (plus bas)
 let V=store.get('acc-voyage-'+ID,null); // dates du voyage (champs publics), pour l’âge à la fête
 (async()=>{try{const r=await fetch('/'+ID+'/voyage.json',{cache:'no-store'});if(r.ok){const j=await r.json();V={titre:j.titre,datesTexte:j.datesTexte,debut:j.debut,fin:j.fin};store.set('acc-voyage-'+ID,V);}}catch(e){}
   $('#g-titre').textContent=V?[V.titre,V.datesTexte].filter(Boolean).join(' · '):ID;document.title='Mon groupe · '+(V&&V.titre||ID);renderGroupe();})();
@@ -148,7 +164,7 @@ const GRP_LOCAL=TRIP.id+'-groupe-local-v1';
 try{localStorage.removeItem(TRIP.id+'-cle-groupe-v1');}catch(e){}   // ancienne clé (liste publiée), plus utilisée
 let GRP=null,gEditId=null,gPending=null;
 const gLoadLocal=()=>{const g=store.get(GRP_LOCAL,null);return g&&Array.isArray(g.voyageurs)?g:{voyageurs:[]};};
-function gSaveLocal(){GRP.maj=Date.now();store.set(GRP_LOCAL,GRP);try{navigator.storage?.persist?.();}catch(e){}}
+function gSaveLocal(){GRP.maj=Date.now();store.set(GRP_LOCAL,GRP);try{navigator.storage?.persist?.();}catch(e){}changement();}
 const gId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const gNom=p=>[p.prenom,p.nom].filter(Boolean).join(' ')||'(sans nom)';
 const gTri=(x,y)=>String(x.nom||'').localeCompare(String(y.nom||''),'fr')||String(x.prenom||'').localeCompare(String(y.prenom||''),'fr');
@@ -200,7 +216,7 @@ function gFromRows(rows){
 
 function renderGroupe(){
   GRP=gLoadLocal();const n=GRP.voyageurs.length;
-  $('#g-empty').hidden=!!n||!$('#g-edit').hidden||!$('#g-imp').hidden;
+  $('#g-empty').hidden=!!n||!$('#g-edit').hidden||!$('#g-imp').hidden||EQ.mode==='attente';
   $('#g-view').hidden=!n;
   if(n){drawGroupe();if(gMode==='pres')drawPres();}
 }
@@ -251,7 +267,7 @@ $('#g-export').addEventListener('click',async()=>{
   try{const f=new File([blob],name,{type:'text/csv'});if(navigator.canShare?.({files:[f]})){await navigator.share({files:[f],title:name});return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
 });
-$('#g-wipe').addEventListener('click',e=>arm(e.target,'Touchez encore pour tout effacer',()=>{try{localStorage.removeItem(GRP_LOCAL);localStorage.removeItem(PRES_KEY);}catch(err){}e.target.textContent='Effacer la liste';$('#g-q').value='';renderGroupe();}));
+$('#g-wipe').addEventListener('click',e=>arm(e.target,EQ.mode==='equipe'?'Touchez encore : effacer pour toute l’équipe':'Touchez encore pour tout effacer',()=>{try{localStorage.removeItem(GRP_LOCAL);localStorage.removeItem(PRES_KEY);}catch(err){}changement();e.target.textContent='Effacer la liste';$('#g-q').value='';renderGroupe();}));
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-g-import]')){$('#g-file').click();return;}
   if(e.target.closest('[data-g-add]')){gOpenEdit(null);return;}
@@ -265,7 +281,7 @@ $('#g-q').addEventListener('input',()=>{if(!GRP||!GRP.voyageurs.length)return;dr
 const PRES_KEY=TRIP.id+'-presences-v1';
 let gMode='liste',pGrp='',pMiss=false;
 const pState=()=>{const s0=store.get(PRES_KEY,null)||{};s0.appels=Array.isArray(s0.appels)?s0.appels:[];return s0;};
-const pSave=s0=>store.set(PRES_KEY,s0);
+const pSave=s0=>{store.set(PRES_KEY,s0);changement();};
 const pDefNom=()=>'Appel du '+new Intl.DateTimeFormat(LOC,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date());
 function pCur(){const s0=pState();let a=s0.appels.find(x=>x.id===s0.cur);if(!a){a={id:Date.now().toString(36),nom:pDefNom(),at:Date.now(),coches:{}};s0.appels.unshift(a);s0.cur=a.id;pSave(s0);}return a;}
 function drawPres(){
@@ -281,7 +297,9 @@ function drawPres(){
   const here=scope.filter(p=>a.coches[p._id]).length,miss=scope.length-here;
   $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}${out.length?` <span class="ex">· ${out.length} exclu${out.length>1?'s':''}</span>`:''}`;
   const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.prenom,p.nom].join(' ')).replace(/-/g,' ').includes(q))).sort(gTri);
-  $('#p-list').innerHTML=(rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}<br><button type="button" class="p-ex" data-pexcl="${esc(p._id)}">Exclure de cet appel</button>${!on&&p.cellulaire?`<span class="t">${gContact(p)}</span>`:''}</span>${''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`)
+  const QUI=EQ.mode==='equipe'&&window.Equipe?Equipe.quiACoche(ID):{};
+  const quiTxt=pid=>{const c=QUI[a.id+'|'+pid];if(!c||!c.par)return '';const n=c.par===EQ.compte?'vous':(EQ.noms[c.par]||c.par);return `<br><span class="p-qui">✓ ${esc(n)} · ${new Intl.DateTimeFormat(LOC,{hour:'2-digit',minute:'2-digit'}).format(new Date(c.t))}</span>`;};
+  $('#p-list').innerHTML=(rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${on?quiTxt(p._id):''}${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}<br><button type="button" class="p-ex" data-pexcl="${esc(p._id)}">Exclure de cet appel</button>${!on&&p.cellulaire?`<span class="t">${gContact(p)}</span>`:''}</span>${''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`)
     +(out.length&&!pMiss?`<p class="g-grp">Exclus de cet appel · ${out.length}</p>`+out.map(p=>`<div class="p-row p-out"><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}</span><button type="button" class="light mini" data-pincl="${esc(p._id)}">Remettre</button></div>`).join(''):'');
   $('#p-miss').setAttribute('aria-pressed',pMiss);$('#p-miss').textContent=pMiss?'Afficher tout le monde':'Seulement les absents';
 }
@@ -300,7 +318,75 @@ $('#p-miss').addEventListener('click',()=>{pMiss=!pMiss;drawPres();});
 let pArm={};const arm=(b,txt,fn)=>{if(!pArm[b.id]){pArm[b.id]=1;const o=b.textContent;b.textContent=txt;setTimeout(()=>{pArm[b.id]=0;b.textContent=o;},3500);return;}pArm[b.id]=0;fn();};
 $('#p-reset').addEventListener('click',e=>arm(e.target,'Touchez encore pour décocher',()=>{const s0=pState();const a=s0.appels.find(x=>x.id===s0.cur);if(a){a.coches={};pSave(s0);}e.target.textContent='Tout décocher';drawPres();}));
 $('#p-del').addEventListener('click',e=>arm(e.target,'Touchez encore pour supprimer',()=>{const s0=pState();s0.appels=s0.appels.filter(x=>x.id!==s0.cur);s0.cur=s0.appels[0]?.id;pSave(s0);e.target.textContent='Supprimer cet appel';drawPres();}));
+
+/* ---------- Partage chiffré avec les autres accompagnateurs du voyage (equipe.js) ---------- */
+let eqTimer=null,eqPoll=null;
+function changement(){
+  if(!window.Equipe)return;
+  try{if(Equipe.noterChangement(ID,EQ.compte)){clearTimeout(eqTimer);eqTimer=setTimeout(()=>synchro(),700);}}catch(e){}
+}
+const enEdition=()=>!$('#g-edit').hidden||!$('#g-imp').hidden;
+async function synchro(){
+  if(!window.Equipe)return;
+  let r;
+  try{r=await Equipe.synchroniser(ID,{creer:true});}
+  catch(x){r={...(EQ.res||{}),creee:false,change:false,rotation:false,mode:EQ.mode==='equipe'?'equipe':'horsligne',erreurSync:x.message};}
+  if(r.moi){EQ.compte=r.moi.username;store.set('monaccompagnateur-compte',EQ.compte);}
+  if(r.membres)EQ.noms=Object.fromEntries(r.membres.map(m=>[m.username,m.nom]));
+  EQ.mode=r.mode==='horsligne'&&EQ.res&&EQ.res.mode==='equipe'?'equipe':r.mode;
+  if(r.mode!=='horsligne')EQ.res=r;
+  dessinerEq(r);
+  if((r.change||r.creee||r.rotation||r.efface)&&!enEdition())renderGroupe();
+}
+function dessinerEq(r){
+  const z=$('#eq'),fmt=t=>new Intl.DateTimeFormat(LOC,{hour:'2-digit',minute:'2-digit'}).format(new Date(t));
+  const autres=(r.membres||[]).filter(m=>m.username!==EQ.compte).map(m=>m.nom);
+  const partagee=EQ.mode==='equipe';
+  $('#eq-cle').hidden=!partagee;
+  $('#p-note').textContent=partagee?'Les présences sont partagées avec les autres accompagnateurs : chaque coche indique qui l’a faite.':'Les présences sont gardées sur ce téléphone seulement : chaque accompagnateur fait son propre appel.';
+  $('#g-tools-n').innerHTML=partagee?'« Effacer la liste » l’efface pour toute l’équipe. Après le retour (au plus tard 30 jours), effacez-la et supprimez aussi vos copies du fichier CSV, comme le prévoit la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>. La copie chiffrée du serveur est supprimée avec le voyage.':$('#g-tools-n').innerHTML;
+  $('#foot-n').firstChild.textContent=partagee?'Liste et présences chiffrées sur les téléphones des accompagnateurs : le serveur ne peut pas les lire.':'La liste et les présences restent dans cette app, sur ce téléphone, tant qu’elles ne sont pas partagées.';
+  if(r.mode==='equipe'||partagee){
+    const att=(r.attente||[]);
+    z.innerHTML=`<div class="card eq-ok" style="padding:12px 14px"><div class="eq-l"><span>🔒</span><span><b>${autres.length?'Partagée et chiffrée avec '+esc(autres.join(', ')):'Liste chiffrée'}</b><br><span class="small">${autres.length?'':'Aucun autre accompagnateur pour ce voyage pour l’instant. '}${r.erreurSync?'Hors ligne : vos changements partiront au retour du réseau.':'À jour à '+fmt(Date.now())}${r.erreur&&!r.erreurSync?' · '+esc(r.erreur):''}</span></span></div></div>`
+      +(att.length?`<div class="card eq-wait"><h3>🔑 En attente de la clé d’équipe</h3><p class="small">Comparez le code avec celui affiché sur le téléphone de la personne (de vive voix ou par texto), puis donnez-lui la clé. Si les codes diffèrent, ne touchez à rien et avisez l’administrateur.</p>${att.map(x=>`<div class="eq-dev"><span><b>${esc(x.nomCompte)}${x.nom?' · '+esc(x.nom):''}</b><span class="small">Code : <code>${esc(x.code)}</code></span></span><button type="button" data-eq-donner="${esc(x.id)}">Donner la clé</button></div>`).join('')}<p class="small" id="eq-msg" style="margin:6px 0 0"></p></div>`:'')
+      +(r.creee?`<div class="card"><p class="small" style="margin:0"><b>Liste partagée créée.</b> Notez le code de secours (carte « Clé d’équipe », en bas) dans votre gestionnaire de mots de passe.</p></div>`:'');
+    return;
+  }
+  if(r.mode==='attente'){
+    const a=r.appareil;$('#g-empty').hidden=true;
+    z.innerHTML=`<div class="card eq-wait"><h3>🔑 En attente de la clé d’équipe</h3>
+      <p class="small">La liste de ce voyage est partagée et chiffrée. Un autre accompagnateur (${esc(autres.join(', ')||'de ce voyage')}) doit ouvrir Mon groupe sur son téléphone et vous donner la clé. Il est averti par notification s’il a activé les alertes.</p>
+      <p class="small" style="margin:8px 0 0">Code de ce téléphone, à lui dicter :</p><div class="eq-code">${esc(a.code)}</div>
+      <details style="margin-top:8px"><summary class="small" style="cursor:pointer">J’ai un code de secours</summary>
+        <div class="pres-new"><input id="eq-sec-in" placeholder="XXXX-XXXX-…" autocomplete="off" autocapitalize="characters" spellcheck="false"><button type="button" id="eq-sec-go">Ouvrir</button></div><p class="small" id="eq-sec-msg"></p></details>
+      <p class="small" style="margin:8px 0 0">En attendant, ce que vous faites ici reste sur ce téléphone et sera fusionné à la liste commune.</p></div>`;
+    $('#eq-sec-go').onclick=async()=>{$('#eq-sec-msg').textContent='…';try{await Equipe.utiliserSecours(ID,$('#eq-sec-in').value);$('#eq-sec-msg').textContent='';await synchro();}catch(x){$('#eq-sec-msg').textContent=x.message;}};
+    return;
+  }
+  const t={retire:'Vous n’êtes plus accompagnateur de ce voyage : la liste partagée a été retirée de ce téléphone.',connexion:'La liste reste sur ce téléphone. Connectez-vous dans l’accès accompagnateur pour la partager, chiffrée, avec les autres accompagnateurs du voyage.',membre:'Vous n’êtes pas accompagnateur de ce voyage : la liste reste sur ce téléphone.','2fa':'Activez la double authentification de votre compte pour partager la liste avec les autres accompagnateurs. En attendant, elle reste sur ce téléphone.'};
+  z.innerHTML=`<p class="small">${r.mode==='horsligne'?'Hors ligne : la liste de ce téléphone est affichée; elle sera partagée au retour du réseau.':esc(t[r.raison]||'La liste reste sur ce téléphone.')}</p>`;
+}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-eq-donner]');if(!b)return;
+  if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Même code? Toucher encore';setTimeout(()=>{if(b.isConnected){delete b.dataset.arm;b.textContent='Donner la clé';}},5000);return;}
+  b.disabled=true;const x=((EQ.res&&EQ.res.attente)||[]).find(y=>y.id===b.dataset.eqDonner);
+  try{await Equipe.donnerCle(ID,[x]);$('#eq-msg')&&($('#eq-msg').textContent='Clé donnée ✓ '+x.nomCompte+' voit maintenant la liste.');setTimeout(synchro,600);}
+  catch(err){b.disabled=false;const m=$('#eq-msg');if(m)m.textContent=err.message;}});
+$('#eq-sec-b').addEventListener('click',async e=>{const z=$('#eq-sec');if(!z.hidden){z.hidden=true;e.target.textContent='Afficher le code de secours';return;}
+  const c=await Equipe.cleLocale(ID);if(!c){z.hidden=false;z.innerHTML='<p class="small">Ce téléphone n’a pas la clé.</p>';return;}
+  z.hidden=false;z.innerHTML=`<div class="eq-sec">${esc(Equipe.codeSecours(c))}</div><div class="g-acts"><button type="button" class="light" id="eq-sec-cp">Copier</button></div><p class="small">Il change si la clé change (par exemple quand un accompagnateur est retiré du voyage) : revenez alors le noter de nouveau.</p>`;
+  e.target.textContent='Masquer le code de secours';
+  $('#eq-sec-cp').onclick=async()=>{try{await navigator.clipboard.writeText(Equipe.codeSecours(c));$('#eq-sec-cp').textContent='Copié ✓';}catch(x){}};});
+function demarrerEq(){
+  if(!window.Equipe)return;
+  synchro();
+  clearInterval(eqPoll);eqPoll=setInterval(()=>{if(!document.hidden)synchro();},25000);
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)synchro();});
+addEventListener('online',()=>synchro());
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(((e.data||{}).kind)==='cle')synchro();});
 renderGroupe();
+demarrerEq();
 </script>
 </body>
 </html>

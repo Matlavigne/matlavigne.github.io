@@ -242,6 +242,55 @@ try {
   r = await call("POST", "/api/acces/decision", { trip: "st-anton-mars2027", decisions: [{ id: dem.id, ok: true, cle: cleCh }] }, ADMIN);
   check(r.json.approuvees === 1 && (await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton)).json.statut === "ok", "accès redonné");
 
+  console.log("\nMon groupe partagé (clé d'équipe)");
+  r = await call("POST", "/api/admin/comptes", { username: "luc.t", nom: "Luc T.", role: "accompagnateur", trips: [] }, ADMIN);
+  { const tmpL = r.json.motDePasse; r = await call("POST", "/api/auth/connexion", { username: "luc.t", password: tmpL }); var luc = r.json.session;
+    await call("POST", "/api/auth/mdp", { ancien: tmpL, nouveau: "luc-nouveau-mdp-1" }, luc); const sec = (await call("POST", "/api/auth/2fa/debut", {}, luc)).json.secret; await call("POST", "/api/auth/2fa/activer", { code: totp(sec) }, luc); }
+  await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["julie.b", "luc.t"] }, ADMIN);
+  const pk = () => ({ x: b64u(32), y: b64u(32) });
+  const envl = () => ({ epk: { x: b64u(32), y: b64u(32) }, iv: b64u(12), data: b64u(80) });
+  const pJ = pk(), pL = pk();
+  check((await call("GET", "/api/equipe?trip=st-anton-mars2027")).status === 401, "équipe : pas sans connexion");
+  check((await call("GET", "/api/equipe?trip=st-anton-mars2027", null, ADMIN)).status === 403, "administrateur non assigné : pas accès à la liste");
+  r = await call("POST", "/api/equipe/appareil", { pub: pJ, nom: "iPhone" }, julie); const aJ = r.json.id;
+  check(r.status === 200 && /^[0-9a-f]{32}$/.test(aJ), `téléphone de Julie enregistré (${r.status} ${r.json.erreur || ""})`);
+  check((await call("POST", "/api/equipe/appareil", { pub: pJ }, luc)).status === 409, "le même téléphone ne peut pas passer à un autre compte");
+  const aL = (await call("POST", "/api/equipe/appareil", { pub: pL, nom: "Android" }, luc)).json.id;
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
+  check(r.status === 200 && r.json.kid === null && r.json.membres.length === 2 && r.json.appareils.length === 2, "équipe : 2 accompagnateurs, 2 téléphones, pas encore de clé");
+  const blob = { iv: b64u(12), data: b64u(300), z: 1 };
+  check((await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, cles: [{ appareil: aL, env: envl() }] }, julie)).status === 400, "nouvelle clé sans son propre téléphone : refusée");
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }] }, julie);
+  check(r.status === 200 && r.json.version === 1, `Julie crée la liste chiffrée (${r.status} ${r.json.erreur || ""})`);
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
+  check(r.json.kid === "a".repeat(16) && r.json.cle && r.json.appareils.find((a) => a.id === aJ).cle && !r.json.appareils.find((a) => a.id === aL).cle, "Julie a sa clé; Luc pas encore");
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aL, null, luc);
+  check(r.json.cle === null, "Luc attend la clé");
+  r = await call("GET", "/api/groupe?trip=st-anton-mars2027", null, luc);
+  check(r.json.blob && r.json.blob.data === blob.data, "Luc reçoit le bloc chiffré (illisible sans la clé)");
+  check((await call("GET", "/api/groupe?trip=st-anton-mars2027&depuis=1", null, luc)).json.inchange === true, "rien de nouveau : réponse courte");
+  check((await call("POST", "/api/equipe/cles", { trip: "st-anton-mars2027", kid: "b".repeat(16), cles: [{ appareil: aL, env: envl() }] }, julie)).status === 409, "enveloppe pour une ancienne clé : refusée");
+  r = await call("POST", "/api/equipe/cles", { trip: "st-anton-mars2027", kid: "a".repeat(16), cles: [{ appareil: aL, env: envl() }] }, julie);
+  check(r.status === 200, "Julie donne la clé au téléphone de Luc");
+  check((await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aL, null, luc)).json.cle, "Luc a la clé");
+  check((await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 0, kid: "a".repeat(16), blob }, luc)).status === 409, "version dépassée : conflit (il faut fusionner)");
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 1, kid: "a".repeat(16), blob: { ...blob, data: b64u(310) } }, luc);
+  check(r.status === 200 && r.json.version === 2, "Luc enregistre ses présences");
+  // Luc retiré du voyage : il faut changer de clé, et il ne reçoit plus rien
+  await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["julie.b"] }, ADMIN);
+  check((await call("GET", "/api/groupe?trip=st-anton-mars2027", null, luc)).status === 403, "accompagnateur retiré : plus de liste");
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
+  check(r.json.rotation === true, "le téléphone de Julie voit qu'il faut changer la clé");
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }, { appareil: aL, env: envl() }] }, julie);
+  check(r.status === 400, "la nouvelle clé ne peut pas aller à un téléphone retiré");
+  r = await call("PUT", "/api/groupe", { trip: "st-anton-mars2027", base: 2, kid: "c".repeat(16), blob, cles: [{ appareil: aJ, env: envl() }] }, julie);
+  check(r.status === 200, "nouvelle clé : liste rechiffrée");
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aJ, null, julie);
+  check(r.json.rotation === false && r.json.kid === "c".repeat(16) && r.json.cle, "plus besoin de changer la clé");
+  await call("POST", "/api/admin/acces", { trip: "st-anton-mars2027", comptes: ["julie.b", "luc.t"] }, ADMIN);
+  r = await call("GET", "/api/equipe?trip=st-anton-mars2027&appareil=" + aL, null, luc);
+  check(r.json.cle === null, "Luc réassigné : l'ancienne clé ne lui sert plus, il doit recevoir la nouvelle");
+
   console.log("\nSuppression");
   put(`_app/icones/${nv.id}.svg`, "<svg/>"); put(`_app/i18n/voyages/${nv.id}.json`, "{}"); put(`${nv.id}/index.html`, "x");
   r = await call("POST", "/api/admin/supprimer", { trip: nv.id }, ADMIN);

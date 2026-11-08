@@ -192,6 +192,7 @@ button.danger{color:var(--red);border-color:#e3b7b2}
   <p class="foot" data-i>Les listes de groupe restent sur le téléphone de l’accompagnateur : elles ne passent jamais par Internet.</p>
   <p class="foot">© 2026 Mathieu Lavigne · Tous droits réservés</p>
 </main>
+<script src="equipe.js"></script>
 <script>
 const WORKER='https://api.monaccompagnateur.ca';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
@@ -342,7 +343,10 @@ async function ouvrirDem(id){DEMV=DATA.voyages.find(x=>x.id===id);if(!DEMV)retur
   SEL=null;try{const r=await fetch('/'+id+'/voyage.json',{cache:'no-store'});if(r.ok){const j=await r.json();SEL=j.chiffre?j.chiffre.salt:null;}}catch(e){}
   $('#dem-t').textContent=(LANG==='en'?'Access requests · ':'Demandes d’accès · ')+(DEMV.appCourt||DEMV.titre);$('#dem-msg').textContent='';$('#dem-list').innerHTML='<p class="small">…</p>';
   vue('v-dem');scrollTo(0,0);
+  // La liste du groupe partagée par l’équipe (si ce téléphone a la clé) sert à repérer les bons noms
+  const eqSync=window.Equipe?Promise.race([Equipe.synchroniser(id,{creer:false}).catch(()=>null),new Promise(r=>setTimeout(r,6000))]):null;
   try{DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(id))).demandes||[];}catch(x){$('#dem-list').innerHTML=`<p class="small">${esc(x.message)}</p>`;return;}
+  if(eqSync)await eqSync;
   dessinerDem();majTotalDem();
 }
 function majTotalDem(){if(!DATA||!DEMV)return;const v=DATA.voyages.find(x=>x.id===DEMV.id);if(v)v.demandes=DEMS.filter(d=>d.statut==='attente').length;

@@ -1,7 +1,7 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mon accompagnateur » (voyageurs, accompagnateurs, administration) : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
-const CACHE = "app-v5";
-const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html"];
+const CACHE = "app-v6";
+const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html", "equipe.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n.startsWith("app-") && n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {
@@ -21,6 +21,8 @@ var EN = {
   "Votre voyage": "Your trip",
   "Alertes des demandes d'accès activées sur ce téléphone.": "Access request alerts are on for this phone.",
   "Demande d'accès": "Access request",
+  "Clé d'équipe reçue : touchez pour ouvrir Mon groupe.": "Team key received: tap to open My group.",
+  "Mon groupe": "My group",
 };
 function tellClients(msg) {
   return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (l) { l.forEach(function (c) { c.postMessage(msg); }); });
@@ -47,6 +49,7 @@ self.addEventListener("push", function (event) {
     .then(function (lang) {
       if (lang === "en") {
         if (data.kind === "demande" && data.nom) options.body = data.n > 1 ? data.nom + " is asking for access (" + data.n + " requests waiting)." : data.nom + " is asking for access to the trip.";
+        else if (data.kind === "cle" && data.nom) options.body = data.nom + " is waiting for the My group team key.";
         else options.body = EN[options.body] || options.body;
         title = EN[title] || title;
       }

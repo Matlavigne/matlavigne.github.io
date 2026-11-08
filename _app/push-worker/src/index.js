@@ -10,6 +10,7 @@
 // L'app déchiffre l'annonce elle-même quand le voyageur touche la notification.
 
 import { sendPush, b64urlDecode } from "./webpush.js";
+import { handleEquipe, supprimerEquipe } from "./equipe.js";
 import { handleAuth, handleComptes, sessionUser, userCanEdit, requireAdminSession, purgeSessions, ensureAuthSchema } from "./auth.js";
 
 const KINDS = {
@@ -88,7 +89,7 @@ function corsHeaders(env, req) {
   const h = { Vary: "Origin" };
   if (origin) {
     h["Access-Control-Allow-Origin"] = origin;
-    h["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+    h["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS";
     h["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
     h["Access-Control-Max-Age"] = "86400";
   }
@@ -465,11 +466,16 @@ async function alerterAccompagnateurs(env, trip, t, nom) {
   let dest = us.filter((u) => u.actif && JSON.parse(u.trips || "[]").includes(trip)).map((u) => u.username);
   if (!dest.length) dest = us.filter((u) => u.actif && u.role === "admin").map((u) => u.username);
   if (!dest.length) return 0;
-  const subs = (await env.DB.prepare(`SELECT * FROM comptes_subs WHERE username IN (${dest.map(() => "?").join(",")})`).bind(...dest).all()).results || [];
-  if (!subs.length) return 0;
   const att = await env.DB.prepare("SELECT COUNT(*) AS n FROM demandes WHERE trip = ? AND statut = 'attente'").bind(trip).first();
   const n = att.n || 1;
-  const msg = { title: t.title || "Demande d'accès", body: n > 1 ? `${nom} demande l'accès (${n} demandes en attente).` : `${nom} demande l'accès au voyage.`, nom, n, url: `/app/accompagnateur.html#dem=${encodeURIComponent(trip)}`, tag: `demande:${trip}`, kind: "demande", id: trip };
+  return notifierComptes(env, dest, { title: t.title || "Demande d'accès", body: n > 1 ? `${nom} demande l'accès (${n} demandes en attente).` : `${nom} demande l'accès au voyage.`, nom, n, url: `/app/accompagnateur.html#dem=${encodeURIComponent(trip)}`, tag: `demande:${trip}`, kind: "demande", id: trip });
+}
+// Notification sur les téléphones de ces comptes (alertes activées dans l'accès accompagnateur)
+async function notifierComptes(env, usernames, msg) {
+  const c = cfg(env);
+  if (!c.vapid.privateJwk || !usernames.length) return 0;
+  await ensureDemandes(env);
+  const subs = (await env.DB.prepare(`SELECT * FROM comptes_subs WHERE username IN (${usernames.map(() => "?").join(",")})`).bind(...usernames).all()).results || [];
   let ok = 0;
   const vus = new Set();
   for (const s of subs) {
@@ -692,6 +698,7 @@ async function handle(req, env) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(env, req) });
   if (path.startsWith("/api/auth/")) return json(env, req, await handleAuth(req, env, path, readJson));
   if (path.startsWith("/api/acces/")) return json(env, req, await handleAcces(req, env, path, url));
+  if (path === "/api/equipe" || path.startsWith("/api/equipe/") || path === "/api/groupe") return json(env, req, await handleEquipe(req, env, path, url, { HttpError, sessionUser, requireTrip, readJson, notifierComptes }));
   if (path === "/api/voyage/accompagnateurs" && req.method === "GET") {
     // Pour l'éditeur : coordonnées des accompagnateurs du voyage, à inscrire dans le contenu chiffré
     const trip = url.searchParams.get("trip") || "";
@@ -890,6 +897,7 @@ async function purgeTrip(env, trip) {
     env.DB.prepare("DELETE FROM subscriptions WHERE trip = ?").bind(trip),
   ]);
   try { await env.DB.prepare("DELETE FROM demandes WHERE trip = ?").bind(trip).run(); } catch (e) { /* table absente */ }
+  await supprimerEquipe(env, trip);
 }
 
 export async function runDue(env, now = Date.now()) {

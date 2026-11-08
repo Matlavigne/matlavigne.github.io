@@ -221,3 +221,13 @@ Les apps appellent `https://api.monaccompagnateur.ca` (domaine monaccompagnateur
 - Alertes des demandes : l'accompagnateur touche « Activer » (liste de ses voyages ou Réglages) dans l'app installée; `POST /api/acces/alertes` garde l'abonnement de ce téléphone (table `comptes_subs`). Chaque nouvelle demande avertit les accompagnateurs du voyage, ou les administrateurs s'il n'y en a aucun. La notification ouvre la liste des demandes du voyage.
 - Retirer un accès : « Déjà traitées » › Retirer (`decision` avec `retirer: true`). Statut `retire`, plus de clé, désabonné des alertes du voyage; l'app du voyageur efface le voyage (clé et contenu) à sa prochaine ouverture. « Redonner » le rétablit.
 - Changement de phrase : chaque approbation retient le sel de la clé envoyée (`sel`). Si la phrase change dans l'éditeur, la page des demandes l'indique et « Leur envoyer la nouvelle clé » la rechiffre pour chaque voyageur approuvé; leur app la reprend à la prochaine ouverture. Les personnes retirées ne la reçoivent pas : c'est la coupure certaine.
+
+## Mon groupe partagé entre accompagnateurs (chiffré de bout en bout)
+
+- `app/equipe.js` (dans Mon groupe et l'accès accompagnateur). Clé d'équipe : 32 octets aléatoires, AES-256-GCM, gardée seulement sur les téléphones (IndexedDB `equipe-<voyage>`).
+- Chaque téléphone a sa paire ECDH P-256 (`equipe-appareil`, partie privée non exportable) enregistrée sur le compte (`POST /api/equipe/appareil`, table `equipe_appareils`).
+- Le premier accompagnateur qui ouvre Mon groupe crée la clé et la copie chiffrée (`PUT /api/groupe`, table `groupes`). Un nouveau téléphone attend : un collègue compare le code de vérification (calculé des deux côtés à partir de la clé publique) et touche « Donner la clé » (`POST /api/equipe/cles`, enveloppes ECDH dans `equipe_cles`). Le collègue est averti par notification (alertes des demandes activées).
+- Accès réservé aux comptes assignés au voyage avec double authentification (l'administrateur non assigné n'y a pas accès). Un accompagnateur retiré : `GET /api/equipe` répond `rotation`, le premier téléphone restant change la clé et rechiffre; la liste s'efface du téléphone retiré.
+- Fusion : chaque fiche, appel et coche porte l'heure et l'auteur du changement; les écritures simultanées sont fusionnées (conflit 409, fusion, renvoi). Liste compressée (gzip) avant chiffrement.
+- Code de secours : la clé elle-même en base 32 (carte « Clé d'équipe »), pour rouvrir la liste si tous les téléphones sont perdus.
+- Copie chiffrée, enveloppes et attentes effacées avec le voyage (`purgeTrip`, 7 jours après la fin).
