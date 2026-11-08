@@ -86,7 +86,8 @@ export async function sessionUser(env, req) {
 // Peut modifier ce voyage? (admin avec double authentification, ou accompagnateur à qui le voyage est confié)
 export function userCanEdit(r, trip) {
   if (!r || r.must_change) return false;
-  if (r.role === "admin") return !!r.totp_on;
+  if (!r.totp_on) return false; // double authentification obligatoire pour tous les comptes
+  if (r.role === "admin") return true;
   return JSON.parse(r.trips || "[]").includes(trip);
 }
 export async function requireAdminSession(env, req) {
@@ -190,10 +191,8 @@ export async function handleAuth(req, env, path, readJson) {
     return { ok: true, codesSecours: codes, profil: U({ ...me, totp_on: 1 }) };
   }
   if (path === "/api/auth/2fa/retirer" && req.method === "POST") {
-    if (me.role === "admin") throw new AuthError(403, "Obligatoire pour l'administrateur");
-    if (!(await checkPw(body.motDePasse, me.pw))) throw new AuthError(403, "Mot de passe incorrect");
-    await env.DB.prepare("UPDATE users SET totp = NULL, totp_on = 0, secours = NULL WHERE username = ?").bind(me.username).run();
-    return { ok: true };
+    // Obligatoire pour tous : seul l'administrateur peut la réinitialiser (téléphone perdu), et elle est redemandée à la connexion suivante
+    throw new AuthError(403, "La double authentification est obligatoire pour tous les comptes");
   }
   throw new AuthError(404, "Introuvable");
 }

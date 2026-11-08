@@ -87,7 +87,7 @@ if (process.env.SERVIR) {
 { // administrateur avec double authentification
   const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const dec = (s) => { let bits = 0, v = 0; const o = []; for (const c of s) { v = (v << 5) | B32.indexOf(c); bits += 5; if (bits >= 8) { o.push((v >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(o); };
-  const totp = (sec) => { const m = Buffer.alloc(8); m.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000))); const h = crypto.createHmac("sha1", dec(sec)).update(m).digest(); const o = h[19] & 15; return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, "0"); };
+  var totp = (sec) => { const m = Buffer.alloc(8); m.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000))); const h = crypto.createHmac("sha1", dec(sec)).update(m).digest(); const o = h[19] & 15; return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, "0"); };
   let r = await call("POST", "/api/auth/premier-admin", { jeton: ADMIN_TOKEN, username: "admin", password: "mot-de-passe-test" });
   ADMIN = r.json.session;
   r = await call("POST", "/api/auth/2fa/debut", {}, ADMIN);
@@ -164,6 +164,7 @@ try {
   const julie = r.json.session;
   check((await call("GET", "/api/mes-voyages", null, julie)).status === 428, "mot de passe temporaire : il faut d'abord le changer");
   await call("POST", "/api/auth/mdp", { ancien: tmp, nouveau: "julie-nouveau-mdp" }, julie);
+  { const sec = (await call("POST", "/api/auth/2fa/debut", {}, julie)).json.secret; await call("POST", "/api/auth/2fa/activer", { code: totp(sec) }, julie); }
   r = await call("GET", "/api/mes-voyages", null, julie);
   check(r.status === 200 && r.json.voyages.length === 1 && r.json.voyages[0].id === "st-anton-mars2027" && r.json.profil.nom === "Julie B.", "accompagnateur : seulement ses voyages");
 

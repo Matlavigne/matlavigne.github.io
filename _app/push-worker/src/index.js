@@ -194,6 +194,7 @@ async function requireEditor(env, req, trip) {
     const u = await sessionUser(env, req);
     if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
     if (userCanEdit(u, trip)) return;
+    if (!u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
     throw new HttpError(403, "Ce compte n'a pas accès à ce voyage");
   }
   let tokens = {};
@@ -432,7 +433,7 @@ async function mesVoyages(env, req) {
   if (!u) throw new HttpError(401, "Session expirée : reconnectez-vous");
   if (u.must_change) throw new HttpError(428, "Changez d'abord votre mot de passe temporaire");
   const admin = u.role === "admin";
-  if (admin && !u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
+  if (!u.totp_on) throw new HttpError(428, "Activez d'abord la double authentification");
   const mine = new Set(JSON.parse(u.trips || "[]"));
   const [vFiles, all] = await Promise.all([ghDir(env, "_app/voyages"), trips(env)]);
   const ids = vFiles.filter((f) => f.name.endsWith(".json")).map((f) => f.name.slice(0, -5)).filter((id) => (admin || mine.has(id)) && !(all[id] || {}).supprime);

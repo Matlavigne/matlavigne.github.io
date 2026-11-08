@@ -108,6 +108,12 @@ input{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--lin
     </form>
   </section>
 
+  <section class="card" id="v-2fa" hidden>
+    <h2 data-i>Double authentification</h2>
+    <p class="small" data-i>Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.</p>
+    <p style="margin:12px 0 0"><a class="btn" href="/admin/" data-i>Activer maintenant</a></p>
+  </section>
+
   <section id="v-app" hidden>
     <div class="who"><span id="qui"></span><a href="#" id="b-out" data-i>Se déconnecter</a></div>
     <div id="list"></div>
@@ -158,7 +164,7 @@ const EN={
 'Mon compte':'My account','Mot de passe et double authentification se gèrent sur la page du compte.':'Password and two-step verification are managed on the account page.',
 'Gérer mon compte':'Manage my account','Installer cette app':'Install this app',
 'iPhone : dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Android : menu ⋮ de Chrome, puis « Installer l’application ».':'iPhone: in Safari, tap Share, then “Add to Home Screen”. Android: Chrome ⋮ menu, then “Install app”.',
-'← Mes voyages':'← My trips','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
+'← Mes voyages':'← My trips','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
 'Les listes de groupe restent sur le téléphone de l’accompagnateur : elles ne passent jamais par Internet.':'Group lists stay on the trip leader’s phone: they never go over the Internet.',
 'App du voyage':'Trip app','Éditeur':'Editor','Mon groupe':'My group','Partager l’app':'Share the app',
 'Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming','Terminé':'Over','Clos':'Closed',
@@ -180,7 +186,7 @@ function msg(t,c){const m=$('#m');if(!t){m.hidden=true;return;}m.hidden=false;m.
 async function api(method,path,body,auth=true){
   const r=await fetch(WORKER+path,{method,headers:{'Content-Type':'application/json',...(auth&&SESSION?{Authorization:'Bearer '+SESSION}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;throw e;}return j;}
-const VUES=['v-wait','v-login','v-code','v-mdp','v-app','v-reglages'];
+const VUES=['v-wait','v-login','v-code','v-mdp','v-2fa','v-app','v-reglages'];
 function vue(id){VUES.forEach(v=>{$('#'+v).hidden=v!==id;});$('#gear').hidden=!(id==='v-app'||id==='v-reglages');$('#gear').setAttribute('aria-pressed',id==='v-reglages');}
 
 $('#login-f').addEventListener('submit',async e=>{e.preventDefault();msg('');
@@ -204,7 +210,7 @@ async function demarrer(){
   try{PROFIL=(await api('GET','/api/auth/moi')).profil;}
   catch(x){if(x.status===401){setSession('');vue('v-login');return;}msg((LANG==='en'?'Cannot reach the service: ':'Impossible de joindre le service : ')+esc(x.message),'err');vue('v-login');return;}
   if(PROFIL.doitChanger){$('#mdp-user').value=PROFIL.username;vue('v-mdp');return;}
-  if(PROFIL.role==='admin'&&!PROFIL.deuxEtapes){msg(LANG==='en'?'Turn on two-step verification on the <a href="/admin/">account page</a> first.':'Activez d’abord la double authentification sur la <a href="/admin/">page du compte</a>.','warn');vue('v-login');return;}
+  if(!PROFIL.deuxEtapes){vue('v-2fa');return;}
   $('#qui').innerHTML=(LANG==='en'?'Signed in: ':'Connecté : ')+'<b>'+esc(PROFIL.nom)+'</b>';
   vue('v-app');
   try{DATA=await api('GET','/api/mes-voyages');}catch(x){msg(esc(x.message),'err');return;}

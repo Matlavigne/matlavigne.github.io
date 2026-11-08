@@ -217,7 +217,7 @@ async function auth(method,path,body,withSes=true){const h={'Content-Type':'appl
   const j=await r.json().catch(()=>({}));if(!r.ok){const e=Error(j.erreur||('Erreur '+r.status));e.status=r.status;e.data=j;throw e;}return j;}
 function acView(){const on=!!(sesGet()&&PROFIL);$('#ac-out').hidden=on;$('#ac-in').hidden=!on;
   if(on){const ok=PROFIL.role==='admin'||(PROFIL.trips||[]).includes(TRIP.id);
-    $('#ac-who').innerHTML='Connecté : <b>'+esc(PROFIL.nom)+'</b> ('+esc(PROFIL.username)+(PROFIL.role==='admin'?', administrateur':'')+').'+(ok?'':' <b>Ce voyage ne vous est pas attribué</b> : demandez l’accès au responsable de l’app.')+(PROFIL.role==='admin'&&!PROFIL.deuxEtapes?' Activez la double authentification dans « Mon compte » pour pouvoir publier.':'');
+    $('#ac-who').innerHTML='Connecté : <b>'+esc(PROFIL.nom)+'</b> ('+esc(PROFIL.username)+(PROFIL.role==='admin'?', administrateur':'')+').'+(ok?'':' <b>Ce voyage ne vous est pas attribué</b> : demandez l’accès au responsable de l’app.')+(!PROFIL.deuxEtapes?' <b>Activez la double authentification</b> (obligatoire) dans « Mon compte » pour pouvoir publier.':'');
     $('#ac-mdpf').hidden=!PROFIL.doitChanger;}
   $('#ek-old').open=!on&&!!ekGet();}
 async function acOpen(r){sesSet(r.session);PROFIL=r.profil;DEFI=null;$('#ac-codef').hidden=true;$('#ac-login').hidden=false;acView();ekOff=false;await load();checkWrite();}
@@ -347,7 +347,7 @@ async function checkWrite(){
   $('#ek-msg').textContent='';$('#cx-msg').textContent='';
   const ses=!!sesGet();
   if(MODE()==='cle'){canWrite=remoteOk&&!(ses&&PROFIL&&PROFIL.doitChanger);$('#cx-state').textContent=canWrite?(ses&&PROFIL?'✓ '+PROFIL.nom:'✓ connecté'):(ses?(PROFIL&&PROFIL.doitChanger?'mot de passe à changer':'accès refusé'):'clé refusée');
-    $('#ek-msg').textContent=canWrite?'Vous pouvez publier ce voyage.':ses?(PROFIL&&PROFIL.doitChanger?'Changez votre mot de passe temporaire pour pouvoir publier.':'Votre compte ne peut pas publier ce voyage.'):'La clé n’a pas été acceptée pour ce voyage.';if(!canWrite)$('#s-connexion').open=true;return;}
+    $('#ek-msg').textContent=canWrite?'Vous pouvez publier ce voyage.':ses?(PROFIL&&PROFIL.doitChanger?'Changez votre mot de passe temporaire pour pouvoir publier.':PROFIL&&!PROFIL.deuxEtapes?'Activez la double authentification (« Mon compte ») pour pouvoir publier.':'Votre compte ne peut pas publier ce voyage.'):'La clé n’a pas été acceptée pour ce voyage.';if(!canWrite)$('#s-connexion').open=true;return;}
   if(!cx.token){canWrite=false;$('#cx-state').textContent='lecture seule';$('#ek-msg').textContent=TRIP.push?'Connectez-vous avec votre compte pour pouvoir publier.':'Entrez le jeton GitHub pour pouvoir publier.';$('#s-connexion').open=true;return;}
   try{const r=await api('');if(!r.ok)throw Error(r.status);const j=await r.json();canWrite=!!j.permissions?.push;
     $('#cx-state').textContent=canWrite?'✓ connecté (administrateur)':'lecture seule';

@@ -177,7 +177,7 @@ Les nouvelles stations se préparent encore à la main (fiche `_app/stations/<id
 Chaque accompagnateur a son compte; l'administrateur lui confie un ou plusieurs voyages. La même connexion sert à `/admin` et à l'éditeur de chaque voyage (session partagée sur monaccompagnateur.ca).
 
 - **Administrateur** : double authentification obligatoire (app d'authentification : Google Authenticator, 1Password, Authy…). Session de 12 h.
-- **Accompagnateur** : publie seulement les voyages qui lui sont confiés. Double authentification facultative (« Mon compte »). Session de 30 jours.
+- **Accompagnateur** : publie seulement les voyages qui lui sont confiés. Double authentification obligatoire aussi (activée à la première connexion; impossible de la retirer soi-même, l'administrateur peut la réinitialiser). Session de 30 jours.
 - Mot de passe temporaire à la création ou à la réinitialisation : la personne le remplace à sa première connexion (10 caractères minimum).
 - 5 essais ratés : compte bloqué 15 minutes. Codes de secours (8, à usage unique) remis à l'activation de la double authentification.
 - Rien n'est stocké en clair : mots de passe (PBKDF2), sessions et codes de secours (SHA-256) dans la base D1.

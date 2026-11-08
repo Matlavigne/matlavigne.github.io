@@ -211,11 +211,11 @@ $('#premier-f').addEventListener('submit',async e=>{e.preventDefault();
 function ouvrir(r){setSession(r.session);PROFIL=r.profil;suite();}
 $('#b-out').onclick=async()=>{try{await api('POST','/api/auth/deconnexion',{});}catch(x){}setSession('');PROFIL=null;msg('');vue('v-login');};
 
-/* Étapes obligatoires : mot de passe temporaire, puis double authentification pour un administrateur */
+/* Étapes obligatoires : mot de passe temporaire, puis double authentification (tous les comptes) */
 function suite(){
   if(!PROFIL)return vue('v-login');
   if(PROFIL.doitChanger)return formMdp(true);
-  if(PROFIL.role==='admin'&&!PROFIL.deuxEtapes)return form2fa(true);
+  if(!PROFIL.deuxEtapes)return form2fa(true);
   vue('v-app');$('#qui').innerHTML='Connecté : <b>'+esc(PROFIL.nom)+'</b> ('+(PROFIL.role==='admin'?'administrateur':'accompagnateur')+')';
   $('#tabs').hidden=PROFIL.role!=='admin';$('#b-new').hidden=PROFIL.role!=='admin';
   onglet('voyages');chargerTout();
@@ -231,12 +231,13 @@ $('#mdp-f').addEventListener('submit',async e=>{e.preventDefault();
   catch(x){msg(esc(x.message),'err');}});
 async function form2fa(force){
   vue('v-2fa');const z=$('#tfa');
-  z.innerHTML=`<p class="small">${force?'Obligatoire pour un compte administrateur. ':''}Installez une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password, Apple Mots de passe…), puis scannez ce code.</p><p class="small">Chargement…</p>`;
+  z.innerHTML=`<p class="small">${force?'Obligatoire pour tous les comptes : elle protège l’éditeur des voyages. ':''}Installez une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password, Apple Mots de passe…), puis scannez ce code.</p><p class="small">Chargement…</p>`;
   try{const r=await api('POST','/api/auth/2fa/debut',{});
     const q=qrcode(0,'M');q.addData(r.uri);q.make();
-    z.innerHTML=`<p class="small">${force?'Obligatoire pour un compte administrateur. ':''}Installez une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password, Apple Mots de passe…), puis scannez ce code.</p>
+    z.innerHTML=`<p class="small">${force?'Obligatoire pour tous les comptes : elle protège l’éditeur des voyages. ':''}Installez une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password, Apple Mots de passe…), puis scannez ce code.</p>
     <div class="qr">${q.createSvgTag({cellSize:4,margin:2,scalable:true})}</div>
-    <p class="small">Sur le téléphone même, ou sans appareil photo : entrez la clé <span class="secret" style="display:inline-block;padding:2px 6px">${esc(r.secret.replace(/(.{4})/g,'$1 ').trim())}</span></p>
+    <p class="row"><a class="btn light" href="${esc(r.uri)}">Ajouter à l’app d’authentification de ce téléphone</a></p>
+    <p class="small">Sur le téléphone même, ou sans appareil photo : touchez le bouton ci-dessus, ou entrez la clé <span class="secret" style="display:inline-block;padding:2px 6px">${esc(r.secret.replace(/(.{4})/g,'$1 ').trim())}</span></p>
     <form id="tfa-f" class="grid" autocomplete="off"><label class="full">Code à 6 chiffres affiché par l’app<input id="tfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
     <div class="full row"><button type="submit">Activer</button>${force?'':'<button type="button" class="light" id="tfa-annuler">Annuler</button>'}</div></form>`;
     if(!force)$('#tfa-annuler').onclick=()=>suite();
@@ -255,7 +256,7 @@ $('#b-compte').onclick=()=>{onglet('moncompte');
   const z=$('#t-moncompte');
   z.innerHTML=`<h2>Mon compte</h2><p><b>${esc(PROFIL.nom)}</b> · ${esc(PROFIL.username)} · ${PROFIL.role==='admin'?'administrateur':'accompagnateur'}</p>
   <p class="row"><button type="button" class="light" id="mc-mdp">Changer de mot de passe</button>
-  ${PROFIL.deuxEtapes?(PROFIL.role==='admin'?'<span class="tag ok">Double authentification active</span>':'<button type="button" class="light" id="mc-2fa-off">Retirer la double authentification</button>'):'<button type="button" id="mc-2fa">Activer la double authentification</button>'}</p>
+  ${PROFIL.deuxEtapes?'<span class="tag ok">Double authentification active</span>':'<button type="button" id="mc-2fa">Activer la double authentification</button>'}</p>
   <p class="small">Téléphone d’authentification perdu et plus de codes de secours? ${PROFIL.role==='admin'?'Dans le dossier du Worker : <code>npm run secours-admin -- '+esc(PROFIL.username)+'</code>.':'Demandez à l’administrateur de réinitialiser votre double authentification.'}</p>`;
   $('#mc-mdp').onclick=()=>formMdp(false);
   if($('#mc-2fa'))$('#mc-2fa').onclick=()=>form2fa(false);
@@ -341,7 +342,7 @@ $('#nc').addEventListener('submit',async e=>{e.preventDefault();
   catch(x){msg(esc(x.message),'err');}});
 function montrerMdp(u,pw,nouveau){
   const c=COMPTES.find(x=>x.username===u)||{};
-  const texte=`${nouveau?'Votre compte monaccompagnateur.ca est prêt.':'Votre mot de passe monaccompagnateur.ca a été réinitialisé.'}\n- Votre app : ${SITE}/accompagnateur/ (ajoutez-la à l’écran d’accueil de votre téléphone)\n- Nom d’usager : ${u}\n- Mot de passe temporaire : ${pw}\nÀ la première connexion, vous choisirez votre propre mot de passe.`;
+  const texte=`${nouveau?'Votre compte monaccompagnateur.ca est prêt.':'Votre mot de passe monaccompagnateur.ca a été réinitialisé.'}\n- Votre app : ${SITE}/accompagnateur/ (ajoutez-la à l’écran d’accueil de votre téléphone)\n- Nom d’usager : ${u}\n- Mot de passe temporaire : ${pw}\nÀ la première connexion, vous choisirez votre propre mot de passe, puis vous activerez la double authentification : installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone).`;
   const z=$('#cres');z.hidden=false;
   z.innerHTML=`<h2>${nouveau?'Compte créé ✓':'Nouveau mot de passe ✓'}</h2><p class="small">Mot de passe temporaire, affiché une seule fois. La personne le remplace à sa première connexion. Transmettez-le par un canal privé.</p>
   <div class="secret">${esc(pw)}</div><p style="margin-top:12px"><b>Message à envoyer</b></p><textarea readonly>${esc(texte)}</textarea>

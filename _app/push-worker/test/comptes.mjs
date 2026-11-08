@@ -75,9 +75,15 @@ try {
   r = await call("POST", "/api/auth/connexion", { username: "julie.b", password: temp });
   check(r.status === 200 && r.json.session && r.json.profil.doitChanger, "connexion, changement de mot de passe exigé");
   let ju = r.json.session;
-  check((await call("GET", "/api/voyage?trip=st-anton-mars2027", null, ju)).status === 403, "pas d'accès à l'éditeur avant d'avoir changé le mot de passe");
+  check([403, 428].includes((await call("GET", "/api/voyage?trip=st-anton-mars2027", null, ju)).status), "pas d'accès à l'éditeur avant d'avoir changé le mot de passe");
   check((await call("POST", "/api/auth/mdp", { ancien: temp, nouveau: "court" }, ju)).status === 400, "nouveau mot de passe trop court refusé");
   check((await call("POST", "/api/auth/mdp", { ancien: temp, nouveau: "le-nouveau-de-julie" }, ju)).status === 200, "mot de passe changé");
+  r = await call("GET", "/api/voyage?trip=st-anton-mars2027", null, ju);
+  check(r.status === 428, "pas d'accès à l'éditeur tant que la double authentification n'est pas active (obligatoire pour tous)");
+  check((await call("GET", "/api/mes-voyages", null, ju)).status === 428, "pas de liste de voyages non plus");
+  const jsec = (await call("POST", "/api/auth/2fa/debut", {}, ju)).json.secret;
+  check((await call("POST", "/api/auth/2fa/activer", { code: totp(jsec) }, ju)).status === 200, "double authentification activée par l'accompagnatrice");
+  check((await call("POST", "/api/auth/2fa/retirer", { motDePasse: "le-nouveau-de-julie" }, ju)).status === 403, "elle ne peut pas la retirer");
   check((await call("GET", "/api/voyage?trip=st-anton-mars2027", null, ju)).status === 200, "accès à l'éditeur de son voyage");
   check((await call("GET", "/api/voyage?trip=solden-voyage-2027", null, ju)).status === 403, "pas d'accès à un autre voyage");
   check((await call("GET", "/api/admin/comptes", null, ju)).status === 403, "pas d'accès à l'administration");
