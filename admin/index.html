@@ -55,7 +55,7 @@ textarea{font:inherit;font-size:14px;width:100%;min-height:150px;padding:10px;bo
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>Administration des voyages</h1><p>monaccompagnateur.ca · voyages, comptes des accompagnateurs</p></div></header>
+<header><div class="wrap"><p style="margin:0 0 6px;font-size:14px"><a href="/app/accompagnateur.html" style="color:#fff;text-decoration:none;font-weight:600">← Mon accompagnateur</a></p><h1>Administration des voyages</h1><p>monaccompagnateur.ca · voyages, comptes des accompagnateurs</p></div></header>
 <main class="wrap">
   <div id="m" class="msg" hidden></div>
 
@@ -283,7 +283,7 @@ $$('[data-tab]').forEach(b=>b.onclick=()=>onglet(b.dataset.tab));
 const MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 async function chargerTout(){
   if(PROFIL.role!=='admin'){
-    $('#list').innerHTML=`<p class="msg info">Votre app d’accompagnateur : <a href="/accompagnateur/"><b>Mes voyages</b></a>. Ajoutez-la à l’écran d’accueil de votre téléphone.</p>`+PROFIL.trips.length?PROFIL.trips.map(id=>`<div class="v"><span class="t">${esc(id)}</span><span></span><span class="acts"><a class="btn" href="${SITE}/${esc(id)}/editeur.html">Éditeur</a><a class="btn light" href="${SITE}/${esc(id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(id)}/installer.html" target="_blank" rel="noopener">Installation</a></span></div>`).join(''):'<p class="small">Aucun voyage ne vous est confié pour l’instant.</p>';
+    $('#list').innerHTML=`<p class="msg info">Votre app d’accompagnateur : <a href="/app/accompagnateur.html"><b>Mon accompagnateur</b></a>. Ajoutez-la à l’écran d’accueil de votre téléphone.</p>`+PROFIL.trips.length?PROFIL.trips.map(id=>`<div class="v"><span class="t">${esc(id)}</span><span></span><span class="acts"><a class="btn" href="${SITE}/${esc(id)}/editeur.html">Éditeur</a><a class="btn light" href="${SITE}/${esc(id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(id)}/installer.html" target="_blank" rel="noopener">Installation</a></span></div>`).join(''):'<p class="small">Aucun voyage ne vous est confié pour l’instant.</p>';
     return;
   }
   try{[ETAT,{comptes:COMPTES}]=await Promise.all([api('GET','/api/admin/etat'),api('GET','/api/admin/comptes')]);}
@@ -363,7 +363,7 @@ $('#nc').addEventListener('submit',async e=>{e.preventDefault();
   catch(x){msg(esc(x.message),'err');}});
 function montrerMdp(u,pw,nouveau){
   const c=COMPTES.find(x=>x.username===u)||{};
-  const texte=`${nouveau?'Votre compte monaccompagnateur.ca est prêt.':'Votre mot de passe monaccompagnateur.ca a été réinitialisé.'}\n- Votre app : ${SITE}/accompagnateur/ (ajoutez-la à l’écran d’accueil de votre téléphone)\n- Nom d’usager : ${u}\n- Mot de passe temporaire : ${pw}\nÀ la première connexion, vous choisirez votre propre mot de passe, puis vous activerez la double authentification : installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone).`;
+  const texte=`${nouveau?'Votre compte monaccompagnateur.ca est prêt.':'Votre mot de passe monaccompagnateur.ca a été réinitialisé.'}\n- Votre app : ${SITE}/app/ (ajoutez-la à l’écran d’accueil de votre téléphone, puis roue dentée › Accès accompagnateur)\n- Nom d’usager : ${u}\n- Mot de passe temporaire : ${pw}\nÀ la première connexion, vous choisirez votre propre mot de passe, puis vous activerez la double authentification : installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone).`;
   const z=$('#cres');z.hidden=false;
   z.innerHTML=`<h2>${nouveau?'Compte créé ✓':'Nouveau mot de passe ✓'}</h2><p class="small">Mot de passe temporaire, affiché une seule fois. La personne le remplace à sa première connexion. Transmettez-le par un canal privé.</p>
   <div class="secret">${esc(pw)}</div><p style="margin-top:12px"><b>Message à envoyer</b></p><textarea readonly>${esc(texte)}</textarea>

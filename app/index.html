@@ -1,0 +1,291 @@
+<!doctype html>
+<!-- Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c3a78">
+<title>Mon accompagnateur</title>
+<meta name="description" content="Tous vos voyages de ski accompagnés dans une seule app : programme, annonces, pistes et carte.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mon accompagnateur">
+<script>/* Thème partagé avec les apps des voyages : auto, clair ou sombre */
+(function(){var K='monaccompagnateur-theme',p=null;try{p=localStorage.getItem(K);}catch(e){}
+var m=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null;
+function ap(){var d=p==='dark'||(p!=='light'&&!!(m&&m.matches));document.documentElement.setAttribute('data-theme',d?'dark':'light');}
+ap();if(m){if(m.addEventListener)m.addEventListener('change',ap);else if(m.addListener)m.addListener(ap);}
+window.setTheme=function(v){p=v==='dark'||v==='light'?v:null;try{if(p)localStorage.setItem(K,p);else localStorage.removeItem(K);}catch(e){}ap();};
+window.themePref=function(){return p||'auto';};})();</script>
+<style>
+:root{--ink:#16263a;--pine:#13509f;--pbg:#13509f;--hd:#0c3a78;--muted:#5b6878;--paper:#f2f5fa;--line:#d6dee9;--white:#fff;--soft:#e7eef8;--ok-bg:#e3f1e6;--ok:#246b3c;--warn-bg:#fdf3d8;--warn:#6b4a00;--err-bg:#fdeceb;--err:#8c1d18}
+:root[data-theme=dark]{color-scheme:dark;--ink:#e3e9f1;--pine:#86b6f2;--pbg:#2c69bd;--hd:#0a1d3a;--muted:#9babbd;--paper:#0d141e;--line:#2a3747;--white:#172130;--soft:#223041;--ok-bg:#173523;--ok:#8fd6a2;--warn-bg:#352a10;--warn:#f3cd6b;--err-bg:#3d1c1a;--err:#f6a49c}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+a{color:var(--pine)}
+header{background:var(--hd);color:#fff;padding:calc(20px + env(safe-area-inset-top)) 0 18px;position:relative}
+header h1{margin:0;font-size:28px;letter-spacing:-.5px}header p{margin:2px 0 0;opacity:.85;font-size:14px}
+.gear{position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:#ffffff1f;border:0;padding:0;min-height:0;cursor:pointer}
+.gear svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gear[aria-pressed=true]{background:#ffffff40}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+main{padding:16px 0 50px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 12px}
+h2{font-size:21px;margin:0 0 8px;letter-spacing:-.3px}
+.small{font-size:13px;color:var(--muted)}
+button,.btn{font:inherit;font-size:15px;font-weight:600;border:1px solid var(--pbg);background:var(--pbg);color:#fff;border-radius:10px;padding:9px 14px;min-height:44px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button.light,.btn.light{background:var(--white);color:var(--pine)}
+button:disabled{opacity:.55}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input{font:inherit;font-size:17px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);width:100%}
+.msg{border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:14px}
+.msg.err{background:var(--err-bg);color:var(--err)}.msg.ok{background:var(--ok-bg);color:var(--ok)}.msg.info{background:var(--soft);color:var(--ink)}.msg.warn{background:var(--warn-bg);color:var(--warn)}
+.trip{display:block;position:relative;border-radius:18px;overflow:hidden;margin:0 0 12px;min-height:170px;color:#fff;text-decoration:none;background:#0c3a78 center/cover no-repeat;box-shadow:0 2px 10px #0c3a7826}
+.trip:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#061a3af0 0%,#0b3a78a0 55%,#0b3a7820 100%)}
+.trip .in{position:relative;z-index:1;padding:16px 18px;display:flex;flex-direction:column;justify-content:flex-end;min-height:170px}
+.trip h3{margin:0;font-size:26px;letter-spacing:-.5px;line-height:1.1}
+.trip .d{font-size:15px;font-weight:600;margin-top:4px}
+.trip .w{font-size:13px;opacity:.9;margin-top:2px}
+.trip .tag{position:absolute;top:12px;right:12px;z-index:1;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:#ffffffe0;color:#0c3a78}
+.trip .tag.now{background:#e3f1e6;color:#1d5631}
+.trip.past{filter:saturate(.55);min-height:120px}.trip.past .in{min-height:120px}.trip.past h3{font-size:21px}
+.sect{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:2px dashed var(--line);background:transparent;color:var(--pine);border-radius:16px;min-height:60px;font-size:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--white)}
+.seg button{border:0;border-radius:0;min-height:36px;padding:6px 13px;font-size:14px;font-weight:500;background:transparent;color:var(--pine)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--pbg);color:#fff}
+.phrase{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;font-weight:700;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:6px 10px;display:inline-block;margin:4px 0;word-break:break-all}
+.mine{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.mine:first-of-type{border-top:0}
+.mine button{min-height:36px;padding:6px 12px;font-size:14px}
+.mine button.armed{background:#b3261e;border-color:#b3261e;color:#fff}
+.foot{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1 data-i>Mes voyages</h1><p>Mon accompagnateur</p></div>
+  <button type="button" class="gear" id="gear" aria-label="Réglages" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+<main class="wrap">
+  <div id="m" class="msg" hidden></div>
+
+  <section id="v-install" class="card" hidden>
+    <h2 data-i>Installez l’app sur votre téléphone</h2>
+    <p class="small" id="inst-txt"></p>
+    <div id="inst-phrase" hidden>
+      <p class="small" style="margin:8px 0 0" data-i>Sur iPhone, l’app installée vous demandera une fois la phrase du voyage :</p>
+      <div class="row"><span class="phrase" id="inst-ph"></span><button type="button" class="light" id="inst-copy" data-i>Copier la phrase</button></div>
+    </div>
+  </section>
+
+  <section id="v-list">
+    <div id="list"></div>
+    <button type="button" class="add" id="b-add"><span aria-hidden="true">＋</span> <span data-i>Ajouter un voyage</span></button>
+    <div id="passes"></div>
+  </section>
+
+  <section id="v-add" class="card" hidden>
+    <h2 data-i>Ajouter un voyage</h2>
+    <p class="small" data-i>Entrez la phrase du voyage remise par votre accompagnateur (par exemple marmotte-fondue-glacier). Majuscules, accents et espaces n’ont pas d’importance.</p>
+    <form id="add-f" style="display:flex;flex-direction:column;gap:10px;margin-top:10px" autocomplete="off">
+      <input id="add-ph" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Phrase du voyage">
+      <div class="row"><button type="submit" id="add-go" data-i>Ajouter</button><button type="button" class="light" id="add-paste" data-i>Coller</button><button type="button" class="light" id="add-cancel" data-i>Annuler</button></div>
+    </form>
+    <p class="small" id="add-msg" role="status" style="margin:10px 0 0"></p>
+  </section>
+
+  <section id="v-reglages" hidden>
+    <div class="card">
+      <h2 data-i>Apparence</h2>
+      <div class="seg" role="group"><button type="button" data-theme-set="auto">Auto</button><button type="button" data-theme-set="light" data-i>Clair</button><button type="button" data-theme-set="dark" data-i>Sombre</button></div>
+      <p class="small" style="margin:8px 0 0" data-i>Auto : suit le mode clair ou sombre du téléphone.</p>
+    </div>
+    <div class="card">
+      <h2>Langue · Language</h2>
+      <div class="seg" role="group"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
+      <p class="small" style="margin:8px 0 0">Auto : langue du téléphone · Auto: phone language</p>
+    </div>
+    <div class="card">
+      <h2 data-i>Alertes</h2>
+      <p class="small" data-i>Les alertes s’activent dans chaque voyage : ouvrez le voyage, roue dentée ⚙ en haut à droite, « Alertes du voyage ».</p>
+    </div>
+    <div class="card">
+      <h2 data-i>Voyages sur ce téléphone</h2>
+      <div id="mine"></div>
+      <p class="small" style="margin:8px 0 0" data-i>Retirer un voyage efface sa phrase et ses données de ce téléphone. Vous pourrez l’ajouter de nouveau avec sa phrase.</p>
+    </div>
+    <div class="card">
+      <h2 data-i>Accès accompagnateur</h2>
+      <p class="small" data-i>Réservé aux accompagnateurs, avec leur compte : leurs voyages, la liste du groupe et l’éditeur.</p>
+      <p style="margin:10px 0 0"><a class="btn light" href="accompagnateur.html" data-i>Accès accompagnateur</a></p>
+    </div>
+    <p><button type="button" class="light" id="r-back" data-i>← Mes voyages</button></p>
+  </section>
+  <p class="foot"><a href="/confidentialite.html" data-i>Confidentialité</a> · monaccompagnateur.ca<br>© 2026 Mathieu Lavigne · Tous droits réservés</p>
+</main>
+<script>
+const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Langue (même choix que les apps des voyages) ---------- */
+const LANG_KEY='monaccompagnateur-langue';
+const LANG=(()=>{let p=null;try{p=localStorage.getItem(LANG_KEY);}catch(e){}if(p==='fr'||p==='en')return p;return /^fr/i.test(navigator.language||'fr')?'fr':'en';})();
+const EN={
+'Mes voyages':'My trips','Installez l’app sur votre téléphone':'Install the app on your phone','Sur iPhone, l’app installée vous demandera une fois la phrase du voyage :':'On iPhone, the installed app will ask once for the trip passphrase:',
+'Copier la phrase':'Copy passphrase','Ajouter un voyage':'Add a trip',
+'Entrez la phrase du voyage remise par votre accompagnateur (par exemple marmotte-fondue-glacier). Majuscules, accents et espaces n’ont pas d’importance.':'Enter the trip passphrase given by your trip leader (for example marmotte-fondue-glacier). Capitals, accents and spaces don’t matter.',
+'Ajouter':'Add','Coller':'Paste','Annuler':'Cancel','Apparence':'Appearance','Clair':'Light','Sombre':'Dark','Auto : suit le mode clair ou sombre du téléphone.':'Auto: follows the phone’s light or dark mode.',
+'Alertes':'Alerts','Les alertes s’activent dans chaque voyage : ouvrez le voyage, roue dentée ⚙ en haut à droite, « Alertes du voyage ».':'Alerts are turned on in each trip: open the trip, gear ⚙ at the top right, “Trip alerts”.',
+'Voyages sur ce téléphone':'Trips on this phone','Retirer un voyage efface sa phrase et ses données de ce téléphone. Vous pourrez l’ajouter de nouveau avec sa phrase.':'Removing a trip erases its passphrase and data from this phone. You can add it again with its passphrase.',
+'← Mes voyages':'← My trips','Accès accompagnateur':'Trip leader access','Réservé aux accompagnateurs, avec leur compte : leurs voyages, la liste du groupe et l’éditeur.':'For trip leaders, with their account: their trips, the group list and the editor.','Confidentialité':'Privacy','Réglages':'Settings','Retirer':'Remove','Toucher encore pour retirer':'Tap again to remove','Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming',
+'Aucun voyage pour l’instant':'No trip yet','Touchez « Ajouter un voyage » et entrez la phrase reçue de votre accompagnateur.':'Tap “Add a trip” and enter the passphrase from your trip leader.',
+};
+const T=s=>LANG==='en'&&EN[s]?EN[s]:s;
+document.documentElement.lang=LANG;
+$$('[data-i]').forEach(e=>{e.textContent=T(e.textContent.trim());});
+$('#gear').setAttribute('aria-label',T('Réglages'));
+$('#add-ph').placeholder=LANG==='en'?'Trip passphrase':'Phrase du voyage';
+$$('[data-lang]').forEach(b=>{let p=null;try{p=localStorage.getItem(LANG_KEY);}catch(e){}b.setAttribute('aria-pressed',b.dataset.lang===(p==='fr'||p==='en'?p:'auto'));
+  b.onclick=()=>{try{if(b.dataset.lang==='auto')localStorage.removeItem(LANG_KEY);else localStorage.setItem(LANG_KEY,b.dataset.lang);}catch(e){}location.reload();};});
+const markTheme=()=>$$('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.themeSet===themePref()));
+$$('[data-theme-set]').forEach(b=>b.onclick=()=>{setTheme(b.dataset.themeSet);markTheme();});markTheme();
+function msg(t,c){const m=$('#m');if(!t){m.hidden=true;return;}m.hidden=false;m.className='msg '+(c||'info');m.innerHTML=t;scrollTo({top:0,behavior:'smooth'});}
+
+/* ---------- Mes voyages : liste gardée sur ce téléphone ----------
+   Pour chaque voyage, la clé de déchiffrement est rangée exactement comme l’app du voyage la range (<id>-cle-v1) :
+   ouvert depuis cette app, le voyage est déjà déverrouillé. La phrase elle-même n’est jamais gardée. */
+const MV='monaccompagnateur-mes-voyages';
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let MES=store.get(MV,[]);if(!Array.isArray(MES))MES=[];
+const saveMes=()=>store.set(MV,MES);
+let CATALOGUE=[];
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+
+const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
+async function essai(phrase,v){
+  const c=v.chiffre;
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
+  await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(c.iv)},key,unb64(c.data)); // lève une erreur si ce n’est pas la bonne phrase
+  return {salt:c.salt,k:tob64(new Uint8Array(await crypto.subtle.exportKey('raw',key)))};
+}
+async function publicDe(id){const r=await fetch('/'+encodeURIComponent(id)+'/voyage.json',{cache:'no-store'});if(!r.ok)throw Error(r.status);return r.json();}
+function garder(id,v){
+  const pub={id,titre:v.titre,datesTexte:v.datesTexte,debut:v.debut,fin:v.fin,ajoute:Date.now()};
+  const cat=CATALOGUE.find(x=>x.id===id);if(cat)pub.appCourt=cat.appCourt;
+  const i=MES.findIndex(x=>x.id===id);if(i<0)MES.push(pub);else MES[i]={...MES[i],...pub,ajoute:MES[i].ajoute};saveMes();
+}
+/* Ajoute le voyage dont la phrase ouvre le contenu. vise = identifiant connu (lien d’invitation) */
+async function ajouter(phrase,vise){
+  const ids=vise?[vise]:CATALOGUE.map(x=>x.id);
+  if(!ids.length)throw Error(LANG==='en'?'Trip list unavailable: check your Internet connection.':'Liste des voyages indisponible : vérifiez la connexion Internet.');
+  let n=0;
+  for(const id of ids){
+    n++;$('#add-msg').textContent=(LANG==='en'?'Looking for your trip… ':'Recherche de votre voyage… ')+(ids.length>1?`${n}/${ids.length}`:'');
+    let v;try{v=await publicDe(id);}catch(e){continue;}
+    if(!v.chiffre){if(vise){garder(id,v);return id;}continue;}
+    if(!phrase)continue;
+    try{const cle=await essai(phrase,v);store.set(id+'-cle-v1',cle);garder(id,v);return id;}catch(e){}
+  }
+  return null;
+}
+const nomDe=id=>{const x=MES.find(v=>v.id===id)||CATALOGUE.find(v=>v.id===id)||{};return x.appCourt||x.titre||id;};
+
+/* ---------- Affichage ---------- */
+const jour=s=>{const m=String(s||'').match(/^(\d{4})-(\d\d)-(\d\d)/);return m?new Date(+m[1],m[2]-1,+m[3]):null;};
+const fmt=(d,o)=>d.toLocaleDateString(LANG==='en'?'en-CA':'fr-CA',o);
+function plage(v){const a=jour(v.debut),b=jour(v.fin);if(!a||!b)return v.datesTexte||'';
+  const sm=a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth();
+  if(LANG==='en')return sm?`${fmt(a,{month:'long'})} ${a.getDate()}–${b.getDate()}, ${b.getFullYear()}`:`${fmt(a,{month:'short',day:'numeric'})} – ${fmt(b,{month:'short',day:'numeric',year:'numeric'})}`;
+  return sm?`${a.getDate()} au ${fmt(b,{day:'numeric',month:'long',year:'numeric'})}`:`${fmt(a,{day:'numeric',month:'long'})} au ${fmt(b,{day:'numeric',month:'long',year:'numeric'})}`;}
+function etat(v){
+  const now=new Date();now.setHours(0,0,0,0);const a=jour(v.debut),b=jour(v.fin);
+  if(!a||!b)return {k:'futur',txt:'',ord:9e15};
+  const J=864e5,da=Math.round((a-now)/J),db=Math.round((b-now)/J);
+  if(db<0)return {k:'passe',txt:'',ord:-b};
+  if(da<=0){const n=Math.round((now-a)/J)+1,tot=Math.round((b-a)/J)+1;return {k:'cours',txt:LANG==='en'?`Day ${n} of ${tot}`:`Jour ${n} sur ${tot}`,ord:-1e15};}
+  return {k:'futur',txt:da===1?(LANG==='en'?'Departure tomorrow':'Départ demain'):(LANG==='en'?`Departure in ${da} days`:`Départ dans ${da} jours`),ord:+a};
+}
+function carte(v){
+  const e=etat(v),id=encodeURIComponent(v.id);
+  return `<a class="trip ${e.k==='passe'?'past':''}" href="/${id}/" style="background-image:url('/${id}/hero.webp')">
+    ${e.k==='cours'?`<span class="tag now">${T('En cours')}</span>`:e.k==='futur'?`<span class="tag">${T('À venir')}</span>`:''}
+    <div class="in"><h3>${esc(v.appCourt||v.titre||v.id)}</h3><div class="d">${esc(plage(v))}</div>${e.txt?`<div class="w">${esc(e.txt)}</div>`:''}</div></a>`;
+}
+function dessiner(){
+  const vs=MES.map(v=>({v,e:etat(v)}));
+  const act=vs.filter(x=>x.e.k!=='passe').sort((a,b)=>a.e.ord-b.e.ord),pas=vs.filter(x=>x.e.k==='passe').sort((a,b)=>a.e.ord-b.e.ord);
+  $('#list').innerHTML=act.map(x=>carte(x.v)).join('')||(MES.length?'':`<div class="card" style="text-align:center"><p style="margin:0 0 4px"><b>${T('Aucun voyage pour l’instant')}</b></p><p class="small" style="margin:0">${T('Touchez « Ajouter un voyage » et entrez la phrase reçue de votre accompagnateur.')}</p></div>`);
+  $('#passes').innerHTML=pas.length?`<p class="sect">${T('Voyages passés')}</p>`+pas.map(x=>carte(x.v)).join(''):'';
+  $('#mine').innerHTML=MES.map(v=>`<div class="mine"><span>${esc(v.appCourt||v.titre||v.id)}</span><button type="button" class="light" data-retirer="${esc(v.id)}">${T('Retirer')}</button></div>`).join('')||'<p class="small" style="margin:0">—</p>';
+}
+const VUES=['v-list','v-add','v-reglages'];
+function vue(id){VUES.forEach(v=>{$('#'+v).hidden=v!==id;});$('#gear').setAttribute('aria-pressed',id==='v-reglages');scrollTo(0,0);}
+$('#gear').onclick=()=>{msg('');vue($('#v-reglages').hidden?'v-reglages':'v-list');};
+$('#r-back').onclick=()=>vue('v-list');
+$('#b-add').onclick=()=>{msg('');$('#add-msg').textContent='';$('#add-ph').value='';vue('v-add');$('#add-ph').focus();};
+$('#add-cancel').onclick=()=>vue('v-list');
+$('#add-paste').onclick=async()=>{try{$('#add-ph').value=(await navigator.clipboard.readText()).trim();}catch(e){$('#add-ph').focus();}};
+$('#add-f').addEventListener('submit',async e=>{e.preventDefault();
+  const ph=$('#add-ph').value;if(!normPhrase(ph)){$('#add-msg').textContent=LANG==='en'?'Enter the trip passphrase.':'Entrez la phrase du voyage.';return;}
+  $('#add-go').disabled=true;
+  try{const id=await ajouter(ph);
+    if(id){dessiner();vue('v-list');msg((LANG==='en'?'Added: ':'Ajouté : ')+'<b>'+esc(nomDe(id))+'</b>','ok');}
+    else $('#add-msg').textContent=LANG==='en'?'No trip opens with this passphrase. Check it with your trip leader.':'Aucun voyage ne s’ouvre avec cette phrase. Vérifiez-la auprès de votre accompagnateur.';}
+  catch(x){$('#add-msg').textContent=x.message;}
+  $('#add-go').disabled=false;});
+let armed=null;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-retirer]');if(!b)return;const id=b.dataset.retirer;
+  if(armed!==id){armed=id;b.classList.add('armed');b.textContent=T('Toucher encore pour retirer');setTimeout(()=>{if(armed===id){armed=null;dessiner();}},4000);return;}
+  armed=null;MES=MES.filter(v=>v.id!==id);saveMes();
+  try{Object.keys(localStorage).filter(k=>k.startsWith(id+'-')).forEach(k=>localStorage.removeItem(k));}catch(x){}
+  dessiner();});
+$('#inst-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#inst-ph').textContent);$('#inst-copy').textContent=LANG==='en'?'Copied ✓':'Copiée ✓';}catch(e){}};
+
+/* ---------- Lien d’invitation : #cle=la-phrase (&v=voyage) — jamais envoyé au serveur, retiré aussitôt de l’adresse ---------- */
+async function lien(){
+  const h=new URLSearchParams(location.hash.slice(1));const ph=h.get('cle')||'';let vise=h.get('v')||'';
+  if(!ph&&!vise)return '';
+  history.replaceState(null,'',location.pathname);
+  if(vise&&!CATALOGUE.some(c=>c.id===vise))vise='';
+  msg(LANG==='en'?'Adding your trip…':'Ajout de votre voyage…','info');
+  try{const id=await ajouter(ph,vise);
+    if(id){dessiner();vue('v-list');msg((LANG==='en'?'Added to your trips: ':'Ajouté à vos voyages : ')+'<b>'+esc(nomDe(id))+'</b>','ok');}
+    else msg(LANG==='en'?'This link did not open a trip. Ask your trip leader for the passphrase.':'Ce lien n’a ouvert aucun voyage. Demandez la phrase à votre accompagnateur.','err');}
+  catch(x){msg(esc(x.message),'err');}
+  return ph;
+}
+addEventListener('hashchange',()=>{lien().then(ph=>{if(ph&&ios&&!standalone()){$('#inst-phrase').hidden=false;$('#inst-ph').textContent=ph;}});});
+
+/* ---------- Démarrage ---------- */
+async function demarrer(){
+  try{const r=await fetch('liste.json',{cache:'no-store'});if(r.ok)CATALOGUE=(await r.json()).voyages||[];}catch(e){}
+  // Voyages déjà déverrouillés sur ce téléphone (dans cette app) : ajoutés d’office
+  for(const c of CATALOGUE)if(!MES.some(v=>v.id===c.id)&&store.get(c.id+'-cle-v1',null))MES.push({id:c.id,appCourt:c.appCourt,titre:c.titre,ajoute:Date.now()});
+  dessiner();
+  const ph=await lien();
+  // Mise à jour des titres et des dates (gardés pour l’ouverture sans réseau)
+  await Promise.all(MES.map(async m=>{try{const v=await publicDe(m.id);Object.assign(m,{titre:v.titre,datesTexte:v.datesTexte,debut:v.debut,fin:v.fin});const c=CATALOGUE.find(x=>x.id===m.id);if(c)m.appCourt=c.appCourt;}catch(e){}}));
+  // Un voyage supprimé du site disparaît de la liste
+  if(CATALOGUE.length)MES=MES.filter(m=>CATALOGUE.some(c=>c.id===m.id));
+  saveMes();dessiner();
+  if(!standalone()){
+    $('#v-install').hidden=false;
+    $('#inst-txt').textContent=ios?(LANG==='en'?'In Safari, tap Share, then “Add to Home Screen”. All your trips will be in this single app.':'Dans Safari, touchez Partager, puis « Sur l’écran d’accueil ». Tous vos voyages seront dans cette seule app.')
+      :(LANG==='en'?'In Chrome, ⋮ menu, then “Install app”. All your trips will be in this single app.':'Dans Chrome, menu ⋮, puis « Installer l’application ». Tous vos voyages seront dans cette seule app.');
+    if(ph&&ios){$('#inst-phrase').hidden=false;$('#inst-ph').textContent=ph;}
+  }
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+demarrer();
+</script>
+</body>
+</html>

@@ -169,12 +169,12 @@ let failed = false;
 for (const id of only ? [only] : ids) {
   try { build(id, version); } catch (e) { failed = true; console.error(`ERREUR ${id} : ${e.message}`); }
 }
-// Liste publique des voyages pour l'app « Mes voyages » des voyageurs (identifiants et noms seulement, jamais le contenu)
+// Liste publique des voyages pour l'app « Mon accompagnateur » (identifiants et noms seulement, jamais le contenu)
 if (!only) {
   const liste = ids.map((id) => { const T = readJson(path.join(APP, "voyages", `${id}.json`)); return { id, appCourt: T.appCourt, titre: T.titre }; });
-  const lp = path.join(ROOT, "mes-voyages", "liste.json");
+  const lp = path.join(ROOT, "app", "liste.json");
   fs.mkdirSync(path.dirname(lp), { recursive: true });
   const txt = JSON.stringify({ voyages: liste }, null, 1) + "\n";
-  if (!fs.existsSync(lp) || fs.readFileSync(lp, "utf8") !== txt) { fs.writeFileSync(lp, txt); console.log("mes-voyages/liste.json mis à jour"); }
+  if (!fs.existsSync(lp) || fs.readFileSync(lp, "utf8") !== txt) { fs.writeFileSync(lp, txt); console.log("app/liste.json mis à jour"); }
 }
 process.exit(failed ? 1 : 0);

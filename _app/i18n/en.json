@@ -511,7 +511,11 @@
 "Conception et développement de l’app : Mathieu Lavigne": "App design and development: Mathieu Lavigne",
 "© 2026 Mathieu Lavigne, tous droits réservés": "© 2026 Mathieu Lavigne, all rights reserved",
 "Code QR : qrcode-generator © Kazuhiko Arase (licence MIT)": "QR code: qrcode-generator © Kazuhiko Arase (MIT licence)",
-"QR Code est une marque déposée de DENSO WAVE": "QR Code is a registered trademark of DENSO WAVE"
+"QR Code est une marque déposée de DENSO WAVE": "QR Code is a registered trademark of DENSO WAVE",
+"L’icône Mon accompagnateur apparaît avec vos autres apps. Tous vos voyages accompagnés y seront.": "The Mon accompagnateur icon appears with your other apps. All your guided trips will be in it.",
+"Sur iPhone, ouvrez l’app installée, touchez « Ajouter un voyage » et collez ou tapez cette phrase (une seule fois).": "On iPhone, open the installed app, tap “Add a trip” and paste or type this passphrase (only once).",
+"Ouvrez votre voyage, puis roue dentée ⚙ en haut à droite › « Alertes du voyage »": "Open your trip, then gear ⚙ at the top right › “Trip alerts”",
+"Mon accompagnateur": "Mon accompagnateur"
 },
 "regex": [
 [

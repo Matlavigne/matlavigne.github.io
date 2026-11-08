@@ -83,7 +83,7 @@ ol.steps b{display:block}
       <h2>Scannez avec l’appareil photo</h2>
       <p style="margin:0">Pointez l’appareil photo de votre téléphone vers le code, puis touchez le lien qui apparaît. Ou tapez l’adresse :</p>
       <div class="url" id="url">—</div>
-      <div class="url" id="phrase" style="display:none;margin-top:8px;background:#fdf3d8;border-color:#e0b44a">Phrase du voyage : <b id="phrase-txt"></b><br><span style="font-size:13px;font-weight:400">Sur iPhone, l’app installée la demande une fois : tapez-la.</span></div>
+      <div class="url" id="phrase" style="display:none;margin-top:8px;background:#fdf3d8;border-color:#e0b44a">Phrase du voyage : <b id="phrase-txt"></b><br><span style="font-size:13px;font-weight:400">Sur iPhone, ouvrez l’app installée, touchez « Ajouter un voyage » et collez ou tapez cette phrase (une seule fois).</span></div>
       <div class="btns noprint">
         <a class="btn" id="open" href="./">Ouvrir l’app</a>
         <button class="btn light" type="button" id="share">Partager ce lien</button>
@@ -100,7 +100,7 @@ ol.steps b{display:block}
         <li><span><b>Ouvrez l’adresse dans Safari</b>En scannant le code ou en touchant le lien reçu.</span></li>
         <li><span><b>Touchez Partager <span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg></span></b>En bas de l’écran (ou en haut sur iPad).</span></li>
         <li><span><b>Choisissez « Sur l’écran d’accueil » <span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg></span></b>Faites défiler la liste vers le bas si vous ne le voyez pas.</span></li>
-        <li><span><b>Touchez « Ajouter »</b>L’icône {{APP_COURT}} apparaît avec vos autres apps.</span></li>
+        <li><span><b>Touchez « Ajouter »</b>L’icône Mon accompagnateur apparaît avec vos autres apps. Tous vos voyages accompagnés y seront.</span></li>
       </ol>
     </section>
     <section class="os" id="os-android">
@@ -110,7 +110,7 @@ ol.steps b{display:block}
         <li><span><b>Ouvrez l’adresse dans Chrome</b>En scannant le code ou en touchant le lien reçu.</span></li>
         <li><span><b>Touchez le menu <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg></span></b>Les trois points en haut à droite.</span></li>
         <li><span><b>Choisissez « Installer l’application »</b>Ou « Ajouter à l’écran d’accueil ». Chrome le propose parfois tout seul dans un bandeau en bas.</span></li>
-        <li><span><b>Confirmez « Installer »</b>L’icône {{APP_COURT}} apparaît avec vos autres apps.</span></li>
+        <li><span><b>Confirmez « Installer »</b>L’icône Mon accompagnateur apparaît avec vos autres apps. Tous vos voyages accompagnés y seront.</span></li>
       </ol>
     </section>
   </div>
@@ -120,23 +120,17 @@ ol.steps b{display:block}
     <p class="small-note">Recevez les annonces du groupe (changement d’horaire, rendez-vous déplacé) même quand l’app est fermée. Seulement les annonces de votre accompagnateur : aucune publicité.</p>
     <ol class="steps">
       <li><span><b>Ouvrez l’app depuis son icône</b>Sur l’écran d’accueil, pas dans Safari ni Chrome. Sur iPhone, c’est obligatoire : les alertes ne fonctionnent que dans l’app installée.</span></li>
-      <li><span><b>Roue dentée ⚙ en haut à droite › « Alertes du voyage »</b>Touchez « Activer les alertes ».</span></li>
+      <li><span><b>Ouvrez votre voyage, puis roue dentée ⚙ en haut à droite › « Alertes du voyage »</b>Touchez « Activer les alertes ».</span></li>
       <li><span><b>Touchez « Autoriser »</b>Quand le téléphone demande la permission d’envoyer des notifications.</span></li>
       <li><span><b>C’est tout</b>Vous recevrez « Nouvelle annonce du groupe ». Une pastille rouge sur l’icône compte les annonces que vous n’avez pas encore lues.</span></li>
     </ol>
-    <p class="small-note">Pas de demande d’autorisation, ou alertes bloquées? <b>iPhone :</b> Réglages › Notifications › {{APP_COURT}} › Autoriser les notifications. <b>Android :</b> touchez longuement l’icône › Infos sur l’app › Notifications. Pour arrêter les alertes : onglet Infos, « Désactiver les alertes » (touchez deux fois pour confirmer).</p>
-  </section>
-
-  <section class="after noprint" id="mv">
-    <h3>Plusieurs voyages avec nous ? Une seule app</h3>
-    <p class="small-note">L’app <b>Mes voyages</b> regroupe tous vos voyages accompagnés sous une seule icône. Déjà installée? Ce bouton y ajoute ce voyage.</p>
-    <p><a class="btn light" id="mv-btn" href="/mes-voyages/">Ajouter à l’app Mes voyages</a></p>
+    <p class="small-note">Pas de demande d’autorisation, ou alertes bloquées? <b>iPhone :</b> Réglages › Notifications › Mon accompagnateur › Autoriser les notifications. <b>Android :</b> touchez longuement l’icône › Infos sur l’app › Notifications. Pour arrêter les alertes : onglet Infos, « Désactiver les alertes » (touchez deux fois pour confirmer).</p>
   </section>
 
   <section class="after">
     <h3>Une fois installée</h3>
     <ul>
-      <li>Ouvrez l’app <b>une première fois avec Internet</b> : elle se garde ensuite en mémoire et fonctionne même sans réseau.</li>
+      <li>Ouvrez l’app <b>Mon accompagnateur</b> une première fois avec Internet et touchez votre voyage : il se garde ensuite en mémoire et fonctionne même sans réseau. Un prochain voyage s’ajoutera dans la même app.</li>
       <li>Touchez <b>« Ma position »</b> dans l’onglet Carte et autorisez la localisation pour vous situer sur les pistes.</li>
       <li>Les <b>annonces</b> du groupe s’affichent sur l’Accueil. Avec les alertes activées, vous êtes averti; sinon, ouvrez l’app chaque matin pendant le voyage.</li>
       <li>Rejoignez le groupe WhatsApp et le groupe Facebook depuis l’Accueil, dès que les liens sont disponibles.</li>
@@ -2464,12 +2458,12 @@ var qrcode = function() {
 (function(){
   var p=new URLSearchParams(location.search);
   var online=location.protocol!=='file:';
-  var app=p.get('url')||(online?new URL('./',location.href).href:'');
+  // Une seule app pour tous les voyages : « Mon accompagnateur » (/app/), qui ajoute ce voyage à l’ouverture du lien
+  var app=p.get('url')||(online?location.origin+'/app/':'');
   // Lien d’invitation : installer.html#cle=la-phrase → le code QR ouvre l’app déjà déverrouillée
   var cm=location.hash.match(/(?:^#|&)cle=([^&]*)/),cle='';
   if(cm){try{cle=decodeURIComponent(cm[1]);}catch(e){cle=cm[1];}}
-  var appBase=app;if(cle&&app)app=app+'#cle='+encodeURIComponent(cle);
-  var mvb=document.getElementById('mv-btn');if(mvb)mvb.href='/mes-voyages/#v={{ID}}'+(cle?'&cle='+encodeURIComponent(cle):'');
+  var appBase=app;if(app)app=app+'#v={{ID}}'+(cle?'&cle='+encodeURIComponent(cle):'');
   if(cle){var pe=document.getElementById('phrase');if(pe){pe.style.display="block";document.getElementById('phrase-txt').textContent=cle;}}
   var urlEl=document.getElementById('url');
   urlEl.textContent=appBase?appBase.replace(/^https?:\/\//,'').replace(/\/$/,''):'adresse disponible une fois l’app en ligne';
