@@ -161,7 +161,7 @@ textarea{font:inherit;font-size:14px;width:100%;min-height:150px;padding:10px;bo
 <script src="qrcode.js"></script>
 <script>
 'use strict';
-const WORKER='https://monaccompagnateur-push.monaccompagnateur.workers.dev';
+const WORKER='https://api.monaccompagnateur.ca';
 const SITE='https://monaccompagnateur.ca';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

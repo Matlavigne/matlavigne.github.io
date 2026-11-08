@@ -206,3 +206,7 @@ Page installable (icône « Accompagnateur » sur l'écran d'accueil) où chaque
 - réglages : apparence (auto, clair, sombre) et langue, partagés avec les apps des voyages.
 
 Le Worker répond à `GET /api/mes-voyages` (session de compte; mot de passe temporaire changé; double authentification pour l'administrateur). Les dates viennent des champs publics de `<voyage>/voyage.json`.
+
+## Adresse du Worker
+
+Les apps appellent `https://api.monaccompagnateur.ca` (domaine monaccompagnateur.ca géré dans le DNS de Cloudflare; le site reste sur GitHub Pages en « DNS only »). L'ancienne adresse `monaccompagnateur-push.monaccompagnateur.workers.dev` reste active (`workers_dev = true`) pour les téléphones qui n'ont pas encore la nouvelle version des apps.

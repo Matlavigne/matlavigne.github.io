@@ -1,6 +1,6 @@
 // Service worker généré par _app/build.mjs (ne pas modifier ici : modifier _app/gabarit/sw.js)
 // Changez CACHE à chaque mise à jour pour forcer l'actualisation chez les utilisateurs.
-const CACHE = 'gendronski-solden-2027-a5f6399c';
+const CACHE = 'gendronski-solden-2027-c3d301bc';
 const CORE = ['./', 'index.html', 'manifest.webmanifest',
               'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
               'voyage.json', 'hero.webp', 'installer.html', 'affiche-bagages.html', 'og.jpg', 'editeur.html'];
@@ -85,7 +85,7 @@ self.addEventListener('fetch', e => {
 });
 
 // ---------- Alertes du voyage (push) ----------
-self.VOYAGE_PUSH = { worker: 'https://monaccompagnateur-push.monaccompagnateur.workers.dev', trip: 'solden-voyage-2027', icon: 'icon-192.png' };
+self.VOYAGE_PUSH = { worker: 'https://api.monaccompagnateur.ca', trip: 'solden-voyage-2027', icon: 'icon-192.png' };
 /* Alertes du voyage — à ajouter au service worker existant de l'app.
  *
  * En haut du service worker (avant importScripts) :
