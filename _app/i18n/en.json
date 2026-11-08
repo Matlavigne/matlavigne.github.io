@@ -521,7 +521,10 @@
 "dans l’app Mon accompagnateur.": "in the Mon accompagnateur app.",
 "L’app ne demande ni compte, ni courriel : seulement votre prénom et votre nom si vous demandez l’accès à un voyage, pour que votre accompagnateur l’approuve.": "The app asks for no account or email: only your first and last name if you request access to a trip, so your trip leader can approve it.",
 "Chercher un resto, un bar, un plat…": "Search a restaurant, bar, dish…",
-"Aucune adresse ne correspond à cette recherche.": "No place matches this search."
+"Aucune adresse ne correspond à cette recherche.": "No place matches this search.",
+"Touchez le bouton ☰ à gauche de l’adresse": "Tap the ☰ button left of the address",
+"Dans la barre du bas de Safari (iOS 26). Sur un iOS plus ancien, passez à l’étape suivante.": "In Safari’s bottom bar (iOS 26). On older iOS, skip to the next step.",
+"Dans le menu qui s’ouvre (ou en bas de l’écran sur un iOS plus ancien).": "In the menu that opens (or at the bottom of the screen on older iOS)."
 },
 "regex": [
 [
