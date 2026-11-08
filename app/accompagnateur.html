@@ -315,7 +315,7 @@ function carte(v){
     <p class="meta">${esc(e.txt)}${v.alertes?' · '+esc(abt):''}</p>
     ${!v.clos&&e.k!=='passe'?`<button type="button" class="dembtn${v.demandes?' on':''}" data-dem="${esc(v.id)}"><span>🙋</span><span><b>${v.demandes?(LANG==='en'?`${v.demandes} access request${v.demandes>1?'s':''} to approve`:`${v.demandes} demande${v.demandes>1?'s':''} d’accès à approuver`):T('Demandes d’accès')}</b><small>${LANG==='en'?`${v.approuves||0} traveller${(v.approuves||0)>1?'s':''} approved`:`${v.approuves||0} voyageur${(v.approuves||0)>1?'s':''} approuvé${(v.approuves||0)>1?'s':''}`}</small></span>${v.demandes?`<i>${v.demandes}</i>`:''}</button>`:''}
     <div class="acts">
-      <a class="btn" href="${base}">${IC.app}${T('App du voyage')}</a>
+      <a class="btn" href="${base}" data-ouvrir="${esc(v.id)}">${IC.app}${T('App du voyage')}</a>
       <a class="btn light" href="${base}editeur.html">${IC.ed}${T('Éditeur')}</a>
       <a class="btn light" href="groupe.html?v=${encodeURIComponent(v.id)}">${IC.grp}${T('Mon groupe')}</a>
       <button type="button" class="light" data-share="${esc(v.id)}">${IC.inst}${T('Partager l’app')}</button>
@@ -461,8 +461,8 @@ if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('messag
   if(d.event==='opened'&&d.id&&DATA.voyages.some(v=>v.id===d.id)){ouvrirDem(d.id);return;}
   if(!$('#v-dem').hidden&&DEMV)ouvrirDem(DEMV.id);else if(!$('#v-app').hidden)demarrer();});
 
-/* Partager l’app : lien de la page d’installation avec la phrase (#cle=…), qui ouvre l’app déjà déverrouillée.
-   La phrase n’est jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
+/* Phrase du voyage : réservée aux accompagnateurs (éditeur, clés envoyées aux voyageurs approuvés).
+   Jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const normPhrase=p=>String(p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
 async function phraseOk(phrase,c){try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
@@ -481,6 +481,14 @@ async function phrasePour(v){
   try{localStorage.setItem('editeur-phrase-'+v.id,JSON.stringify(ph.trim()));}catch(e){}
   msg('');return ph.trim();
 }
+/* App du voyage : les voyageurs n’ont plus de phrase; l’accompagnateur range ici la clé du voyage
+   sur ce téléphone (même rangement que Mes voyages), puis l’app s’ouvre déverrouillée. */
+document.addEventListener('click',async e=>{
+  const a=e.target.closest('[data-ouvrir]');if(!a)return;
+  e.preventDefault();const v=DATA.voyages.find(x=>x.id===a.dataset.ouvrir);
+  try{const cle=v?await cleVoyage(v):null;if(cle)localStorage.setItem(v.id+'-cle-v1',JSON.stringify(cle));}catch(x){}
+  location.href=a.href;
+});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-share]');if(!b)return;
   const v=DATA.voyages.find(x=>x.id===b.dataset.share);

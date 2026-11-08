@@ -207,7 +207,7 @@ header{position:relative}
   <details class="sec" id="s-phrase">
     <summary><h2>Phrase du voyage (accès protégé)</h2><span class="n" id="ph-state">…</span></summary>
     <div class="body">
-      <p class="help">Avec une phrase, le contenu publié est chiffré : sans elle, personne ne peut lire le programme, les annonces, l’hôtel ni les liens du groupe. Les voyageurs l’entrent une seule fois sur leur téléphone. Restent publics : le titre, les dates, la météo et les webcams.</p>
+      <p class="help">Avec une phrase, le contenu publié est chiffré : sans elle, personne ne peut lire le programme, les annonces, l’hôtel ni les liens du groupe. Elle reste entre accompagnateurs : les voyageurs ne la voient jamais. Ils demandent l’accès dans l’app et, à votre approbation, reçoivent la clé du voyage chiffrée pour leur téléphone. Restent publics : le titre, les dates, la météo et les webcams.</p>
       <div class="grid">
         <div class="f full"><label for="ph-in">Phrase du voyage</label><input id="ph-in" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex. trois-mots-simples"></div>
         <label class="chk"><input type="checkbox" id="ph-show"> Afficher la phrase</label>
@@ -216,8 +216,8 @@ header{position:relative}
       <div class="addbar"><button type="button" id="ph-open">Ouvrir le contenu</button><button type="button" class="light" id="ph-gen">Proposer une phrase</button></div>
       <p class="help" id="ph-msg"></p>
       <div id="ph-invite" hidden>
-        <p class="help" style="margin-top:12px;font-weight:600;color:var(--ink)">Lien d’invitation pour les voyageurs</p>
-        <p class="help">Page d’installation avec le code QR et la phrase. À envoyer aux voyageurs seulement (courriel ou groupe WhatsApp), jamais en public.</p>
+        <p class="help" style="margin-top:12px;font-weight:600;color:var(--ink)">Lien pour les voyageurs</p>
+        <p class="help">Page d’installation avec le code QR, sans la phrase. Les voyageurs installent l’app, demandent l’accès, et vous approuvez dans l’accès accompagnateur.</p>
         <div class="f full"><input id="ph-link" readonly></div>
         <div class="addbar"><button type="button" class="light" id="ph-copy">Copier le lien</button><a class="btn light" id="ph-openlink" target="_blank" rel="noopener">Ouvrir la page</a></div>
       </div>
@@ -324,9 +324,9 @@ function phUi(){
   const p=phNow();
   $('#ph-state').textContent=RAW?.chiffre?(openPhrase?'✓ protégé':'🔒 phrase requise'):(p?'sera protégé':'non protégé');
   const appUrl=new URL('./',location.href).href;
-  $('#ph-invite').hidden=!p;
-  if(p){const l=appUrl+'installer.html#cle='+encodeURIComponent(p);$('#ph-link').value=l;$('#ph-openlink').href=l;}
-  if(V&&phDirty())$('#ph-msg').textContent=RAW?.chiffre?(p?'Nouvelle phrase : elle s’appliquera à la prochaine publication. Les voyageurs devront entrer la nouvelle phrase.':'Le contenu publié est protégé : une phrase est obligatoire pour publier.'):'La protection s’activera à la prochaine publication (touchez « Publier »).';
+  $('#ph-invite').hidden=false;
+  {const l=appUrl+'installer.html';$('#ph-link').value=l;$('#ph-openlink').href=l;}
+  if(V&&phDirty())$('#ph-msg').textContent=RAW?.chiffre?(p?'Nouvelle phrase : elle s’appliquera à la prochaine publication. Ensuite, ouvrez les demandes d’accès du voyage pour envoyer la nouvelle clé aux voyageurs déjà approuvés.':'Le contenu publié est protégé : une phrase est obligatoire pour publier.'):'La protection s’activera à la prochaine publication (touchez « Publier »).';
   else if(V)$('#ph-msg').textContent=p?'Le contenu publié est protégé par cette phrase.':'Aucune phrase : le contenu publié est lisible par toute personne qui connaît l’adresse.';
 }
 $('#ph-show').onchange=()=>{$('#ph-in').type=$('#ph-show').checked?'text':'password';};

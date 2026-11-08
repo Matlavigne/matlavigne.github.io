@@ -212,7 +212,7 @@ body.is-offline .hero .wrap{padding-top:22px}
 .lock-card input{font-size:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;width:100%;box-sizing:border-box}
 .lock-card input:focus{outline:2px solid var(--pine);border-color:var(--pine)}
 .lock-card button{font-size:17px;padding:12px}
-.lock-msg{min-height:1.3em;margin:4px 0;font-weight:600}.lock-msg.err{color:var(--red)}
+.lock-msg{min-height:1.3em;margin:4px 0;font-weight:600}.lock-msg:empty{min-height:0;margin:0}.lock-msg.err{color:var(--red)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 body.locked{overflow:hidden}
 .passe-img{margin:10px 0 8px}.passe-img img{width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:var(--soft);display:block;cursor:zoom-in}
@@ -991,15 +991,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="overline">App du voyage</p>
     <h1 id="lock-titre">{{TITRE}}</h1>
     <p class="lock-dates" id="lock-dates"></p>
-    <p>Cette app est réservée aux voyageurs du groupe. Entrez la <b>phrase du voyage</b> transmise par votre accompagnateur.</p>
-    <form id="lock-form" autocomplete="off">
-      <label for="lock-in" class="sr">Phrase du voyage</label>
-      <input id="lock-in" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex. mot-mot-mot" enterkeyhint="go">
-      <button type="submit" id="lock-go">Ouvrir l’app</button>
-    </form>
+    <p>Cette app est réservée aux voyageurs du groupe.</p>
     <p class="lock-msg" id="lock-msg" role="status"></p>
-    <p class="small">Majuscules, accents et espaces n’ont pas d’importance. La phrase est gardée sur ce téléphone : vous ne la taperez qu’une fois.</p>
-    <p class="small" style="margin-top:10px"><b>Pas de phrase?</b> <a href="/app/#v={{ID}}">Demandez l’accès à votre accompagnateur</a> dans l’app Mon accompagnateur.</p>
+    <a class="btn" id="lock-go" href="/app/#v={{ID}}" style="width:100%;font-size:17px;padding:12px;margin:6px 0 10px">Demander l’accès</a>
+    <p class="small">Faites la demande dans l’app Mon accompagnateur : dès que votre accompagnateur l’approuve, le voyage s’ouvre ici.</p>
+    <p class="small" style="margin-top:10px"><a href="/app/accompagnateur.html">Accès accompagnateur</a></p>
   </div>
 </div>
 <div id="offline" class="offline" role="status" hidden></div>
@@ -1303,57 +1299,38 @@ let V=null,syncMsg='';
 const TZ_ALIAS={'america/montreal':'America/Toronto','montreal':'America/Toronto','montréal':'America/Toronto','quebec':'America/Toronto','québec':'America/Toronto',...Object.fromEntries((S.alias||[]).map(a=>[a.toLowerCase(),S.fuseau]))};
 function normTz(o){if(Array.isArray(o))o.forEach(normTz);else if(o&&typeof o==='object')for(const k in o){if(k==='fuseau'&&typeof o[k]==='string'){o[k]=TZ_ALIAS[o[k].trim().toLowerCase()]||o[k];}else normTz(o[k]);}return o;}
 function valid(v){return v&&typeof v==='object'&&Array.isArray(v.programme)&&v.debut&&v.fin;}
-/* ---------- Phrase du voyage : contenu chiffré (AES-GCM, clé tirée de la phrase par PBKDF2) ---------- */
+/* ---------- Contenu chiffré (AES-GCM). La clé arrive par la demande d’accès approuvée (Mes voyages)
+   ou par l’Accès accompagnateur; elle est rangée sous <voyage>-cle-v1. La phrase reste du côté de l’éditeur. ---------- */
 const KEY_CLE=TRIP.id+'-cle-v1';
-let LOCKED=false,ENC=null,PENDING_PHRASE='';
+let LOCKED=false,ENC=null;
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
 const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
-async function keyFromPhrase(phrase,c){
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
-}
 async function openWith(key,v){
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(v.chiffre.iv)},key,unb64(v.chiffre.data));
   const full=JSON.parse(new TextDecoder().decode(pt));const pub={...v};delete pub.chiffre;return {...pub,...full};
 }
 async function storedKey(c){const s=store.get(KEY_CLE,null);if(!s||s.salt!==c.salt||!s.k)return null;try{return await crypto.subtle.importKey('raw',unb64(s.k),{name:'AES-GCM'},true,['decrypt']);}catch(e){return null;}}
-async function unlockWithPhrase(phrase,v){
-  const key=await keyFromPhrase(phrase,v.chiffre);const out=await openWith(key,v);
-  store.set(KEY_CLE,{salt:v.chiffre.salt,k:tob64(new Uint8Array(await crypto.subtle.exportKey('raw',key)))});
-  return out;
-}
-/* Ouvre un voyage.json chiffré ou non; null = phrase nécessaire */
+/* Ouvre un voyage.json chiffré ou non; null = clé absente ou changée */
 async function readVoyage(v){
   if(!v||!v.chiffre)return v;
   if(!window.crypto||!crypto.subtle)throw Error('Ce navigateur ne permet pas d’ouvrir le contenu protégé.');
   const k=await storedKey(v.chiffre);
   if(k){try{return await openWith(k,v);}catch(e){}}
-  if(PENDING_PHRASE){try{const o=await unlockWithPhrase(PENDING_PHRASE,v);PENDING_PHRASE='';return o;}catch(e){}}
   return null;
 }
 function showLock(v,why){
   ENC=v;LOCKED=true;document.body.classList.add('locked');
   $('#lock-titre').textContent=v?.titre||TRIP.titre;$('#lock-dates').textContent=v?.datesTexte||'';
   const m=$('#lock-msg');m.className='lock-msg'+(why?' err':'');m.textContent=why||'';
-  $('#lock').hidden=false;setTimeout(()=>$('#lock-in').focus(),50);
+  $('#lock').hidden=false;
 }
 function hideLock(){$('#lock-msg').textContent='';LOCKED=false;document.body.classList.remove('locked');$('#lock').hidden=true;}
-$('#lock-form').addEventListener('submit',async e=>{
-  e.preventDefault();const ph=$('#lock-in').value;const m=$('#lock-msg');
-  if(!normPhrase(ph)){m.className='lock-msg err';m.textContent='Entrez la phrase du voyage.';return;}
-  if(!ENC){m.className='lock-msg err';m.textContent='Connectez-vous à Internet une première fois pour ouvrir l’app.';refreshVoyage();return;}
-  const b=$('#lock-go');b.disabled=true;m.className='lock-msg';m.textContent='Vérification…';
-  try{const v=await unlockWithPhrase(ph,ENC);if(!valid(v))throw Error('contenu');store.set(K.voyage,{at:Date.now(),data:v});V=normTz(v);hideLock();renderAll();if(location.hash)show(location.hash.slice(1));}
-  catch(err){m.className='lock-msg err';m.textContent='Phrase incorrecte. Vérifiez auprès de votre accompagnateur.';}
-  finally{b.disabled=false;}
-});
 function boot(){
   const def=JSON.parse($('#voyage-defaut').textContent);
   const cached=store.get(K.voyage,null);
-  // Lien d’invitation : #cle=la-phrase (jamais envoyé au serveur), retiré aussitôt de l’adresse
-  const hm=location.hash.match(/(?:^#|&)cle=([^&]*)/);
-  if(hm){try{PENDING_PHRASE=decodeURIComponent(hm[1]);}catch(e){PENDING_PHRASE=hm[1];}history.replaceState(null,'',location.pathname+location.search+'#accueil');}
+  // Ancien lien d’invitation avec la phrase (#cle=…) : la phrase est ignorée et retirée de l’adresse
+  if(/(?:^#|&)cle=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search+'#accueil');
   V=normTz(valid(cached?.data)?cached.data:def);
   if(cached?.at)syncMsg='Dernière mise à jour reçue le '+fmt(new Date(cached.at),'America/Toronto',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (heure de Montréal).';
   const br=params.has('brouillon')?store.get('voyage-apercu-brouillon',null):null;
@@ -1374,7 +1351,7 @@ async function refreshVoyage(){
     const txt=await r.text();
     let v;try{v=JSON.parse(txt);}catch(e){showVerif('voyage.json contient une erreur de syntaxe : '+e.message+'\nL’app continue d’afficher la dernière version valide.');return;}
     if(v&&v.chiffre){const o=await readVoyage(v);
-      if(!o){setOffline(!!r.headers.get('X-Hors-Ligne')||!navigator.onLine);showLock(v,store.get(KEY_CLE,null)?'La phrase du voyage a changé. Entrez la nouvelle phrase.':'');if(VERIF)showVerif('voyage.json est chiffré : entrez la phrase pour le vérifier.',true);return;}
+      if(!o){setOffline(!!r.headers.get('X-Hors-Ligne')||!navigator.onLine);showLock(v,store.get(KEY_CLE,null)?'La clé du voyage a changé. Ouvrez Mes voyages : la nouvelle clé y arrive si votre accès est toujours approuvé.':'');if(VERIF)showVerif('voyage.json est chiffré : ouvrez l’app avec sa clé pour le vérifier.',true);return;}
       v=o;}
     if(!valid(v)){showVerif('voyage.json est lisible mais incomplet : il faut au moins « debut », « fin » et « programme ».');return;}
     if(r.headers.get('X-Hors-Ligne')){setOffline(true);V=normTz(v);if(LOCKED){store.set(K.voyage,{at:Date.now(),data:v});hideLock();}renderAll();setOffline(true);return;}
@@ -2012,7 +1989,7 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-goto-bag]'))set
 let wipeArmed=false;
 $('#wipe').addEventListener('click',async()=>{
   const b=$('#wipe');
-  if(!wipeArmed){wipeArmed=true;b.textContent='Touchez encore pour confirmer';$('#wipe-msg').textContent='Les cases cochées, le domaine choisi, la photo de la passe, vos infos, la phrase du voyage, la liste du groupe (accompagnateur) et les copies hors ligne seront effacés. L’app restera installée.';setTimeout(()=>{if(wipeArmed){wipeArmed=false;b.textContent='Effacer mes données de cet appareil';$('#wipe-msg').textContent='';}},6000);return;}
+  if(!wipeArmed){wipeArmed=true;b.textContent='Touchez encore pour confirmer';$('#wipe-msg').textContent='Les cases cochées, le domaine choisi, la photo de la passe, vos infos, la clé du voyage, la liste du groupe (accompagnateur) et les copies hors ligne seront effacés. L’app restera installée.';setTimeout(()=>{if(wipeArmed){wipeArmed=false;b.textContent='Effacer mes données de cet appareil';$('#wipe-msg').textContent='';}},6000);return;}
   wipeArmed=false;
   try{Object.keys(localStorage).filter(k=>k.startsWith(TRIP.id+'-')).forEach(k=>localStorage.removeItem(k));}catch(e){}
   try{if(window.caches){for(const k of await caches.keys()){const c=await caches.open(k);for(const r of await c.keys()){if(!r.url.startsWith(location.origin))await c.delete(r);}}}}catch(e){}

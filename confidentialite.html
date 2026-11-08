@@ -53,7 +53,7 @@ footer a{color:inherit}
     <li><b>Aucun cookie, aucune statistique de visite, aucune publicité.</b> Rien n’est vendu ni utilisé pour du profilage.</li>
     <li><b>Ce que vous entrez reste sur votre téléphone</b> : cases cochées, photo de la passe de ski, numéro de chambre, notes.</li>
     <li><b>La liste du groupe</b> n’est lisible que sur les téléphones des accompagnateurs du voyage. Quand elle est partagée entre eux, le service n’en garde qu’une copie chiffrée qu’il ne peut pas lire. Elle n’est jamais publiée.</li>
-    <li><b>Le contenu du voyage</b> (programme, hôtel, annonces) est chiffré : il ne se lit qu’avec la phrase du voyage.</li>
+    <li><b>Le contenu du voyage</b> (programme, hôtel, annonces) est chiffré : il ne se lit que sur les téléphones dont l’accès a été approuvé par l’accompagnateur.</li>
   </ul>
 </div>
 
@@ -70,7 +70,7 @@ footer a{color:inherit}
   <h3>Sur votre téléphone seulement</h3>
   <p>Pour fonctionner hors ligne, l’app garde dans la mémoire de votre téléphone :</p>
   <ul>
-    <li>la phrase du voyage (sous forme de clé), le domaine choisi, les annonces lues et vos cases cochées;</li>
+    <li>la clé du voyage, le domaine choisi, les annonces lues et vos cases cochées;</li>
     <li>une copie du programme, de la météo, de l’état des pistes et des taux de change;</li>
     <li>ce que vous entrez dans « Mes infos » (casier, location, chambre, notes) et la photo et le numéro de série de votre passe de ski.</li>
   </ul>
@@ -95,7 +95,7 @@ footer a{color:inherit}
   <p>Chaque accompagnateur a un compte (nom d’usager, mot de passe et double authentification) pour modifier l’app de ses voyages. Le service garde son nom et, s’il les ajoute lui-même, son cellulaire et son courriel; le mot de passe n’est gardé que sous forme d’empreinte. Ces coordonnées sont affichées aux voyageurs de ses voyages, à l’intérieur du contenu chiffré, pour qu’ils puissent le joindre. L’accompagnateur peut les modifier ou les retirer en tout temps; le compte est supprimé à la fin de sa collaboration.</p>
 
   <h3>Le contenu du voyage</h3>
-  <p>Le programme, l’hôtel, les annonces et les liens du groupe sont publiés sur le site sous forme chiffrée (AES-GCM) : seuls ceux qui ont la phrase du voyage peuvent les lire. Ce contenu ne contient aucun renseignement sur les voyageurs. Restent publics : le titre, les dates, la météo et les webcams de la station.</p>
+  <p>Le programme, l’hôtel, les annonces et les liens du groupe sont publiés sur le site sous forme chiffrée (AES-GCM) : seuls les téléphones qui ont reçu la clé du voyage, après approbation par l’accompagnateur, peuvent les lire. Ce contenu ne contient aucun renseignement sur les voyageurs. Restent publics : le titre, les dates, la météo et les webcams de la station.</p>
 </div>
 
 <div class="card">
@@ -134,7 +134,7 @@ footer a{color:inherit}
 
 <div class="card">
   <h2>6. Sécurité</h2>
-  <p>Le site est servi uniquement en HTTPS. Le contenu du voyage est chiffré avec la phrase du voyage, et la modification de l’app est réservée à l’accompagnateur. La liste du groupe n’est lisible que sur les téléphones des accompagnateurs, protégés par un code de verrouillage : le service n’en voit qu’une copie chiffrée. L’app n’utilise aucun outil de suivi.</p>
+  <p>Le site est servi uniquement en HTTPS. Le contenu du voyage est chiffré, sa clé n’est remise qu’aux voyageurs approuvés, et la modification de l’app est réservée à l’accompagnateur. La liste du groupe n’est lisible que sur les téléphones des accompagnateurs, protégés par un code de verrouillage : le service n’en voit qu’une copie chiffrée. L’app n’utilise aucun outil de suivi.</p>
 </div>
 
 <div class="card">

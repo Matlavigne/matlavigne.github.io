@@ -30,7 +30,7 @@ monaccompagnateur.ca (GitHub Pages, ce dépôt)          api.monaccompagnateur.c
 
 | Qui | Où | Quoi |
 |---|---|---|
-| Voyageur | `/app/` | ses voyages; « Ajouter un voyage » : demande d'accès (approbation) ou phrase du voyage |
+| Voyageur | `/app/` | ses voyages; « Ajouter un voyage » : demande d'accès, approuvée par l'accompagnateur |
 | Accompagnateur | `/app/accompagnateur.html` (roue dentée › Accès accompagnateur) | ses voyages, demandes d'accès, Mon groupe, éditeur, profil, alertes des demandes |
 | Administrateur | `/admin/` (bouton « Administration ») | comptes, création, photo, accompagnateurs, clôture, suppression des voyages |
 
@@ -88,7 +88,7 @@ Les jetons `{{NOM}}` du gabarit ne contiennent pas de chiffres. L'éditeur n'éc
 
 `/<voyage>/editeur.html`, ouvert depuis l'accès accompagnateur :
 - **Connexion pour publier** : se fait avec un compte (nom d'usager, mot de passe, double authentification). Chaque compte ne publie que ses voyages.
-- **Phrase du voyage** : gardée sur l'appareil, elle sert à chiffrer et à ouvrir le contenu.
+- **Phrase du voyage** : réservée aux accompagnateurs, gardée sur l'appareil. Elle sert à chiffrer le contenu et à fabriquer la clé envoyée à chaque voyageur approuvé. Les voyageurs ne la voient jamais : ils reçoivent la clé par leur demande d'accès (ni lien d'invitation, ni saisie de phrase). Un ancien lien `#cle=…` est ignoré. Le bouton « App du voyage » de l'accès accompagnateur range la clé sur le téléphone de l'accompagnateur. Changer la phrase : publier, puis ouvrir les demandes d'accès pour envoyer la nouvelle clé aux voyageurs déjà approuvés (les anciennes versions restent lisibles avec l'ancienne phrase dans l'historique Git).
 - **Tableau de bord** : tuiles et « Prêt pour le départ ».
 - **Contenu** : programme en ligne du temps, carte avec pistes pour placer un point, annonces programmées. Les annonces déclenchent les alertes à la publication.
 - **Accompagnateurs** : coordonnées reprises de leurs comptes.

@@ -83,7 +83,6 @@ ol.steps b{display:block}
       <h2>Scannez avec l’appareil photo</h2>
       <p style="margin:0">Pointez l’appareil photo de votre téléphone vers le code, puis touchez le lien qui apparaît. Ou tapez l’adresse :</p>
       <div class="url" id="url">—</div>
-      <div class="url" id="phrase" style="display:none;margin-top:8px;background:#fdf3d8;border-color:#e0b44a">Phrase du voyage : <b id="phrase-txt"></b><br><span style="font-size:13px;font-weight:400">Sur iPhone, ouvrez l’app installée, touchez « Ajouter un voyage » et collez ou tapez cette phrase (une seule fois).</span></div>
       <div class="btns noprint">
         <a class="btn" id="open" href="./">Ouvrir l’app</a>
         <button class="btn light" type="button" id="share">Partager ce lien</button>
@@ -2461,11 +2460,10 @@ var qrcode = function() {
   var online=location.protocol!=='file:';
   // Une seule app pour tous les voyages : « Mon accompagnateur » (/app/), qui ajoute ce voyage à l’ouverture du lien
   var app=p.get('url')||(online?location.origin+'/app/':'');
-  // Lien d’invitation : installer.html#cle=la-phrase → le code QR ouvre l’app déjà déverrouillée
-  var cm=location.hash.match(/(?:^#|&)cle=([^&]*)/),cle='';
-  if(cm){try{cle=decodeURIComponent(cm[1]);}catch(e){cle=cm[1];}}
-  var appBase=app;if(app)app=app+'#v={{ID}}'+(cle?'&cle='+encodeURIComponent(cle):'');
-  if(cle){var pe=document.getElementById('phrase');if(pe){pe.style.display="block";document.getElementById('phrase-txt').textContent=cle;}}
+  // Pas de phrase dans les liens : le voyageur demande l’accès dans l’app et l’accompagnateur approuve.
+  // Un ancien lien d’invitation (#cle=…) est nettoyé pour ne pas être partagé de nouveau.
+  if(/(?:^#|&)cle=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search);
+  var appBase=app;if(app)app=app+'#v={{ID}}';
   var urlEl=document.getElementById('url');
   urlEl.textContent=appBase?appBase.replace(/^https?:\/\//,'').replace(/\/$/,''):'adresse disponible une fois l’app en ligne';
   if(app){
