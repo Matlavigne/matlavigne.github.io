@@ -143,6 +143,17 @@ try {
   r = await call("GET", "/api/admin/etat", null, ADMIN);
   check(r.json.voyages.find((x) => x.id === nv.id)?.clos === true, "marqué clos dans la liste");
 
+  console.log("\nPhoto d'en-tête");
+  put("_app/voyages/photos/st-anton-mars2027.png", "ancienne"); put("_app/voyages/photos/st-anton-mars2027.fait", "sha");
+  r = await call("POST", "/api/admin/photo", { trip: "st-anton-mars2027", photo, credit: "Photo : Mathieu" });
+  check([401, 403].includes(r.status), "sans session : refusé");
+  r = await call("POST", "/api/admin/photo", { trip: "st-anton-mars2027", photo: "data:text/plain;base64,eA==" }, ADMIN);
+  check(r.status === 400, "fichier qui n'est pas une image : refusé");
+  r = await call("POST", "/api/admin/photo", { trip: "st-anton-mars2027", photo, credit: "Photo : <b>Mathieu</b>" }, ADMIN);
+  check(r.status === 200, `photo enregistrée (${r.status} ${r.json.erreur || ""})`);
+  check(files.get("_app/voyages/photos/st-anton-mars2027.jpg")?.toString() === "faux jpeg" && !files.has("_app/voyages/photos/st-anton-mars2027.png") && !files.has("_app/voyages/photos/st-anton-mars2027.fait"), "nouvelle photo écrite, l'ancienne et sa marque retirées");
+  check(JSON.parse(files.get("_app/voyages/st-anton-mars2027.json")).credit === "Photo : &lt;b&gt;Mathieu&lt;/b&gt;", "crédit mis à jour et échappé");
+
   console.log("\nApp de l'accompagnateur");
   check((await call("GET", "/api/mes-voyages")).status === 401, "sans session : refusé");
   r = await call("GET", "/api/mes-voyages", null, ADMIN);

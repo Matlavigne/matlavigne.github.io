@@ -454,6 +454,25 @@ async function mesVoyages(env, req) {
   return { profil: { username: u.username, nom: u.nom || u.username, role: u.role }, voyages };
 }
 
+// Photo d'en-tête d'un voyage existant : le robot la recadre ensuite en hero.webp et og.jpg
+async function adminPhoto(env, b) {
+  const id = String(b.trip || "");
+  if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(id)) throw new HttpError(400, "Voyage invalide");
+  const fiche = await ghFile(env, `_app/voyages/${id}.json`);
+  if (!fiche) throw new HttpError(404, "Voyage introuvable");
+  const m = String(b.photo || "").match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+  if (!m) throw new HttpError(400, "Photo : JPEG, PNG ou WebP seulement");
+  const ext = m[1] === "jpeg" ? "jpg" : m[1];
+  const conf = JSON.parse(fiche.text);
+  conf.credit = str(b.credit, 300) ? esc(str(b.credit, 300)) : "Photo : monaccompagnateur.ca";
+  const commit = await commitFiles(env, (paths) => [
+    ...paths.filter((p) => new RegExp(`^_app/voyages/photos/${id}\\.(jpe?g|png|webp|fait)$`).test(p)).map((p) => ({ path: p, del: true })),
+    { path: `_app/voyages/photos/${id}.${ext}`, b64: m[2] },
+    { path: `_app/voyages/${id}.json`, text: JSON.stringify(conf, null, 2) + "\n" },
+  ], `Photo d'en-tête : ${conf.titre || id}`);
+  return { ok: true, id, commit };
+}
+
 async function handleAdmin(req, env, path, url) {
   const me = await requireAdmin(env, req);
   if (path.startsWith("/api/admin/comptes")) {
@@ -463,6 +482,7 @@ async function handleAdmin(req, env, path, url) {
   if (req.method === "GET" && path === "/api/admin/etat") return adminEtat(env);
   if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
+  if (req.method === "POST" && path === "/api/admin/photo") return adminPhoto(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/supprimer") return adminSupprimer(env, await readJson(req));
   if (req.method === "POST" && path === "/api/admin/clore") {
     const b = await readJson(req); await requireTrip(env, b.trip);

@@ -284,7 +284,7 @@ function dessiner(){
     <span class="t">${esc(v.appCourt||v.titre)}</span><span>${v.clos?'<span class="tag clos">Clos</span>':'<span class="tag ok">Actif</span>'}</span>
     <span class="meta">${esc(v.titre)} · ${esc(v.dates)} · ${esc(st[v.station]?.nom||v.station)}<br>
       ${v.abonnes} téléphone${v.abonnes>1?'s':''} abonné${v.abonnes>1?'s':''} aux alertes · éditeur : ${v.acces?.length?esc(v.acces.join(', ')):'aucun accompagnateur'}</span>
-    <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a>
+    <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a><button type="button" class="light" data-photo="${esc(v.id)}">Photo d’en-tête</button>
     ${v.clos?'':`<button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}<button type="button" class="danger" data-suppr="${esc(v.id)}">Supprimer</button></span></div>`).join('')||'<p class="small">Aucun voyage.</p>';
 }
 let armed={};
@@ -376,6 +376,21 @@ $('#b-new').onclick=()=>{
   $('#f-compte').innerHTML='<option value="">Aucun pour l’instant</option>'+COMPTES.filter(c=>c.role!=='admin'&&c.actif).map(c=>`<option value="${esc(c.username)}">${esc(c.nom)} (${esc(c.username)})</option>`).join('');$('#f-phrase').value=phrase();$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
 };
 $('#f-cancel').onclick=()=>{$('#nv').hidden=true;};
+/* Photo d’en-tête d’un voyage existant (ajoutée ou remplacée) */
+const photoIn=Object.assign(document.createElement('input'),{type:'file',accept:'image/jpeg,image/png,image/webp',hidden:true});document.body.appendChild(photoIn);
+let photoPour=null;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-photo]');if(!b)return;photoPour=b.dataset.photo;photoIn.value='';photoIn.click();});
+photoIn.addEventListener('change',async()=>{const f=photoIn.files[0];if(!f||!photoPour)return;const id=photoPour;
+  let data;try{const bmp=await createImageBitmap(f);const k=Math.min(1,2000/bmp.width);const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);data=c.toDataURL('image/jpeg',0.85);
+    if(bmp.width<1200&&!confirm('La photo est petite ('+bmp.width+' px de large) : elle risque d’être floue en en-tête. Continuer ?'))return;}
+  catch(x){msg('Photo illisible : choisissez un fichier JPEG ou PNG.','err');return;}
+  const credit=prompt('Crédit de la photo (facultatif, affiché sous l’en-tête) :','Photo : ');if(credit===null)return;
+  msg('Envoi de la photo…','info');
+  try{await api('POST','/api/admin/photo',{trip:id,photo:data,credit:credit.trim()==='Photo :'?'':credit.trim()});
+    msg(`Photo d’en-tête enregistrée pour « ${esc(id)} ». Le robot recadre l’en-tête et l’aperçu des liens : en ligne d’ici 2 à 4 minutes.`,'ok');}
+  catch(x){msg(x.status===404&&/Introuvable/.test(x.message)?'La photo n’a pas été envoyée : le service ne connaît pas encore cette fonction. Redéployez le Worker (<code>npm run deploy</code>).':'La photo n’a pas été envoyée : '+esc(x.message),'err');}
+});
 // La photo est réduite dans le navigateur (2000 px de large au plus) avant l’envoi
 $('#f-photo').addEventListener('change',async e=>{
   const f=e.target.files[0];photo=null;$('#f-credit-l').hidden=!f;if(!f)return;
