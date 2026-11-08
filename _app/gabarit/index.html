@@ -53,8 +53,6 @@ body:not(.on-accueil) .hero{min-height:118px}body:not(.on-accueil) .hero h1{font
 .hero p{margin:6px 0 0;font-size:15px;color:#ffffffe0}
 .hero .h-dates{margin:4px 0 0;font-size:24px;font-weight:700;letter-spacing:-.3px;color:#fff}
 .gear{position:absolute;z-index:2;top:calc(10px + env(safe-area-inset-top));right:10px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:#00000038;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);text-decoration:none}
-.mv{position:absolute;z-index:2;top:calc(14px + env(safe-area-inset-top));left:12px;height:36px;padding:0 13px;border-radius:999px;display:flex;align-items:center;color:#fff;background:#00000038;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);text-decoration:none;font-size:14px;font-weight:600}
-body.has-mv .hero .wrap{padding-top:calc(58px + env(safe-area-inset-top))}
 .gear svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .gear[aria-current]{background:#ffffff40}
 body.is-offline .gear{top:10px}
@@ -1001,7 +999,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 </div>
 <div id="offline" class="offline" role="status" hidden></div>
 <header class="hero" style="background-image:url('hero.webp')">
-  <a class="mv" href="/mes-voyages/" id="mv-link" hidden>← Mes voyages</a>
   <a class="gear" href="#reglages" id="gear" aria-label="Réglages" title="Réglages"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
   <div class="wrap">
     <p class="overline" id="h-sub">{{LIEU}}</p>
@@ -1224,6 +1221,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <a class="back" href="#accueil" id="reg-back">← Retour</a>
   <h2 id="t-reglages">Réglages</h2>
   <p class="small">Propres à ce téléphone.</p>
+  <div class="card" id="mv-card" hidden><h3>Mes voyages</h3><p class="small">Revenir à la liste de tous vos voyages.</p><p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/mes-voyages/" id="mv-voy" hidden>← Mes voyages</a><a class="btn" href="/accompagnateur/" id="mv-acc" hidden>← Mes voyages (accompagnateur)</a></p></div>
   <div class="card" id="alertes-card" hidden><h3>Alertes du voyage</h3><div id="alertes"></div></div>
   <div class="card"><h3>Installer ou partager l’app</h3><p>Page avec le code QR et les étapes pour iPhone et Android, à envoyer aux autres voyageurs.</p><p><a class="btn light" href="installer.html">Comment installer l’app</a></p></div>
   <div class="card" id="apparence">
@@ -2008,7 +2006,9 @@ addEventListener('hashchange',()=>show(location.hash.slice(1)));
 /* App « Mes voyages » : si ce téléphone l’utilise (même app d’écran d’accueil), le voyage s’y inscrit et un lien y ramène */
 function mesVoyages(){try{const k='monaccompagnateur-mes-voyages',l=JSON.parse(localStorage.getItem(k)||'null');if(!Array.isArray(l))return;
   if(!l.some(x=>x.id===TRIP.id)){l.push({id:TRIP.id,titre:V&&V.titre,datesTexte:V&&V.datesTexte,debut:V&&V.debut,fin:V&&V.fin,ajoute:Date.now()});localStorage.setItem(k,JSON.stringify(l));}
-  $('#mv-link').hidden=false;document.body.classList.add('has-mv');}catch(e){}}
+  $('#mv-card').hidden=false;$('#mv-voy').hidden=false;}catch(e){}}
+/* Ouvert depuis l’app Accompagnateur (un compte y est connecté) : lien de retour vers ses voyages */
+try{if(localStorage.getItem('monaccompagnateur-session')){$('#mv-card').hidden=false;$('#mv-acc').hidden=false;}}catch(e){}
 function renderAll(){if(LOCKED)return;mesVoyages();try{renderRemontee();renderSondage();}catch(e){}renderDomSeg();renderHeader();renderHome();renderProgram();renderSkiStatic();renderEtat();renderWx();renderInfos();placeMarkers();}
 
 /* ---------- Alertes du voyage (push) ---------- */

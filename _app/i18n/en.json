@@ -489,7 +489,9 @@
 "Liste du groupe sur ce téléphone": "Group list on this phone",
 "Alertes du voyage, installation de l’app, apparence et langue : touchez la roue dentée en haut à droite.": "Trip alerts, app installation, appearance and language: tap the gear at the top right.",
 "Exporter la liste (CSV)": "Export the list (CSV)",
-"Effacer de ce téléphone": "Erase from this phone"
+"Effacer de ce téléphone": "Erase from this phone",
+"Revenir à la liste de tous vos voyages.": "Back to the list of all your trips.",
+"← Mes voyages (accompagnateur)": "← My trips (trip leader)"
 },
 "regex": [
 [
