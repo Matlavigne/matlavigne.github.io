@@ -54,7 +54,9 @@ select{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10
 .g-grp{margin:14px 0 6px;font-weight:700;color:var(--pine)}
 .g-p{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--white);margin-bottom:6px}
 .g-p .n{font-weight:700}.g-p .ch{font-weight:700;text-align:right}.g-p .m{grid-column:1/-1;font-size:13px;color:var(--muted)}
-.g-p .acts{grid-column:1/-1;display:flex;gap:14px;font-size:14px;margin-top:2px}
+.g-p .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ct{display:inline-flex;align-items:center;min-height:34px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--white);color:var(--pine);font-size:13px;font-weight:600;text-decoration:none}
+.p-row .t{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0;white-space:normal}
 .g-p .ed{font-size:13px;padding:0;min-height:0;border:0;background:none;color:var(--pine);text-decoration:underline;justify-self:end}
 .g-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .g-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g-form .full{grid-column:1/-1}
@@ -168,6 +170,8 @@ function gAgeHtml(p){const a=gAge(p.naissance),f=gFete(p.naissance);if(a==null&&
   return f?`<span class="fete">${a!=null?esc(a+' ans · '):''}${esc(gFeteTxt(f))}</span>`:`<span class="age">${a} ans</span>`;}
 const gDateTxt=iso=>/^\d{4}-\d\d-\d\d$/.test(iso||'')?new Intl.DateTimeFormat(LOC,{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')):String(iso||'');
 /* Numéro à composer : 10 chiffres → +1…, 11 chiffres commençant par 1 → +1…, + conservé */
+/* Boutons de contact (le numéro n’est pas affiché) */
+const gContact=p=>{const t=esc(gTel(p.cellulaire));return `<a class="ct" href="tel:${t}" aria-label="Appeler ${esc(gNom(p))}">Appeler</a><a class="ct" href="sms:${t}" aria-label="Texto à ${esc(gNom(p))}">Texto</a><a class="ct" href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(gNom(p))}">WhatsApp</a>`;};
 const gTel=t=>{const raw=String(t||'').trim(),d=raw.replace(/\D/g,'');if(raw.startsWith('+'))return '+'+d;if(d.length===10)return '+1'+d;if(d.length===11&&d[0]==='1')return '+'+d;return d;};
 
 /* Lecture CSV : UTF-8 ou Windows-1252 (Excel), séparateur ; , ou tabulation, guillemets. */
@@ -208,7 +212,7 @@ function drawGroupe(){
   $('#g-sum').textContent=all.length+' personne'+(all.length>1?'s':'')+(g.F||g.M?` · ${g.F} femme${g.F>1?'s':''}, ${g.M} homme${g.M>1?'s':''}`:'')+(mineurs?` · ${mineurs} mineur${mineurs>1?'s':''}`:'')+(GRP.maj?' · modifiée le '+new Intl.DateTimeFormat(LOC,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(GRP.maj)):'');
   $('#g-list').innerHTML=L.map(p=>{const a=gAge(p.naissance);
     const info=[GENRE[p.genre]||p.genre,p.naissance?gDateTxt(p.naissance)+(a!=null?` (${a} ans)`:''):''].filter(Boolean).join(' · ');
-    return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${gFete(p.naissance)?`<span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler ${esc(p.cellulaire)}</a><a href="sms:${esc(gTel(p.cellulaire))}">Texto</a><a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
+    return `<div class="g-p"><span class="n">${esc(gNom(p))}</span><button type="button" class="ed" data-g-edit="${esc(p._id)}">Modifier</button>${info?`<span class="m">${esc(info)}</span>`:''}${gFete(p.naissance)?`<span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<span class="m">${esc(p.autre)}</span>`:''}${p.cellulaire?`<span class="acts">${gContact(p)}</span>`:''}</div>`;}).join('')||'<p class="small">Aucun résultat.</p>';
 }
 function gOpenEdit(id){
   const p=id?GRP.voyageurs.find(x=>x._id===id):null;gEditId=p?p._id:null;const f=$('#g-edit');
@@ -277,7 +281,7 @@ function drawPres(){
   const here=scope.filter(p=>a.coches[p._id]).length,miss=scope.length-here;
   $('#p-count').innerHTML=`<span class="${miss?'':'ok'}">${here} / ${scope.length} présents</span>${miss?` · <span class="ko">${miss} absent${miss>1?'s':''}</span>`:' ✓'}${out.length?` <span class="ex">· ${out.length} exclu${out.length>1?'s':''}</span>`:''}`;
   const rows=scope.filter(p=>(!pMiss||!a.coches[p._id])&&(!q||normPhrase([p.prenom,p.nom].join(' ')).replace(/-/g,' ').includes(q))).sort(gTri);
-  $('#p-list').innerHTML=(rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}<br><button type="button" class="p-ex" data-pexcl="${esc(p._id)}">Exclure de cet appel</button></span>${!on&&p.cellulaire?`<span class="t"><a href="tel:${esc(gTel(p.cellulaire))}">Appeler</a> · <a href="https://wa.me/${esc(waNum(p.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a></span>`:''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`)
+  $('#p-list').innerHTML=(rows.map(p=>{const on=!!a.coches[p._id];return `<label class="p-row${on?' on':''}"><input type="checkbox" data-pid="${esc(p._id)}"${on?' checked':''}><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${gAgeHtml(p)?`<br><span class="m">${gAgeHtml(p)}</span>`:''}${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}<br><button type="button" class="p-ex" data-pexcl="${esc(p._id)}">Exclure de cet appel</button>${!on&&p.cellulaire?`<span class="t">${gContact(p)}</span>`:''}</span>${''}</label>`;}).join('')||`<p class="small">${pMiss?'Personne d’absent. Tout le monde est là.':'Aucune personne.'}</p>`)
     +(out.length&&!pMiss?`<p class="g-grp">Exclus de cet appel · ${out.length}</p>`+out.map(p=>`<div class="p-row p-out"><span class="p-txt"><span class="n">${esc(gNom(p))}</span>${p.autre?`<br><span class="m note">${esc(p.autre)}</span>`:''}</span><button type="button" class="light mini" data-pincl="${esc(p._id)}">Remettre</button></div>`).join(''):'');
   $('#p-miss').setAttribute('aria-pressed',pMiss);$('#p-miss').textContent=pMiss?'Afficher tout le monde':'Seulement les absents';
 }
