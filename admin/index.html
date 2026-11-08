@@ -125,7 +125,7 @@ textarea{font:inherit;font-size:14px;width:100%;min-height:150px;padding:10px;bo
           <label class="chk full"><input type="checkbox" id="f-aconf"> Dates à confirmer</label>
           <label class="full">Dates affichées<input id="f-dates" maxlength="60"><span class="help">Ex. « 5 au 13 mars 2027 » ou « Mars 2027 ».</span></label>
           <label class="full">Adresse de l’app<input id="f-id" maxlength="63" autocapitalize="off" spellcheck="false"><span class="help" id="f-url"></span></label>
-          <label class="full">Accompagnateur (accès à l’éditeur)<select id="f-compte"></select><span class="help">Créez le compte dans l’onglet Comptes s’il n’existe pas encore; vous pourrez l’associer plus tard.</span></label>
+          <div class="full"><span class="help" style="font-weight:600">Accompagnateurs (accès à l’éditeur et à Mon groupe)</span><div class="chips" id="f-comptes"></div><span class="help">Un ou plusieurs. Créez le compte dans l’onglet Comptes s’il n’existe pas encore; vous pourrez les ajouter ou les changer plus tard (bouton « Accompagnateurs » du voyage).</span></div>
           <label class="full">Photo d’en-tête (facultative)<input id="f-photo" type="file" accept="image/jpeg,image/png,image/webp"><span class="help">Paysage, au moins 1400 px de large. Sans photo : une illustration de la montagne de la station.</span></label>
           <label class="full" id="f-credit-l" hidden>Crédit de la photo<input id="f-credit" maxlength="300" placeholder="ex. Photo : Gaislachkogl, Sloth (CC BY 3.0)"></label>
           <label class="full">Phrase du voyage<input id="f-phrase" autocapitalize="off" spellcheck="false"><span class="help">Elle protège le contenu de l’app. <a href="#" id="f-gen">Proposer une autre phrase</a></span></label>
@@ -284,10 +284,19 @@ function dessiner(){
   $('#list').innerHTML=ETAT.voyages.map(v=>`<div class="v">
     <span class="t">${esc(v.appCourt||v.titre)}</span><span>${v.clos?'<span class="tag clos">Clos</span>':'<span class="tag ok">Actif</span>'}</span>
     <span class="meta">${esc(v.titre)} · ${esc(v.dates)} · ${esc(st[v.station]?.nom||v.station)}<br>
-      ${v.abonnes} téléphone${v.abonnes>1?'s':''} abonné${v.abonnes>1?'s':''} aux alertes · éditeur : ${v.acces?.length?esc(v.acces.join(', ')):'aucun accompagnateur'}</span>
-    <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a><button type="button" class="light" data-photo="${esc(v.id)}">Photo d’en-tête</button>
-    ${v.clos?'':`<button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}<button type="button" class="danger" data-suppr="${esc(v.id)}">Supprimer</button></span></div>`).join('')||'<p class="small">Aucun voyage.</p>';
+      ${v.abonnes} téléphone${v.abonnes>1?'s':''} abonné${v.abonnes>1?'s':''} aux alertes · accompagnateurs : ${v.acces?.length?esc(v.acces.join(', ')):'aucun'}</span>
+    <span class="acts"><a class="btn light" href="${SITE}/${esc(v.id)}/" target="_blank" rel="noopener">App</a><a class="btn light" href="${SITE}/${esc(v.id)}/installer.html" target="_blank" rel="noopener">Installation</a><a class="btn light" href="${SITE}/${esc(v.id)}/editeur.html" target="_blank" rel="noopener">Éditeur</a><button type="button" class="light" data-photo="${esc(v.id)}">Photo d’en-tête</button><button type="button" class="light" data-vacc="${esc(v.id)}">Accompagnateurs</button>
+    ${v.clos?'':`<button type="button" class="danger" data-clore="${esc(v.id)}">Clore</button>`}<button type="button" class="danger" data-suppr="${esc(v.id)}">Supprimer</button></span>
+    <div data-vacc-p="${esc(v.id)}" hidden style="grid-column:1/-1;margin-top:8px"><p class="help" style="margin:0 0 6px">Cochez les accompagnateurs de ce voyage : ils le voient dans leur app et peuvent publier avec l’éditeur.</p><div class="chips">${comptesChips(v.accompagnateurs||[])}</div><p class="row" style="margin-top:8px"><button type="button" data-vacc-save="${esc(v.id)}">Enregistrer</button><button type="button" class="light" data-vacc="${esc(v.id)}">Fermer</button></p></div></div>`).join('')||'<p class="small">Aucun voyage.</p>';
 }
+document.addEventListener('click',async e=>{
+  const o=e.target.closest('[data-vacc]');if(o){const p=$(`[data-vacc-p="${o.dataset.vacc}"]`);if(p)p.hidden=!p.hidden;return;}
+  const sv=e.target.closest('[data-vacc-save]');if(!sv)return;const id=sv.dataset.vaccSave;
+  const comptes=$$(`[data-vacc-p="${id}"] input:checked`).map(i=>i.value);sv.disabled=true;
+  try{await api('POST','/api/admin/acces',{trip:id,comptes});const noms=COMPTES.filter(c=>comptes.includes(c.username)).map(c=>c.nom);
+    msg(`Accompagnateurs de « ${esc(id)} » : ${noms.length?esc(noms.join(', ')):'aucun'}.`,'ok');chargerTout();}
+  catch(x){msg(x.status===404&&/Introuvable/.test(x.message)?'Pas enregistré : le service ne connaît pas encore cette fonction. Redéployez le Worker (<code>npm run deploy</code>).':'Pas enregistré : '+esc(x.message),'err');sv.disabled=false;}
+});
 let armed={};
 function arm(b,key,txt,fn){if(!armed[key]){armed[key]=1;const o=b.textContent;b.classList.add('armed');b.textContent=txt;setTimeout(()=>{armed[key]=0;b.classList.remove('armed');b.textContent=o;},5000);return;}armed[key]=0;fn();}
 document.addEventListener('click',e=>{
@@ -307,6 +316,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ---------- Comptes ---------- */
+const comptesChips=(sel)=>COMPTES.filter(c=>c.role!=='admin'&&c.actif).map(c=>`<label class="chk"><input type="checkbox" value="${esc(c.username)}"${sel.includes(c.username)?' checked':''}> ${esc(c.nom)}</label>`).join('')||'<span class="small">Aucun compte d’accompagnateur actif : créez-en un dans l’onglet Comptes.</span>';
 const tripsChips=(sel)=>ETAT.voyages.filter(v=>!v.clos).map(v=>`<label class="chk"><input type="checkbox" value="${esc(v.id)}"${sel.includes(v.id)?' checked':''}> ${esc(v.appCourt||v.id)}</label>`).join('')||'<span class="small">Aucun voyage actif.</span>';
 function dessinerComptes(){
   $('#clist').innerHTML=COMPTES.map(c=>{const moi=c.username===PROFIL.username;return `<div class="v">
@@ -374,7 +384,7 @@ $('#f-gen').onclick=e=>{e.preventDefault();$('#f-phrase').value=phrase();};
 $('#b-new').onclick=()=>{
   manuel={};photo=null;$('#nv').reset();$('#f-credit-l').hidden=true;
   $('#f-station').innerHTML=ETAT.stations.map(s=>`<option value="${esc(s.id)}">${esc(s.nom)} · ${esc(s.lieu)}</option>`).join('');
-  $('#f-compte').innerHTML='<option value="">Aucun pour l’instant</option>'+COMPTES.filter(c=>c.role!=='admin'&&c.actif).map(c=>`<option value="${esc(c.username)}">${esc(c.nom)} (${esc(c.username)})</option>`).join('');$('#f-phrase').value=phrase();$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
+  $('#f-comptes').innerHTML=comptesChips([]);$('#f-phrase').value=phrase();$('#nv').hidden=false;$('#res').hidden=true;suggestions();$('#nv').scrollIntoView({behavior:'smooth'});
 };
 $('#f-cancel').onclick=()=>{$('#nv').hidden=true;};
 /* Photo d’en-tête d’un voyage existant (ajoutée ou remplacée) */
@@ -409,7 +419,7 @@ function joursProgramme(d,f,tzStation){
 $('#nv').addEventListener('submit',async e=>{
   e.preventDefault();
   const s=ETAT.stations.find(x=>x.id===$('#f-station').value);
-  const b={station:s?.id,titre:$('#f-titre').value.trim(),appCourt:$('#f-court').value.trim(),debut:$('#f-debut').value,fin:$('#f-fin').value,dates:$('#f-dates').value.trim(),id:$('#f-id').value.trim(),photo,credit:$('#f-credit').value.trim(),accueil:$('#f-accueil').checked,compte:$('#f-compte').value||null};
+  const b={station:s?.id,titre:$('#f-titre').value.trim(),appCourt:$('#f-court').value.trim(),debut:$('#f-debut').value,fin:$('#f-fin').value,dates:$('#f-dates').value.trim(),id:$('#f-id').value.trim(),photo,credit:$('#f-credit').value.trim(),accueil:$('#f-accueil').checked,comptes:$$('#f-comptes input:checked').map(i=>i.value)};
   const ph=$('#f-phrase').value.trim();
   if(!s||!b.titre||!b.appCourt||!b.debut||!b.fin||!b.dates||!b.id)return msg('Remplissez la station, le titre, le nom court, les deux dates et l’adresse.','err');
   if(b.fin<b.debut)return msg('Le dernier jour doit suivre le premier.','err');
@@ -426,13 +436,13 @@ $('#nv').addEventListener('submit',async e=>{
 });
 function resultat(r,ph){
   const app=r.url,inv=app+'installer.html#cle='+encodeURIComponent(ph),ed=app+'editeur.html';
-  const texte=`Voici l’accès à l’éditeur du voyage ${r.id} :\n- Éditeur : ${ed}\n- Connexion : votre nom d’usager et votre mot de passe${r.compte?' (compte '+r.compte+')':''}\n- Phrase du voyage : ${ph}\n\nDans l’éditeur, ouvrez « Connexion pour publier », connectez-vous, puis entrez la phrase dans « Phrase du voyage » pour ouvrir le contenu.`;
+  const texte=`Voici l’accès à l’éditeur du voyage ${r.id} :\n- Éditeur : ${ed}\n- Connexion : votre nom d’usager et votre mot de passe${r.comptes&&r.comptes.length?' (compte '+r.comptes.join(', ')+')':''}\n- Phrase du voyage : ${ph}\n\nDans l’éditeur, ouvrez « Connexion pour publier », connectez-vous, puis entrez la phrase dans « Phrase du voyage » pour ouvrir le contenu.`;
   const x=$('#res');x.hidden=false;
   x.innerHTML=`<h2>Voyage créé ✓</h2>
   <p id="etat" class="msg info">Le robot prépare l’app (icône, photo, pages). Elle sera en ligne dans 2 à 4 minutes…</p>
   <p><b>Adresse de l’app :</b> <a href="${esc(app)}" target="_blank" rel="noopener">${esc(app)}</a></p>
   <p><b>Phrase du voyage</b> (à donner aux voyageurs)</p><div class="secret">${esc(ph)}</div>
-  <p style="margin-top:12px"><b>Accès à l’éditeur :</b> ${r.compte?'compte <b>'+esc(r.compte)+'</b>':'aucun compte accompagnateur pour l’instant (onglet Comptes)'}</p>
+  <p style="margin-top:12px"><b>Accès à l’éditeur :</b> ${r.comptes&&r.comptes.length?(r.comptes.length>1?'comptes ':'compte ')+'<b>'+esc(r.comptes.join(', '))+'</b>':'aucun accompagnateur pour l’instant (bouton « Accompagnateurs » du voyage)'}</p>
   <p style="margin-top:12px"><b>Lien d’invitation des voyageurs</b> (ouvre l’app déjà déverrouillée)</p><div class="secret">${esc(inv)}</div>
   <p style="margin-top:12px"><b>Message pour l’accompagnateur</b></p><textarea readonly id="txt">${esc(texte)}</textarea>
   <p class="row" style="margin-top:10px"><button type="button" class="light" id="cp-txt">Copier le message</button><button type="button" class="light" id="cp-inv">Copier le lien d’invitation</button><button type="button" id="fin">J’ai noté la phrase</button></p>

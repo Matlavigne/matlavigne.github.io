@@ -312,14 +312,15 @@ async function adminEtat(env) {
   let toml = {}; try { toml = JSON.parse(env.EDITOR_TOKENS || "{}"); } catch {}
   await ensureAuthSchema(env);
   const us = (await env.DB.prepare("SELECT username, nom, trips, role, actif FROM users").all()).results || [];
-  const acces = (id) => us.filter((u) => u.actif && u.role !== "admin" && JSON.parse(u.trips || "[]").includes(id)).map((u) => u.nom || u.username);
+  const avec = (id) => us.filter((u) => u.actif && u.role !== "admin" && JSON.parse(u.trips || "[]").includes(id));
+  const acces = (id) => avec(id).map((u) => u.nom || u.username);
   const voyages = [];
   for (const f of vFiles.filter((f) => f.name.endsWith(".json"))) {
     const j = await ghFile(env, `_app/voyages/${f.name}`);
     let v; try { v = JSON.parse(j.text); } catch { continue; }
     const t = all[v.id] || {};
     if (t.supprime) continue; // supprimé : GitHub peut encore lister la fiche quelques instants
-    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, acces: acces(v.id), clos: !!t.clos });
+    voyages.push({ id: v.id, station: v.station, titre: v.titre, dates: v.dates, appCourt: v.appCourt, fin: t.end || null, alertes: !!all[v.id], abonnes: nSubs[v.id] || 0, cle: kSet[v.id] ? "admin" : toml[v.id] ? "terminal" : null, acces: acces(v.id), accompagnateurs: avec(v.id).map((u) => u.username), clos: !!t.clos });
   }
   voyages.sort((a, b) => String(b.fin || "").localeCompare(String(a.fin || "")));
   return { stations, voyages };
@@ -377,13 +378,29 @@ async function adminCreer(env, b) {
     env.DB.prepare("INSERT INTO trips (id, station, titre, url, fin, max_subs, created_at, clos) VALUES (?, ?, ?, ?, ?, 300, ?, 0) ON CONFLICT (id) DO UPDATE SET station = excluded.station, titre = excluded.titre, url = excluded.url, fin = excluded.fin, created_at = excluded.created_at, clos = 0").bind(id, station, appCourt, `/${id}/`, b.fin, now),
     env.DB.prepare("INSERT INTO editor_keys (trip, hash, created_at) VALUES (?, ?, ?) ON CONFLICT (trip) DO UPDATE SET hash = excluded.hash, created_at = excluded.created_at").bind(id, await hashKey(cle), now),
   ]);
-  let compte = null;
-  if (b.compte) {
-    await ensureAuthSchema(env);
-    const u = await env.DB.prepare("SELECT username, trips FROM users WHERE username = ?").bind(String(b.compte).toLowerCase()).first();
-    if (u) { const t = JSON.parse(u.trips || "[]"); if (!t.includes(id)) t.push(id); await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(t), u.username).run(); compte = u.username; }
+  // Accompagnateurs : un ou plusieurs comptes (b.comptes), ou l'ancien champ b.compte
+  const voulus = Array.isArray(b.comptes) ? b.comptes : b.compte ? [b.compte] : [];
+  const comptes = voulus.length ? await accesVoyage(env, id, voulus, false) : [];
+  return { ok: true, id, cle, compte: comptes[0] || null, comptes, commit, url: `https://monaccompagnateur.ca/${id}/` };
+}
+
+// Accompagnateurs d'un voyage : donne l'accès aux comptes listés; avec remplacer, le retire aux autres
+async function accesVoyage(env, trip, usernames, remplacer = true) {
+  await ensureAuthSchema(env);
+  const voulus = new Set((usernames || []).map((u) => String(u).toLowerCase()));
+  const us = (await env.DB.prepare("SELECT username, trips, role FROM users").all()).results || [];
+  const inconnus = [...voulus].filter((u) => !us.some((x) => x.username === u && x.role !== "admin"));
+  if (inconnus.length) throw new HttpError(400, `Compte d'accompagnateur inconnu : ${inconnus.join(", ")}`);
+  const ok = [];
+  for (const u of us) {
+    if (u.role === "admin") continue;
+    const t = JSON.parse(u.trips || "[]"), a = t.includes(trip), veut = voulus.has(u.username);
+    if (veut) ok.push(u.username);
+    if (veut === a || (!veut && !remplacer)) continue;
+    const n = veut ? [...t, trip] : t.filter((x) => x !== trip);
+    await env.DB.prepare("UPDATE users SET trips = ? WHERE username = ?").bind(JSON.stringify(n), u.username).run();
   }
-  return { ok: true, id, cle, compte, commit, url: `https://monaccompagnateur.ca/${id}/` };
+  return ok;
 }
 
 async function adminNouvelleCle(env, trip) {
@@ -484,6 +501,12 @@ async function handleAdmin(req, env, path, url) {
   if (req.method === "POST" && path === "/api/admin/voyages") return adminCreer(env, await readJson(req, MAX_ADMIN_BYTES));
   if (req.method === "POST" && path === "/api/admin/cle") { const b = await readJson(req); return adminNouvelleCle(env, b.trip); }
   if (req.method === "POST" && path === "/api/admin/photo") return adminPhoto(env, await readJson(req, MAX_ADMIN_BYTES));
+  if (req.method === "POST" && path === "/api/admin/acces") {
+    const b = await readJson(req);
+    if (!/^[a-z0-9][a-z0-9-]{2,62}$/.test(String(b.trip || ""))) throw new HttpError(400, "Voyage invalide");
+    if (!(await ghFile(env, `_app/voyages/${b.trip}.json`))) throw new HttpError(404, "Voyage introuvable");
+    return { ok: true, trip: b.trip, comptes: await accesVoyage(env, b.trip, Array.isArray(b.comptes) ? b.comptes : []) };
+  }
   if (req.method === "POST" && path === "/api/admin/supprimer") return adminSupprimer(env, await readJson(req));
   if (req.method === "POST" && path === "/api/admin/clore") {
     const b = await readJson(req); await requireTrip(env, b.trip);
