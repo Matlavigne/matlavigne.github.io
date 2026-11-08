@@ -253,6 +253,8 @@ body.locked{overflow:hidden}
 .pin b{transform:rotate(45deg);font-size:12px}
 .leaflet-container{font:inherit}
 /* Infos */
+.acc{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:8px 0;border-top:1px solid var(--line)}.acc:first-of-type{border-top:0}.acc b{font-size:16px}
+.acc-acts{flex:1 0 100%;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;font-weight:600;margin-top:2px}
 .tel{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
 .tel:first-of-type{border-top:0}
 .tel a{font-weight:700;text-decoration:none;background:#f5e6e4;color:#97302b;border-radius:8px;padding:6px 12px;font-size:15px;white-space:nowrap}
@@ -1932,6 +1934,9 @@ $('#m-me').addEventListener('click',()=>{initMap();if(last){map.setView(last,Mat
 $('#m-hotel').addEventListener('click',()=>{initMap();const h=hotelPlace();if(h){map.setView([h.lat,h.lng],16);markers.find(m=>m.options.title===h.nom)?.openPopup();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopGps();else if(current==='carte'&&last)startGps();});
 
+/* ---------- Accompagnateurs du voyage (liste; ancien format : un seul objet « accompagnateur ») ---------- */
+const waNum=t=>{const raw=String(t||'');const d=raw.replace(/\D/g,'');return !raw.trim().startsWith('+')&&d.length===10?'1'+d:d;};
+function accompagnateurs(){const l=Array.isArray(V.accompagnateurs)?V.accompagnateurs:V.accompagnateur?[V.accompagnateur]:[];return l.filter(a=>a&&a.nom);}
 /* ---------- Liens du groupe ---------- */
 const ICONS={
   whatsapp:'<svg viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></svg>',
@@ -1959,10 +1964,16 @@ function renderInfos(){
   const docs=V.documents;const dd=store.get(K.docs,[]);
   $('#documents').hidden=!docs;
   if(docs)$('#documents').innerHTML=`<h3>Documents avant le départ</h3><ul class="check">${(docs.liste||[]).map((t,i)=>`<li><label><input type="checkbox" data-doc="${i}"${dd.includes(i)?' checked':''}><span>${esc(t)}</span></label></li>`).join('')}</ul>${(docs.notes||[]).map(t=>`<p class="small" style="margin-top:8px">${esc(t)}</p>`).join('')}`;
-  const a=V.accompagnateur||{};
+  const accs=accompagnateurs();
   const links=groupLinks();
   const org=V.organisateur||{};
-  $('#contact').innerHTML=`<h3>${esc(a.nom||'Votre accompagnateur')}</h3><p class="small">${esc(a.role||'Votre accompagnateur')}${org.nom?' · voyage organisé par '+(org.site?`<a href="${esc(org.site)}" target="_blank" rel="noopener">${esc(org.nom)}</a>`:esc(org.nom)):''}</p>${links.length?'<div class="links" data-links style="margin-top:10px"></div>':''}${a.courriel?`<p style="margin-top:10px"><a href="mailto:${esc(a.courriel)}">${esc(a.courriel)}</a></p>`:''}${!links.some(l=>l.type!=='site')&&!a.courriel?'<p>Les liens du groupe vous seront remis avant le départ.</p>':''}`;
+  const orgTxt=org.nom?'Voyage organisé par '+(org.site?`<a href="${esc(org.site)}" target="_blank" rel="noopener">${esc(org.nom)}</a>`:esc(org.nom)):'';
+  const accActs=a=>{const tel=String(a.cellulaire||'').replace(/[^\d+]/g,'');
+    return tel||a.courriel?`<span class="acc-acts">${tel?`<a href="tel:${esc(tel)}">Appeler</a><a href="sms:${esc(tel)}">Texto</a><a href="https://wa.me/${esc(waNum(a.cellulaire))}" target="_blank" rel="noopener">WhatsApp</a>`:''}${a.courriel?`<a href="mailto:${esc(a.courriel)}">${esc(a.courriel)}</a>`:''}</span>`:'';};
+  $('#contact').innerHTML=(accs.length>1?`<h3>Vos accompagnateurs</h3>${accs.map(a=>`<div class="acc"><b>${esc(a.nom)}</b><span class="small">${esc(a.role||'Accompagnateur')}</span>${accActs(a)}</div>`).join('')}${orgTxt?`<p class="small" style="margin-top:8px">${orgTxt}</p>`:''}`
+      :accs.length?`<h3>${esc(accs[0].nom)}</h3><p class="small">${esc(accs[0].role||'Votre accompagnateur')}${orgTxt?' · '+orgTxt.charAt(0).toLowerCase()+orgTxt.slice(1):''}</p>${accActs(accs[0])?`<div class="acc" style="border:0;padding-top:4px">${accActs(accs[0])}</div>`:''}`
+      :`<h3>Votre accompagnateur</h3>${orgTxt?`<p class="small">${orgTxt}</p>`:''}`)
+    +`${links.length?'<div class="links" data-links style="margin-top:10px"></div>':''}${!links.some(l=>l.type!=='site')&&!accs.some(a=>a.courriel||a.cellulaire)?'<p>Les liens du groupe vous seront remis avant le départ.</p>':''}`;
   const social=links.filter(l=>l.type!=='site');
   $('#home-links').hidden=!social.length;
   $$('[data-links]').forEach(el=>{const home=el.closest('#home-links');el.innerHTML=(home?social:links).map(linkHtml).join('');});

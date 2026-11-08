@@ -491,7 +491,11 @@
 "Exporter la liste (CSV)": "Export the list (CSV)",
 "Effacer de ce téléphone": "Erase from this phone",
 "Revenir à la liste de tous vos voyages.": "Back to the list of all your trips.",
-"← Mes voyages (accompagnateur)": "← My trips (trip leader)"
+"← Mes voyages (accompagnateur)": "← My trips (trip leader)",
+"Vos accompagnateurs": "Your trip leaders",
+"Accompagnateur": "Trip leader",
+"Courriel": "Email",
+"Voyage organisé par": "Trip organized by"
 },
 "regex": [
 [

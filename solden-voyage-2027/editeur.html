@@ -383,7 +383,8 @@ const S=[
     child:{key:'items',titre:'Rendez-vous de la journée',label:i=>(i.heure||'—')+' · '+(i.titre||''),newItem:()=>({heure:'',titre:'',lieu:'',note:''}),fields:ITEM}},
   {id:'liens',titre:'Liens du groupe (WhatsApp, Facebook…)',type:'list',key:'liens',help:'Un lien vide reste caché dans l’app.',label:l=>(l.titre||l.type||'')+(l.url?'':' (vide)'),newItem:()=>({type:'autre',titre:'',url:''}),
     fields:[['type','Type','select',[['whatsapp','WhatsApp'],['facebook','Facebook'],['instagram','Instagram'],['site','Site web'],['autre','Autre']]],['titre','Titre','text'],['url','Lien','url','full'],['detail','Sous-titre (facultatif)','text','full']]},
-  {id:'accompagnateur',titre:'Accompagnateur',type:'obj',key:'accompagnateur',fields:[['nom','Nom','text'],['role','Rôle','text'],['courriel','Courriel (facultatif, public)','text','full']]},
+  {id:'accompagnateurs',titre:'Accompagnateurs',type:'list',key:'accompagnateurs',help:'Affichés aux voyageurs dans l’onglet Infos, dans cet ordre. Le cellulaire et le courriel sont facultatifs et visibles par tous les voyageurs.',label:a=>(a.nom||'Nouvel accompagnateur')+(a.role?' · '+a.role:''),newItem:()=>({nom:'',role:'Accompagnateur',cellulaire:'',courriel:''}),
+    fields:[['nom','Nom','text'],['role','Rôle (ex. Accompagnateur, Guide)','text'],['cellulaire','Cellulaire (facultatif, public : appel, texto, WhatsApp)','text'],['courriel','Courriel (facultatif, public)','text']]},
   {id:'hotel',titre:'Hôtel',type:'obj',key:'hotel',fields:[['nom','Nom','text'],['adresse','Adresse','text'],['points','Points importants (un par ligne)','lines','full']]},
   {id:'bagages',titre:'Bagages (app et affiche)',type:'obj',key:'bagages',fields:[['soute','En soute — une ligne par sac : nom | détail','pairs','full'],['noteSoute','Note sous la soute','textarea','full'],['cabine','En cabine — une ligne par sac : nom | détail','pairs','full'],['important','Encadré rouge','textarea','full'],['conseils','Conseils (un par ligne)','lines','full']]},
   {id:'documents',titre:'Documents avant le départ',type:'obj',key:'documents',fields:[['liste','Cases à cocher (une par ligne)','lines','full'],['notes','Notes (une par ligne)','lines','full']]},
@@ -407,7 +408,13 @@ const S=[
 const HANDLED=new Set(['titre','datesTexte','debut','fin','niveau','sousTitre',...S.filter(s=>s.key).map(s=>s.key)]);
 /* Mode d’alerte d’une annonce : 'heure' (défaut), 'immediat' ou 'aucune'. Anciennes valeurs : true / false. */
 const ann=a=>a.alerte===false||a.alerte==='aucune'?'aucune':a.alerte==='immediat'?'immediat':'heure';
-function normAnn(v){(v&&Array.isArray(v.annonces)?v.annonces:[]).forEach(a=>{if(a&&typeof a==='object')a.alerte=ann(a);});return v;}
+function normAnn(v){(v&&Array.isArray(v.annonces)?v.annonces:[]).forEach(a=>{if(a&&typeof a==='object')a.alerte=ann(a);});
+  // Ancien format : un seul accompagnateur (objet) → liste d’accompagnateurs; l’ancien lien WhatsApp passe dans les liens du groupe
+  if(v&&v.accompagnateur&&typeof v.accompagnateur==='object'){const a=v.accompagnateur;
+    if(!Array.isArray(v.accompagnateurs)){v.accompagnateurs=(a.nom||a.courriel)?[{nom:a.nom||'',role:a.role||'Accompagnateur',cellulaire:a.cellulaire||'',courriel:a.courriel||''}]:[];}
+    if(a.whatsappGroupe){v.liens=Array.isArray(v.liens)?v.liens:[];if(!v.liens.some(l=>l.url===a.whatsappGroupe))v.liens.unshift({type:'whatsapp',titre:'Groupe WhatsApp',url:a.whatsappGroupe});}
+    delete v.accompagnateur;}
+  return v;}
 function nowLocal(tz){const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;}
 
 /* ---------- Modèles d’annonces ---------- */
