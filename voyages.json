@@ -17,16 +17,6 @@
   },
   "voyages": [
     {
-      "titre": "St. Anton  Mars 2027",
-      "lieu": "Ski Arlberg, Autriche",
-      "debut": "2027-03-06",
-      "fin": "2027-03-14",
-      "dates": "6 au 14 mars 2027",
-      "photo": "/st-anton-mars2027/hero.webp",
-      "app": "https://monaccompagnateur.ca/st-anton-mars2027/",
-      "souvenir": ""
-    },
-    {
       "titre": "Sölden 2027",
       "lieu": "Ötztal, Autriche",
       "debut": "2027-03-05",
