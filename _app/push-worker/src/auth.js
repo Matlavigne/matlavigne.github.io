@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // Comptes (nom d'usager + mot de passe), sessions et double authentification (TOTP, RFC 6238).
 // Rôles : « admin » (administration complète, double authentification obligatoire)
 //         « accompagnateur » (éditeur de ses voyages seulement).

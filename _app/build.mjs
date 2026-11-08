@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // Génère les fichiers de chaque voyage à partir du gabarit commun et de la fiche de sa station.
 //
 //   node _app/build.mjs                 tous les voyages

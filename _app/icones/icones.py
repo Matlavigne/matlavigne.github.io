@@ -1,3 +1,4 @@
+# Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 """Icônes des apps de voyage (écran d'accueil).
 
 Pour chaque voyage de _app/voyages/*.json : une montagne propre à la station, le nom de la

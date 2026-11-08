@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App de l'accompagnateur : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
 const CACHE = "accompagnateur-v2";
 const FILES = ["./", "groupe.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];

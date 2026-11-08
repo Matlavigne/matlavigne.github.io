@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // Worker des apps de voyage monaccompagnateur.ca : alertes et publication depuis l'éditeur.
 //
 // Publication : chaque accompagnateur a une clé d'éditeur propre à SON voyage (EDITOR_TOKENS).

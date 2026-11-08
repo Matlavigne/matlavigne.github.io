@@ -1,3 +1,4 @@
+# Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 """Prépare les images des voyages créés depuis l'administration (exécuté par le robot GitHub).
 
 1. Photo d'en-tête téléversée (_app/voyages/photos/<id>.jpg|png|webp) : recadrée en <id>/hero.webp

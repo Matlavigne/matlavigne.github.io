@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // Service worker généré par _app/build.mjs (ne pas modifier ici : modifier _app/gabarit/sw.js)
 // Changez CACHE à chaque mise à jour pour forcer l'actualisation chez les utilisateurs.
 const CACHE = '{{CACHE}}-{{HASH}}';

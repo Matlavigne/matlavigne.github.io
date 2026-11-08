@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mes voyages » des voyageurs : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
 const CACHE = "mes-voyages-v1";
 const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json"];

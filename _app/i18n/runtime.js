@@ -1,3 +1,4 @@
+// Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 /* Langue de l'app : anglais si le téléphone n'est pas en français (ou choix enregistré), sinon français.
    Le français est la langue du code; en anglais, ce script traduit l'affichage à la volée
    (textes et attributs), à partir du dictionnaire #i18n-en : chaînes exactes et modèles (regex).
