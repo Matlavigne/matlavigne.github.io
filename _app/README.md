@@ -43,7 +43,7 @@ monaccompagnateur.ca (GitHub Pages, ce dépôt)          api.monaccompagnateur.c
    - les faits pratiques, les phrases utiles et la prise électrique ;
    - les adresses de base, avec un `id` chacune.
 2. **Fiche du voyage** (`_app/voyages/<id>.json`). Elle contient la station, le titre, les dates, le nom court de l'app, les textes de partage et le crédit de la photo. Elle est écrite par l'administration.
-3. **Contenu du voyage** (`<id>/voyage.json`, rempli avec l'éditeur). Il contient le programme, les annonces, l'hôtel, les vols, les bagages, les accompagnateurs et les adresses. Tout ce contenu est **chiffré avec la phrase du voyage** (PBKDF2 600 000 tours, AES-256-GCM) dans le navigateur avant la publication. Seuls le titre, les dates, la météo, les webcams et les plans restent publics. Pour les adresses de la station :
+3. **Contenu du voyage** (`<id>/voyage.json`, rempli avec l'éditeur). Il contient le programme, les annonces, l'hôtel, les vols, les bagages, les accompagnateurs et les adresses. Tout ce contenu est **chiffré avec la clé du voyage** (AES-256-GCM) dans le navigateur avant la publication. La clé est aléatoire, créée à la création du voyage; le serveur la garde chiffrée au repos et la remet aux comptes assignés au voyage (voir « Clé du voyage » ci-dessous). Seuls le titre, les dates, la météo, les webcams et les plans restent publics. Pour les adresses de la station :
    - `{ "ref": "id-station", "masquer": true }` retire une adresse de la station ;
    - `{ "ref": "id-station", "coupDeCoeur": true, "description": "…" }` la modifie ;
    - une adresse sans `ref` s'ajoute.
@@ -88,7 +88,7 @@ Les jetons `{{NOM}}` du gabarit ne contiennent pas de chiffres. L'éditeur n'éc
 
 `/<voyage>/editeur.html`, ouvert depuis l'accès accompagnateur :
 - **Connexion pour publier** : se fait avec un compte (nom d'usager, mot de passe, double authentification). Chaque compte ne publie que ses voyages.
-- **Phrase du voyage** : réservée aux accompagnateurs, gardée sur l'appareil. Elle sert à chiffrer le contenu et à fabriquer la clé envoyée à chaque voyageur approuvé. Les voyageurs ne la voient jamais : ils reçoivent la clé par leur demande d'accès (ni lien d'invitation, ni saisie de phrase). Un ancien lien `#cle=…` est ignoré. Le bouton « App du voyage » de l'accès accompagnateur range la clé sur le téléphone de l'accompagnateur. Changer la phrase : publier, puis ouvrir les demandes d'accès pour envoyer la nouvelle clé aux voyageurs déjà approuvés (les anciennes versions restent lisibles avec l'ancienne phrase dans l'historique Git).
+- **Clé du voyage** : aucune phrase. À l'ouverture, l'éditeur demande la clé au serveur (`GET /api/voyage/cle`), qui ne la remet qu'aux comptes assignés au voyage (double authentification). « Changer la clé du voyage » en crée une nouvelle, appliquée à la publication : le serveur l'envoie aussitôt, chiffrée pour leur téléphone, aux voyageurs approuvés, et pas aux accès retirés. Un voyage chiffré autrefois avec une phrase demande la phrase une dernière fois (ou la reprend si l'éditeur l'avait mémorisée) et remet au serveur la clé qui en est tirée : les téléphones déjà ouverts n'y voient aucune différence.
 - **Tableau de bord** : tuiles et « Prêt pour le départ ».
 - **Contenu** : programme en ligne du temps, carte avec pistes pour placer un point, annonces programmées. Les annonces déclenchent les alertes à la publication.
 - **Accompagnateurs** : coordonnées reprises de leurs comptes.
@@ -97,7 +97,7 @@ Les jetons `{{NOM}}` du gabarit ne contiennent pas de chiffres. L'éditeur n'éc
 
 | Clé (localStorage, sauf mention) | Contenu |
 |---|---|
-| `<voyage>-cle-v1` | clé de déchiffrement du voyage (`{salt, k}`) |
+| `<voyage>-cle-v1` | clé du voyage (`{salt, k}` : identifiant et clé AES), reçue par la demande d'accès ou l'accès accompagnateur |
 | `<voyage>-donnees-v1`, `-documents-v1` | contenu déchiffré gardé pour l'ouverture hors ligne |
 | `monaccompagnateur-mes-voyages`, `-demandes`, `-acces` | liste des voyages, demandes d'accès en cours, accès approuvés (pour un retrait ou une nouvelle clé) |
 | `monaccompagnateur-session` | session du compte (accompagnateur, administrateur) |

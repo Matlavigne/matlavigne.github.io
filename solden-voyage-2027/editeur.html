@@ -205,19 +205,21 @@ header{position:relative}
   </details>
 
   <details class="sec" id="s-phrase">
-    <summary><h2>Phrase du voyage (accès protégé)</h2><span class="n" id="ph-state">…</span></summary>
+    <summary><h2>Clé du voyage (accès protégé)</h2><span class="n" id="ph-state">…</span></summary>
     <div class="body">
-      <p class="help">Avec une phrase, le contenu publié est chiffré : sans elle, personne ne peut lire le programme, les annonces, l’hôtel ni les liens du groupe. Elle reste entre accompagnateurs : les voyageurs ne la voient jamais. Ils demandent l’accès dans l’app et, à votre approbation, reçoivent la clé du voyage chiffrée pour leur téléphone. Restent publics : le titre, les dates, la météo et les webcams.</p>
-      <div class="grid">
-        <div class="f full"><label for="ph-in">Phrase du voyage</label><input id="ph-in" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ex. trois-mots-simples"></div>
-        <label class="chk"><input type="checkbox" id="ph-show"> Afficher la phrase</label>
-        <label class="chk"><input type="checkbox" id="ph-keep" checked> Mémoriser sur cet appareil</label>
+      <p class="help">Le contenu publié est chiffré avec la clé du voyage : sans elle, personne ne peut lire le programme, les annonces, l’hôtel ni les liens du groupe. Restent publics : le titre, les dates, la météo et les webcams. Il n’y a aucune phrase à retenir : le serveur garde la clé (chiffrée) et la remet aux accompagnateurs assignés au voyage, connectés avec la double authentification. Les voyageurs la reçoivent, chiffrée pour leur téléphone, quand vous approuvez leur demande d’accès.</p>
+      <div id="ph-migr" hidden>
+        <p class="help" style="font-weight:600;color:var(--ink)">Dernière étape de l’ancienne phrase</p>
+        <p class="help">Ce voyage a été protégé avec une phrase, et sa clé n’est pas encore sur le serveur. Entrez la phrase une dernière fois : la clé sera remise au serveur, et ni vous ni les autres accompagnateurs n’aurez plus à la taper. Les voyageurs déjà approuvés ne voient aucune différence.</p>
+        <div class="grid"><div class="f full"><label for="ph-in">Phrase du voyage</label><input id="ph-in" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"></div>
+          <label class="chk"><input type="checkbox" id="ph-show"> Afficher la phrase</label></div>
+        <div class="addbar"><button type="button" id="ph-open">Ouvrir et remettre la clé</button></div>
       </div>
-      <div class="addbar"><button type="button" id="ph-open">Ouvrir le contenu</button><button type="button" class="light" id="ph-gen">Proposer une phrase</button></div>
+      <div class="addbar" id="ph-rot-bar"><button type="button" class="light" id="ph-rot">Changer la clé du voyage</button></div>
       <p class="help" id="ph-msg"></p>
       <div id="ph-invite" hidden>
         <p class="help" style="margin-top:12px;font-weight:600;color:var(--ink)">Lien pour les voyageurs</p>
-        <p class="help">Page d’installation avec le code QR, sans la phrase. Les voyageurs installent l’app, demandent l’accès, et vous approuvez dans l’accès accompagnateur.</p>
+        <p class="help">Page d’installation avec le code QR. Les voyageurs installent l’app, demandent l’accès, et vous approuvez dans l’accès accompagnateur.</p>
         <div class="f full"><input id="ph-link" readonly></div>
         <div class="addbar"><button type="button" class="light" id="ph-copy">Copier le lien</button><a class="btn light" id="ph-openlink" target="_blank" rel="noopener">Ouvrir la page</a></div>
       </div>
@@ -301,42 +303,45 @@ async function remoteGet(){
 async function remotePut(file,prevSha){
   const j=await wk('POST','/api/publier',{trip:TRIP.id,content:file,sha:prevSha||null});return j.sha;}
 
-/* ---------- Phrase du voyage : chiffrement AES-GCM, clé PBKDF2 (le même procédé que l’app) ---------- */
+/* ---------- Clé du voyage : chiffrement AES-256-GCM ----------
+   La clé { sel, k } est gardée par le serveur (chiffrée au repos) et remise aux comptes qui ont le voyage.
+   « sel » identifie la clé : il est écrit en clair dans voyage.json (chiffre.salt), comme le sel de l’ancienne phrase.
+   Un voyage chiffré autrefois avec une phrase garde sa clé tirée de la phrase (PBKDF2) : on la remet une fois au serveur. */
 const PUBLIC_KEYS=['titre','datesTexte','sousTitre','debut','fin','meteo','webcams','plans'];
-const ITER=600000;
-const PH_KEY=()=>'editeur-phrase-'+TRIP.id;
+const PH_KEY=()=>'editeur-phrase-'+TRIP.id;   // ancienne phrase mémorisée (migration seulement)
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const tob64=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x);};
 const normPhrase=p=>String(p||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
-async function deriveK(phrase,salt,iter){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(salt),iterations:iter},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
-async function decryptFile(f,phrase){const k=await deriveK(phrase,f.chiffre.salt,f.chiffre.iter||ITER);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(f.chiffre.iv)},k,unb64(f.chiffre.data));const pub={...f};delete pub.chiffre;return {...pub,...JSON.parse(new TextDecoder().decode(pt))};}
-async function encryptFile(o,phrase,salt){
-  salt=salt||tob64(crypto.getRandomValues(new Uint8Array(16)));const iv=crypto.getRandomValues(new Uint8Array(12));
-  const k=await deriveK(phrase,salt,ITER);const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o))));
+const aes=(k,use)=>crypto.subtle.importKey('raw',unb64(k),{name:'AES-GCM'},false,use);
+async function cleDePhrase(phrase,c){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
+  const k=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
+  return {sel:c.salt,k:tob64(new Uint8Array(await crypto.subtle.exportKey('raw',k)))};}
+const nouvelleCle=()=>({sel:tob64(crypto.getRandomValues(new Uint8Array(16))),k:tob64(crypto.getRandomValues(new Uint8Array(32)))});
+async function decryptFile(f,cle){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(f.chiffre.iv)},await aes(cle.k,['decrypt']),unb64(f.chiffre.data));const pub={...f};delete pub.chiffre;return {...pub,...JSON.parse(new TextDecoder().decode(pt))};}
+async function encryptFile(o,cle){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await aes(cle.k,['encrypt']),new TextEncoder().encode(JSON.stringify(o))));
   const out={};PUBLIC_KEYS.forEach(x=>{if(o[x]!==undefined)out[x]=o[x];});
-  out.chiffre={v:1,kdf:'PBKDF2-SHA256',iter:ITER,salt,iv:tob64(iv),data:tob64(ct)};return out;
+  out.chiffre={v:2,alg:'AES-256-GCM',salt:cle.sel,iv:tob64(iv),data:tob64(ct)};return out;
 }
-let RAW=null,encSalt=null,openPhrase='';   // fichier en ligne tel que lu; sel actuel; phrase qui l’a ouvert
-const phNow=()=>normPhrase($('#ph-in').value);
-const phDirty=()=>!!V&&phNow()!==openPhrase;
-function savePh(){if($('#ph-keep').checked&&phNow())LS.set(PH_KEY(),$('#ph-in').value.trim());else LS.del(PH_KEY());}
+/* La clé est rangée sur cet appareil comme l’app la range : l’app du voyage (Aperçu, Vérifier) s’ouvre aussitôt */
+const rangerCle=c=>{try{localStorage.setItem(TRIP.id+'-cle-v1',JSON.stringify({salt:c.sel,k:c.k}));}catch(e){}};
+let RAW=null,CLE=null,CLE_NEUVE=null;   // fichier en ligne tel que lu; clé actuelle; nouvelle clé à publier (changement)
+const phDirty=()=>!!V&&!!CLE_NEUVE;
 function phUi(){
-  const p=phNow();
-  $('#ph-state').textContent=RAW?.chiffre?(openPhrase?'✓ protégé':'🔒 phrase requise'):(p?'sera protégé':'non protégé');
+  $('#ph-state').textContent=CLE_NEUVE?'nouvelle clé à publier':RAW?.chiffre?(CLE?'✓ protégé':'🔒 clé requise'):'sera protégé à la publication';
   const appUrl=new URL('./',location.href).href;
   $('#ph-invite').hidden=false;
   {const l=appUrl+'installer.html';$('#ph-link').value=l;$('#ph-openlink').href=l;}
-  if(V&&phDirty())$('#ph-msg').textContent=RAW?.chiffre?(p?'Nouvelle phrase : elle s’appliquera à la prochaine publication. Ensuite, ouvrez les demandes d’accès du voyage pour envoyer la nouvelle clé aux voyageurs déjà approuvés.':'Le contenu publié est protégé : une phrase est obligatoire pour publier.'):'La protection s’activera à la prochaine publication (touchez « Publier »).';
-  else if(V)$('#ph-msg').textContent=p?'Le contenu publié est protégé par cette phrase.':'Aucune phrase : le contenu publié est lisible par toute personne qui connaît l’adresse.';
+  $('#ph-rot-bar').hidden=!(V&&CLE&&!CLE_NEUVE);
+  if(CLE_NEUVE)$('#ph-msg').textContent='Nouvelle clé : elle s’appliquera à la prochaine publication. Les voyageurs approuvés la recevront automatiquement; ceux dont l’accès a été retiré ne la recevront pas.';
+  else if(V)$('#ph-msg').textContent=RAW?.chiffre?'Le contenu publié est protégé par la clé du voyage.':'Le contenu sera chiffré à la prochaine publication.';
 }
 $('#ph-show').onchange=()=>{$('#ph-in').type=$('#ph-show').checked?'text':'password';};
-$('#ph-in').addEventListener('input',()=>{savePh();phUi();if(V)changed();});
-$('#ph-keep').onchange=savePh;
-$('#ph-open').onclick=()=>{savePh();load();};
+$('#ph-open').onclick=()=>{load();};
+$('#ph-rot').onclick=()=>{const b=$('#ph-rot');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Changer la clé? Touchez encore';setTimeout(()=>{delete b.dataset.sure;b.textContent='Changer la clé du voyage';},3500);return;}
+  delete b.dataset.sure;b.textContent='Changer la clé du voyage';CLE_NEUVE=nouvelleCle();phUi();changed();};
 $('#ph-copy').onclick=()=>{navigator.clipboard?.writeText($('#ph-link').value).then(()=>{$('#ph-copy').textContent='Lien copié';setTimeout(()=>$('#ph-copy').textContent='Copier le lien',2000);});};
-const MOTS=['marmotte','chamois','fondue','raclette','tartiflette','poudreuse','gondole','telesiege','sapin','glacier','sommet','strudel','chalet','luge','flocon','bouquetin','edelweiss','tyrol','yodel','refuge','lagopede','schnaps','crepe','cime','corniche','vallon','bretzel','grenat','myrtille','lanterne'];
-$('#ph-gen').onclick=()=>{const r=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;};const w=[];while(w.length<3){const m=MOTS[r(MOTS.length)];if(!w.includes(m))w.push(m);}$('#ph-in').value=w.join('-');$('#ph-show').checked=true;$('#ph-in').type='text';savePh();phUi();if(V)changed();};
-$('#ph-in').value=LS.get(PH_KEY(),'')||'';
 
 
 /* ---------- État ---------- */
@@ -368,13 +373,27 @@ async function load(){
   if(txt==null){try{const r=await fetch('voyage.json',{cache:'no-store'});if(r.ok){txt=await r.text();from='le site';}}catch(e){}}
   if(txt==null){msg('#m-load','Impossible de lire voyage.json. Vérifiez la connexion Internet.','err');return;}
   try{V=JSON.parse(txt);}catch(e){msg('#m-load','voyage.json contient une erreur de syntaxe : '+esc(e.message)+'. Corrigez-le une fois sur GitHub, puis rechargez cette page.','err');return;}
-  RAW=V;encSalt=V.chiffre?.salt||null;openPhrase='';
+  RAW=V;CLE=null;CLE_NEUVE=null;$('#ph-migr').hidden=true;
   if(V.chiffre){
-    const ph=$('#ph-in').value;
-    if(!normPhrase(ph)){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Le contenu publié est protégé. Entrez la phrase du voyage dans « Phrase du voyage », puis touchez « Ouvrir le contenu ».','warn');$('#sections').innerHTML='';return;}
+    const stop=(t,c)=>{V=null;phUi();msg('#m-load',t,c);$('#sections').innerHTML='';};
+    if(!remoteOk)return stop('Le contenu publié est protégé. Connectez-vous avec votre compte (« Connexion pour publier ») pour l’ouvrir.','warn');
     msg('#m-load','Ouverture du contenu protégé…','info');
-    try{V=await decryptFile(RAW,ph);openPhrase=normPhrase(ph);}
-    catch(e){V=null;$('#s-phrase').open=true;phUi();msg('#m-load','Phrase incorrecte : impossible d’ouvrir le contenu publié. Vérifiez la phrase dans « Phrase du voyage ».','err');$('#sections').innerHTML='';return;}
+    let c=null;try{c=await wk('GET','/api/voyage/cle?trip='+encodeURIComponent(TRIP.id));}catch(e){return stop('Clé du voyage indisponible : '+esc(e.message),'err');}
+    if(c.sel){
+      if(c.sel!==RAW.chiffre.salt)return stop('La clé gardée par le serveur ne correspond pas au contenu en ligne. Rechargez la page dans une minute.','err');
+      try{CLE={sel:c.sel,k:c.k};V=await decryptFile(RAW,CLE);}catch(e){CLE=null;return stop('La clé du voyage n’ouvre pas le contenu en ligne.','err');}
+    }else{
+      // Migration : voyage chiffré avec une phrase, clé pas encore sur le serveur
+      const ph=$('#ph-in').value||LS.get(PH_KEY(),'')||'';
+      if(!normPhrase(ph)){$('#ph-migr').hidden=false;$('#s-phrase').open=true;return stop('Ce voyage a été protégé avec une phrase. Entrez-la une dernière fois dans « Clé du voyage » : la clé sera remise au serveur et personne n’aura plus à la taper.','warn');}
+      let cle;
+      try{cle=await cleDePhrase(ph,RAW.chiffre);V=await decryptFile(RAW,cle);}
+      catch(e){$('#ph-migr').hidden=false;$('#s-phrase').open=true;LS.del(PH_KEY());return stop('Phrase incorrecte : impossible d’ouvrir le contenu publié.','err');}
+      try{await wk('POST','/api/voyage/cle',{trip:TRIP.id,cle});}
+      catch(e){$('#ph-migr').hidden=false;return stop('Le contenu s’ouvre, mais la clé n’a pas pu être remise au serveur : '+esc(e.message),'err');}
+      CLE=cle;LS.del(PH_KEY());$('#ph-in').value='';
+    }
+    rangerCle(CLE);
   }
   normAnn(V);base=pretty(V);phUi();
   msg('#m-load','Contenu chargé depuis '+from+'.'+(remoteOk?'':CONNECTE()?' Publication refusée pour ce voyage : voir « Connexion pour publier ».':' Connectez-vous (« Connexion pour publier ») pour pouvoir publier.'),remoteOk?'ok':(CONNECTE()?'warn':'info'));
@@ -613,7 +632,7 @@ $('#b-preview').onclick=()=>{if(!V)return;LS.set(PREVIEW_KEY,clean(V));
   if(dirty())LS.set(DRAFT_KEY(),{at:Date.now(),sha,data:V});
   LS.set(RETOUR_KEY(),{at:Date.now(),y:scrollY,open:[...document.querySelectorAll('details')].map((d,i)=>d.open?i:-1).filter(i=>i>=0)});
   leaving=true;location.href='./?brouillon';};
-$('#b-reset').onclick=()=>{const b=$('#b-reset');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tout annuler?';setTimeout(()=>{delete b.dataset.sure;b.textContent='Annuler';},3500);return;}delete b.dataset.sure;b.textContent='Annuler';V=JSON.parse(base);LS.del(DRAFT_KEY());render();changed();msg('#m-res','Modifications annulées.','info');};
+$('#b-reset').onclick=()=>{const b=$('#b-reset');if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tout annuler?';setTimeout(()=>{delete b.dataset.sure;b.textContent='Annuler';},3500);return;}delete b.dataset.sure;b.textContent='Annuler';V=JSON.parse(base);CLE_NEUVE=null;phUi();LS.del(DRAFT_KEY());render();changed();msg('#m-res','Modifications annulées.','info');};
 $('#b-pub').onclick=async()=>{
   const errs=V&&vDirty()?validate():[];
   if(errs.length){msg('#m-res','<b>À corriger avant de publier :</b><ul style="margin:6px 0 0;padding-left:18px">'+errs.map(e=>`<li>${esc(e)}</li>`).join('')+'</ul>','err');window.scrollTo({top:0,behavior:'smooth'});return;}
@@ -627,10 +646,12 @@ $('#b-pub').onclick=async()=>{
     const nowIso=new Date().toISOString();
     (V.annonces||[]).forEach(a=>{if(ann(a)==='immediat'){const tz=a.fuseau||TZL,at=pushIso(a.date,tz);if(!at||at>nowIso){a.date=nowLocal(tz);avance++;}}});
     const out=pretty(clean(V));
-    const ph=phNow();
-    if(!ph&&RAW?.chiffre){throw Error('le contenu en ligne est protégé : entrez la phrase du voyage avant de publier');}
-    const file=ph?pretty(await encryptFile(JSON.parse(out),ph,ph===openPhrase?encSalt:null)):out;
-    sha=await remotePut(file,curSha||sha);V=JSON.parse(out);base=out;RAW=JSON.parse(file);encSalt=RAW.chiffre?.salt||null;openPhrase=ph;LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
+    if(RAW?.chiffre&&!CLE)throw Error('le contenu en ligne est protégé et sa clé n’est pas ouverte : rechargez la page');
+    // Clé à utiliser : la nouvelle (changement), l’actuelle, ou une première clé pour un voyage encore en clair
+    const neuve=CLE_NEUVE||(!CLE?nouvelleCle():null),cle=neuve||CLE;
+    const file=pretty(await encryptFile(JSON.parse(out),cle));
+    const res=await wk('POST','/api/publier',{trip:TRIP.id,content:file,sha:(curSha||sha)||null,...(neuve?{cle:neuve}:{})});
+    sha=res.sha;V=JSON.parse(out);base=out;RAW=JSON.parse(file);CLE=cle;CLE_NEUVE=null;rangerCle(CLE);LS.del(DRAFT_KEY());delete b.dataset.force;phUi();pushSync(V);
    }
     if(doV)render();changed();
     msg('#m-res','✓ Publié. Les voyageurs verront les changements dans une à deux minutes.'+(avance?' '+avance+' annonce(s) « Immédiatement » mise(s) à l’heure actuelle pour être visible(s) tout de suite.':'')+' <a href="./?verif" target="_blank" rel="noopener">Vérifier dans l’app</a>','ok');window.scrollTo({top:0,behavior:'smooth'});
@@ -683,7 +704,7 @@ function tileSub(id){
     case 'remontee':return nb(L('derniereRemontee').length,'heure')||'—';
     case 'infosSki':return nb(L('infosSki').length,'info')||'—';
     case 'connexion':return $('#cx-state')?.textContent||'';
-    case 'phrase':return (phNow()||RAW?.chiffre)?'Contenu protégé':'Non protégé';
+    case 'phrase':return RAW?.chiffre?'Contenu protégé':'Protégé à la publication';
     case 'groupe':return 'Dans l’app, sur ce téléphone';
     case 'avance':return 'Météo, webcams, organisateur…';
   }
@@ -701,7 +722,7 @@ function readiness(){
   const errs=validate();
   return [
     ['connexion',!!canWrite,'Connecté pour publier'],
-    ['phrase',!!(phNow()||RAW?.chiffre),'Contenu protégé par une phrase'],
+    ['phrase',!!RAW?.chiffre,'Contenu protégé (chiffré)'],
     ['general',okD(V.debut)&&okD(V.fin)&&!!V.datesTexte&&!/confirmer/i.test(V.datesTexte),'Titre et dates confirmés'],
     ['depart',!!(V.depart?.date&&V.depart?.heure),'Heure du décollage (compte à rebours)'],
     ['vols',vols.some(v=>v.sens==='aller')&&vols.some(v=>v.sens==='retour'),'Vols aller et retour'],

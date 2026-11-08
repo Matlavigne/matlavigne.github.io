@@ -1300,7 +1300,7 @@ const TZ_ALIAS={'america/montreal':'America/Toronto','montreal':'America/Toronto
 function normTz(o){if(Array.isArray(o))o.forEach(normTz);else if(o&&typeof o==='object')for(const k in o){if(k==='fuseau'&&typeof o[k]==='string'){o[k]=TZ_ALIAS[o[k].trim().toLowerCase()]||o[k];}else normTz(o[k]);}return o;}
 function valid(v){return v&&typeof v==='object'&&Array.isArray(v.programme)&&v.debut&&v.fin;}
 /* ---------- Contenu chiffré (AES-GCM). La clé arrive par la demande d’accès approuvée (Mes voyages)
-   ou par l’Accès accompagnateur; elle est rangée sous <voyage>-cle-v1. La phrase reste du côté de l’éditeur. ---------- */
+   ou par l’Accès accompagnateur; elle est rangée sous <voyage>-cle-v1. Le serveur la garde, chiffrée au repos, pour les comptes du voyage. ---------- */
 const KEY_CLE=TRIP.id+'-cle-v1';
 let LOCKED=false,ENC=null;
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));

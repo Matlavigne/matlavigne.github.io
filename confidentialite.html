@@ -95,7 +95,7 @@ footer a{color:inherit}
   <p>Chaque accompagnateur a un compte (nom d’usager, mot de passe et double authentification) pour modifier l’app de ses voyages. Le service garde son nom et, s’il les ajoute lui-même, son cellulaire et son courriel; le mot de passe n’est gardé que sous forme d’empreinte. Ces coordonnées sont affichées aux voyageurs de ses voyages, à l’intérieur du contenu chiffré, pour qu’ils puissent le joindre. L’accompagnateur peut les modifier ou les retirer en tout temps; le compte est supprimé à la fin de sa collaboration.</p>
 
   <h3>Le contenu du voyage</h3>
-  <p>Le programme, l’hôtel, les annonces et les liens du groupe sont publiés sur le site sous forme chiffrée (AES-GCM) : seuls les téléphones qui ont reçu la clé du voyage, après approbation par l’accompagnateur, peuvent les lire. Ce contenu ne contient aucun renseignement sur les voyageurs. Restent publics : le titre, les dates, la météo et les webcams de la station.</p>
+  <p>Le programme, l’hôtel, les annonces et les liens du groupe sont publiés sur le site sous forme chiffrée (AES-GCM) : seuls les téléphones qui ont reçu la clé du voyage, après approbation par l’accompagnateur, peuvent les lire. Le service garde cette clé, elle-même chiffrée, et ne la remet qu’aux accompagnateurs assignés au voyage (double authentification) et, chiffrée pour leur téléphone, aux voyageurs approuvés. Ce contenu ne contient aucun renseignement sur les voyageurs. Restent publics : le titre, les dates, la météo et les webcams de la station.</p>
 </div>
 
 <div class="card">
@@ -105,7 +105,7 @@ footer a{color:inherit}
     <thead><tr><th>Service</th><th>Rôle</th><th>Lieu</th></tr></thead>
     <tbody>
       <tr><td>GitHub Pages (GitHub)</td><td>Hébergement du site et des apps</td><td>États-Unis</td></tr>
-      <tr><td>Cloudflare</td><td>Service d’alertes (si activé)</td><td>Amérique du Nord</td></tr>
+      <tr><td>Cloudflare</td><td>Service de l’app : alertes, demandes d’accès, comptes des accompagnateurs, clé du voyage (chiffrée)</td><td>Amérique du Nord</td></tr>
       <tr><td>Apple, Google ou Mozilla</td><td>Livraison des alertes au téléphone (si activé)</td><td>États-Unis</td></tr>
       <tr><td>Open-Meteo</td><td>Météo et neige</td><td>Europe</td></tr>
       <tr><td>Intermaps et sites officiels des stations</td><td>État des remontées et des pistes</td><td>Europe</td></tr>

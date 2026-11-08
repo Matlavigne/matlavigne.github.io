@@ -1237,7 +1237,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p class="small" id="wipe-msg"></p>
   </div>
   <div class="card"><h3>Réglages</h3><p>Alertes du voyage, installation de l’app, apparence et langue : touchez la roue dentée en haut à droite.</p><p><a class="btn light" href="#reglages">Ouvrir les réglages</a></p></div>
-  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-08 16:57</span><br><span class="small">© 2026 Mathieu Lavigne · Tous droits réservés</span></p>
+  <p class="foot">Sölden 2027 · app du voyage · <a href="#accueil">retour à l’accueil</a><br><span class="small">Version de l’app : 2026-11-08 17:24</span><br><span class="small">© 2026 Mathieu Lavigne · Tous droits réservés</span></p>
 </section>
 <section class="view" id="v-reglages" hidden aria-labelledby="t-reglages">
   <a class="back" href="#accueil" id="reg-back">← Retour</a>
@@ -1392,7 +1392,7 @@ const TZ_ALIAS={'america/montreal':'America/Toronto','montreal':'America/Toronto
 function normTz(o){if(Array.isArray(o))o.forEach(normTz);else if(o&&typeof o==='object')for(const k in o){if(k==='fuseau'&&typeof o[k]==='string'){o[k]=TZ_ALIAS[o[k].trim().toLowerCase()]||o[k];}else normTz(o[k]);}return o;}
 function valid(v){return v&&typeof v==='object'&&Array.isArray(v.programme)&&v.debut&&v.fin;}
 /* ---------- Contenu chiffré (AES-GCM). La clé arrive par la demande d’accès approuvée (Mes voyages)
-   ou par l’Accès accompagnateur; elle est rangée sous <voyage>-cle-v1. La phrase reste du côté de l’éditeur. ---------- */
+   ou par l’Accès accompagnateur; elle est rangée sous <voyage>-cle-v1. Le serveur la garde, chiffrée au repos, pour les comptes du voyage. ---------- */
 const KEY_CLE=TRIP.id+'-cle-v1';
 let LOCKED=false,ENC=null;
 const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));

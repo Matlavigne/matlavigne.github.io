@@ -341,7 +341,7 @@ async function pastilleDem(d){d=Math.max(0,d|0);
 let DEMV=null,DEMS=[];
 const nrm=t=>normPhrase(t).replace(/-/g,' ');
 function dansListe(id){try{const g=JSON.parse(localStorage.getItem(id+'-groupe-local-v1')||'null');return new Set((g&&g.voyageurs||[]).flatMap(p=>[nrm((p.prenom||'')+' '+(p.nom||'')),nrm((p.nom||'')+' '+(p.prenom||''))]));}catch(e){return new Set();}}
-let SEL=null;   // sel de la phrase actuelle du voyage (public, dans voyage.json)
+let SEL=null;   // identifiant de la clé actuelle du voyage (public, dans voyage.json)
 const perimee=d=>!!(SEL&&d.sel&&d.sel!==SEL);
 async function ouvrirDem(id){DEMV=DATA.voyages.find(x=>x.id===id);if(!DEMV)return;
   SEL=null;try{const r=await fetch('/'+id+'/voyage.json',{cache:'no-store'});if(r.ok){const j=await r.json();SEL=j.chiffre?j.chiffre.salt:null;}}catch(e){}
@@ -367,7 +367,7 @@ function dessinerDem(){
   const etat=d=>d.statut==='ok'?T('Approuvé'):d.statut==='retire'?T('Accès retiré'):T('Refusé');
   $('#dem-old').innerHTML=old.map(d=>`<div class="dq"><span><b>${nomH(d)}</b><small>${etat(d)} · ${fmt(d.decided||d.created)}${d.par?' · '+esc(d.par):''}${d.statut==='ok'&&perimee(d)?' · 🔑 '+T('ancienne clé'):''}</small></span>${d.statut==='ok'?`<button type="button" class="light danger m" data-dem-rm="${esc(d.id)}">${T('Retirer')}</button>`:`<button type="button" class="light m" data-dem-re="${esc(d.id)}">${d.statut==='retire'?T('Redonner'):T('Approuver')}</button>`}</div>`).join('')||`<p class="small">—</p>`;
   const vieux=DEMS.filter(d=>d.statut==='ok'&&perimee(d));
-  $('#dem-rekey').innerHTML=vieux.length?`<div class="rekey"><b>🔑 ${LANG==='en'?`The trip passphrase changed: ${vieux.length} approved traveller${vieux.length>1?'s have':' has'} the old key.`:`La phrase du voyage a changé : ${vieux.length} voyageur${vieux.length>1?'s approuvés ont':' approuvé a'} l’ancienne clé.`}</b><div style="margin-top:8px"><button type="button" id="dem-rk">${T('Leur envoyer la nouvelle clé')}</button></div></div>`:'';
+  $('#dem-rekey').innerHTML=vieux.length?`<div class="rekey"><b>🔑 ${LANG==='en'?`The trip key changed: ${vieux.length} approved traveller${vieux.length>1?'s have':' has'} the old key.`:`La clé du voyage a changé : ${vieux.length} voyageur${vieux.length>1?'s approuvés ont':' approuvé a'} l’ancienne clé.`}</b><div style="margin-top:8px"><button type="button" id="dem-rk">${T('Leur envoyer la nouvelle clé')}</button></div></div>`:'';
   const rk=$('#dem-rk');if(rk)rk.onclick=()=>decider(vieux.map(d=>d.id),true);
   $('#dem-hist').hidden=!old.length;$('#dem-ok').disabled=$('#dem-no').disabled=!att.length;
   if(!L.size&&att.length)$('#dem-msg').textContent=T('Astuce : importez la liste du groupe (Mon groupe) pour repérer automatiquement les bons noms.');
@@ -376,13 +376,15 @@ $('#dem-back').onclick=()=>{vue('v-app');demarrer();};
 $('#dem-all').onclick=()=>{const L=dansListe(DEMV.id);$$('#dem-list input').forEach(i=>{const d=DEMS.find(x=>x.id===i.value);i.checked=!!d&&!d.cache&&L.has(nrm(d.nom));});};
 $('#dem-none').onclick=()=>$$('#dem-list input').forEach(i=>{i.checked=false;});
 const b64url=u=>{let x='';for(let i=0;i<u.length;i+=0x8000)x+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
-/* Clé du voyage (la même que donne la phrase), pour la chiffrer ensuite pour chaque téléphone */
+/* Clé du voyage { salt, k } (rangement de l’app), remise par le serveur aux comptes qui ont le voyage.
+   undefined = indisponible (message affiché); null = contenu non protégé. */
 async function cleVoyage(v){
-  const ph=await phrasePour(v);if(ph===null)return undefined;if(ph==='')return null;
-  const j=await (await fetch('/'+v.id+'/voyage.json',{cache:'no-store'})).json();const c=j.chiffre;
-  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(ph)),'PBKDF2',false,['deriveKey']);
-  const k=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},true,['decrypt']);
-  return {salt:c.salt,k:btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.exportKey('raw',k))))};
+  let c;try{c=await api('GET','/api/voyage/cle?trip='+encodeURIComponent(v.id));}catch(x){msg(esc(x.message),'err');return undefined;}
+  if(c.sel)return {salt:c.sel,k:c.k};
+  let j=null;try{const r=await fetch('/'+v.id+'/voyage.json',{cache:'no-store'});if(r.ok)j=await r.json();}catch(e){}
+  if(j&&!j.chiffre)return null;
+  msg(LANG==='en'?'This trip’s key is not on the server yet: open the trip editor once (it hands the key over), then try again.':'La clé de ce voyage n’est pas encore sur le serveur : ouvrez une fois l’éditeur du voyage (il la remet), puis réessayez.','warn');
+  return undefined;
 }
 async function chiffrerPour(pub,cle){
   const eph=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
@@ -461,28 +463,9 @@ if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('messag
   if(d.event==='opened'&&d.id&&DATA.voyages.some(v=>v.id===d.id)){ouvrirDem(d.id);return;}
   if(!$('#v-dem').hidden&&DEMV)ouvrirDem(DEMV.id);else if(!$('#v-app').hidden)demarrer();});
 
-/* Phrase du voyage : réservée aux accompagnateurs (éditeur, clés envoyées aux voyageurs approuvés).
-   Jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
-const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const normPhrase=p=>String(p||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[\s_.,;:–—-]+/g,'-').replace(/^-+|-+$/g,'');
-async function phraseOk(phrase,c){try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(normPhrase(phrase)),'PBKDF2',false,['deriveKey']);
-  const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(c.salt),iterations:c.iter||600000},base,{name:'AES-GCM',length:256},false,['decrypt']);
-  await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(c.iv)},key,unb64(c.data));return true;}catch(e){return false;}}
-const phGet=id=>{try{return JSON.parse(localStorage.getItem('editeur-phrase-'+id)||'""')||'';}catch(e){return '';}};
-async function phrasePour(v){
-  let ph=phGet(v.id);let j=null;
-  try{const r=await fetch('/'+v.id+'/voyage.json',{cache:'no-store'});if(r.ok)j=await r.json();}catch(e){}
-  if(!j||!j.chiffre)return '';                       // contenu non protégé : pas de phrase
-  if(ph&&await phraseOk(ph,j.chiffre))return ph;
-  ph=prompt((LANG==='en'?'Trip passphrase for ':'Phrase du voyage ')+(v.appCourt||v.titre)+(LANG==='en'?' (kept on this phone, as in the editor):':' (gardée sur ce téléphone, comme dans l’éditeur) :'));
-  if(ph==null)return null;
-  msg(LANG==='en'?'Checking the passphrase…':'Vérification de la phrase…','info');
-  if(!await phraseOk(ph,j.chiffre)){msg(LANG==='en'?'This passphrase does not open this trip.':'Cette phrase n’ouvre pas ce voyage.','err');return null;}
-  try{localStorage.setItem('editeur-phrase-'+v.id,JSON.stringify(ph.trim()));}catch(e){}
-  msg('');return ph.trim();
-}
-/* App du voyage : les voyageurs n’ont plus de phrase; l’accompagnateur range ici la clé du voyage
-   sur ce téléphone (même rangement que Mes voyages), puis l’app s’ouvre déverrouillée. */
+/* App du voyage : la clé du voyage (remise par le serveur) est rangée sur ce téléphone, comme dans Mes voyages,
+   puis l’app s’ouvre déverrouillée. */
 document.addEventListener('click',async e=>{
   const a=e.target.closest('[data-ouvrir]');if(!a)return;
   e.preventDefault();const v=DATA.voyages.find(x=>x.id===a.dataset.ouvrir);

@@ -32,3 +32,13 @@ export async function accompagnateur(call, admin, username, trips) {
   await call("POST", "/api/auth/2fa/activer", { code: totp(r.json.secret) }, s);
   return s;
 }
+
+// Contenu de voyage chiffré comme le fait le navigateur (AES-256-GCM), avec sa clé { sel, k }
+export function nouvelleCle() { return { sel: crypto.randomBytes(16).toString("base64"), k: crypto.randomBytes(32).toString("base64") }; }
+export async function chiffrerVoyage(o, cle = nouvelleCle()) {
+  const k = await crypto.webcrypto.subtle.importKey("raw", Buffer.from(cle.k, "base64"), { name: "AES-GCM" }, false, ["encrypt"]);
+  const iv = crypto.randomBytes(12);
+  const data = Buffer.from(await crypto.webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, k, Buffer.from(JSON.stringify(o))));
+  return { cle, contenu: JSON.stringify({ titre: o.titre || "T", debut: o.debut || "2028-02-05", fin: o.fin || "2028-02-12", chiffre: { v: 2, alg: "AES-256-GCM", salt: cle.sel, iv: iv.toString("base64"), data: data.toString("base64") } }) };
+}
+export const CLE_MAITRE_TEST = "CLE_MAITRE=" + crypto.randomBytes(32).toString("base64");
