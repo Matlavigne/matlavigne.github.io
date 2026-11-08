@@ -1,6 +1,6 @@
 // Copyright © 2026 Mathieu Lavigne. Tous droits réservés. Voir LICENSE.
 // App « Mon accompagnateur » (voyageurs, accompagnateurs, administration) : page gardée pour l'ouverture hors ligne; toujours la version en ligne si possible.
-const CACHE = "app-v2";
+const CACHE = "app-v3";
 const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "liste.json", "accompagnateur.html", "groupe.html"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n.startsWith("app-") && n !== CACHE).map((n) => caches.delete(n)))).then(() => self.clients.claim())); });
@@ -19,6 +19,8 @@ var EN = {
   "Accès approuvé : touchez pour ouvrir votre voyage.": "Access approved: tap to open your trip.",
   "Nouvelle annonce du groupe.": "New group announcement.",
   "Votre voyage": "Your trip",
+  "Alertes des demandes d'accès activées sur ce téléphone.": "Access request alerts are on for this phone.",
+  "Demande d'accès": "Access request",
 };
 function tellClients(msg) {
   return self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (l) { l.forEach(function (c) { c.postMessage(msg); }); });
@@ -40,7 +42,11 @@ self.addEventListener("push", function (event) {
   var show = caches.open("voyage-badge").then(function (c) { return c.match("/app/__langue__"); })
     .then(function (r) { return r ? r.text() : "fr"; }).catch(function () { return "fr"; })
     .then(function (lang) {
-      if (lang === "en") { options.body = EN[options.body] || options.body; title = EN[title] || title; }
+      if (lang === "en") {
+        if (data.kind === "demande" && data.nom) options.body = data.n > 1 ? data.nom + " is asking for access (" + data.n + " requests waiting)." : data.nom + " is asking for access to the trip.";
+        else options.body = EN[options.body] || options.body;
+        title = EN[title] || title;
+      }
       return self.registration.showNotification(title, options);
     });
   event.waitUntil(Promise.all([badge, show, tellClients({ type: "voyage-push", event: "received", kind: data.kind, id: data.id })]));

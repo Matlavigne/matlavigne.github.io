@@ -214,6 +214,33 @@ try {
   check((await call("GET", "/api/acces/etat?id=" + dem2.id, null, dem2.jeton)).json.statut === "refus", "demande refusée");
   r = await call("GET", "/api/status?trip=st-anton-mars2027", null, ADMIN);
   check(r.status === 200 && r.json.abonnements >= 1, `approuvé : abonné aux alertes du voyage (${r.json.abonnements})`);
+  // Alertes des demandes pour l'accompagnateur
+  const subAcc = { endpoint: "https://fcm.googleapis.com/fcm/send/acc-" + b64u(8), keys: { p256dh: b64u(65, 4), auth: b64u(16) } };
+  check((await call("POST", "/api/acces/alertes", { sub: subAcc })).status === 401, "alertes des demandes : pas sans connexion");
+  r = await call("POST", "/api/acces/alertes", { sub: subAcc }, ADMIN);
+  check(r.status === 200 && r.json.actif, `l'accompagnateur active les alertes des demandes (${r.status} ${r.json.erreur || ""})`);
+  r = await call("GET", "/api/acces/alertes?endpoint=" + encodeURIComponent(subAcc.endpoint), null, ADMIN);
+  check(r.json.actif === true, "alertes actives sur ce téléphone");
+  r = await call("POST", "/api/acces/demande", { trip: "st-anton-mars2027", nom: "Julie Nouvelle", pub });
+  check(r.status === 200, "une nouvelle demande passe même si l'alerte ne peut pas partir (essai hors ligne)");
+  r = await call("POST", "/api/acces/alertes", { actif: false, endpoint: subAcc.endpoint }, ADMIN);
+  check((await call("GET", "/api/acces/alertes?endpoint=" + encodeURIComponent(subAcc.endpoint), null, ADMIN)).json.actif === false, "alertes coupées");
+  // Nouvelle clé (phrase changée) puis retrait de l'accès
+  const cleNv = { ...cleCh, data: b64u(60) };
+  r = await call("POST", "/api/acces/decision", { trip: "st-anton-mars2027", decisions: [{ id: dem.id, ok: true, cle: cleNv, sel: "nouveauSel123=" }] }, ADMIN);
+  check(r.json.renouvelees === 1 && r.json.approuvees === 0, "nouvelle clé envoyée à un voyageur déjà approuvé");
+  r = await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton);
+  check(r.json.statut === "ok" && r.json.cle.data === cleNv.data, "le voyageur reprend la nouvelle clé");
+  r = await call("GET", "/api/acces/demandes?trip=st-anton-mars2027", null, ADMIN);
+  check(r.json.demandes.find((d) => d.id === dem.id).sel === "nouveauSel123=", "la liste indique pour quelle phrase la clé a été envoyée");
+  r = await call("POST", "/api/acces/decision", { trip: "st-anton-mars2027", decisions: [{ id: dem.id, retirer: true }] }, ADMIN);
+  check(r.status === 200 && r.json.retirees === 1, "accès retiré");
+  r = await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton);
+  check(r.json.statut === "retire" && !r.json.cle, "le téléphone voit l'accès retiré, sans clé");
+  r = await call("GET", "/api/status?trip=st-anton-mars2027", null, ADMIN);
+  check(r.json.abonnements === 0, `retiré : plus abonné aux alertes du voyage (${r.json.abonnements})`);
+  r = await call("POST", "/api/acces/decision", { trip: "st-anton-mars2027", decisions: [{ id: dem.id, ok: true, cle: cleCh }] }, ADMIN);
+  check(r.json.approuvees === 1 && (await call("GET", "/api/acces/etat?id=" + dem.id, null, dem.jeton)).json.statut === "ok", "accès redonné");
 
   console.log("\nSuppression");
   put(`_app/icones/${nv.id}.svg`, "<svg/>"); put(`_app/i18n/voyages/${nv.id}.json`, "{}"); put(`${nv.id}/index.html`, "x");

@@ -73,6 +73,12 @@ input{font:inherit;font-size:16px;padding:10px 12px;border:1.5px solid var(--lin
 .dq{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line)}.dq:first-child{border-top:0}
 label.dq{flex-direction:row;font-weight:400;color:var(--ink);font-size:inherit;cursor:pointer}
 .dq input{width:24px;height:24px;flex:none;accent-color:#246b3c}.dq b{display:block;font-size:15px}.dq small{display:block;font-size:12.5px;color:var(--muted)}
+.alrt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);margin:0 0 12px}
+.alrt>span:first-child{font-size:22px}.alrt b{display:block;font-size:14.5px}.alrt small{display:block;color:var(--muted);font-size:12.5px}.alrt button{margin-left:auto;flex:none}
+.alrt.on{background:var(--ok-bg);border-color:transparent}
+.rekey{border:1px solid #e0b44a;background:#fdf3d8;color:#5b4300;border-radius:12px;padding:10px 12px;margin:10px 0 0}
+[data-theme=dark] .rekey{background:#3a3014;color:#f3dfa6;border-color:#7a6224}
+.dq button.m{margin-left:auto}
 .dq .m{margin-left:auto;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}.dq .m.y{background:var(--ok-bg);color:var(--ok)}.dq .m.n{background:var(--warn-bg);color:var(--warn)}
 button.danger{color:var(--red);border-color:#e3b7b2}
 .foot{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
@@ -127,6 +133,7 @@ button.danger{color:var(--red);border-color:#e3b7b2}
   <section id="v-app" hidden>
     <div class="who"><span id="qui"></span><a href="#" id="b-out" data-i>Se déconnecter</a></div>
     <p id="b-admin" hidden style="margin:0 0 14px"><a class="btn" href="/admin/" data-i>Administration</a> <span class="small" data-i>créer un voyage, comptes, accompagnateurs</span></p>
+    <div id="alrt"></div>
     <div id="list"></div>
   </section>
 
@@ -134,11 +141,13 @@ button.danger{color:var(--red);border-color:#e3b7b2}
     <p style="margin:0 0 10px"><button type="button" class="light" id="dem-back" data-i>← Mes voyages</button></p>
     <div class="card"><h2 id="dem-t"></h2><p class="small" data-i>Cochez les personnes à accepter. Le ✓ indique un nom trouvé dans votre liste du groupe (sur ce téléphone). À l’approbation, votre app envoie la clé du voyage chiffrée pour le téléphone de chaque personne : le serveur ne peut pas la lire. Elle reçoit une notification et son voyage s’ouvre.</p>
       <div class="row" style="margin-top:10px"><button type="button" class="light" id="dem-all" data-i>Cocher ceux de la liste</button><button type="button" class="light" id="dem-none" data-i>Tout décocher</button></div>
+      <div id="dem-rekey"></div>
       <div id="dem-list" style="margin-top:10px"></div>
       <div class="row" style="margin-top:12px"><button type="button" id="dem-ok" data-i>Approuver</button><button type="button" class="light danger" id="dem-no" data-i>Refuser</button></div>
       <p class="small" id="dem-msg" style="margin:8px 0 0"></p>
     </div>
-    <details class="card" id="dem-hist"><summary style="cursor:pointer;font-weight:700" data-i>Déjà traitées</summary><div id="dem-old" style="margin-top:8px"></div></details>
+    <details class="card" id="dem-hist"><summary style="cursor:pointer;font-weight:700" data-i>Déjà traitées</summary><div id="dem-old" style="margin-top:8px"></div>
+      <p class="small" style="margin:10px 0 0" data-i>Retirer un accès : le voyage s’efface de son téléphone à la prochaine ouverture de l’app, et la personne ne reçoit plus les alertes du groupe. Pour une coupure certaine (téléphone resté hors ligne, captures d’écran), changez aussi la phrase du voyage dans l’éditeur, puis revenez ici envoyer la nouvelle clé aux voyageurs approuvés.</p></details>
   </section>
 
   <section id="v-reglages" hidden>
@@ -151,6 +160,11 @@ button.danger{color:var(--red);border-color:#e3b7b2}
       <h2>Langue · Language</h2>
       <div class="seg" role="group"><button type="button" data-lang="fr">Français</button><button type="button" data-lang="en">English</button><button type="button" data-lang="auto">Auto</button></div>
       <p class="small" style="margin:8px 0 0">Auto : langue du téléphone · Auto: phone language</p>
+    </div>
+    <div class="card">
+      <h2 data-i>Alertes des demandes d’accès</h2>
+      <p class="small" data-i>Une notification sur ce téléphone dès qu’un voyageur demande l’accès à l’un de vos voyages.</p>
+      <div id="alrt-r" style="margin-top:10px"></div>
     </div>
     <div class="card">
       <h2 data-i>Mon profil</h2>
@@ -201,7 +215,7 @@ const EN={
 '← Mes voyages':'← My trips','Demandes d’accès':'Access requests','Cochez les personnes à accepter. Le ✓ indique un nom trouvé dans votre liste du groupe (sur ce téléphone). À l’approbation, votre app envoie la clé du voyage chiffrée pour le téléphone de chaque personne : le serveur ne peut pas la lire. Elle reçoit une notification et son voyage s’ouvre.':'Tick the people to accept. ✓ marks a name found in your group list (on this phone). On approval, your app sends the trip key encrypted for each person’s phone: the server cannot read it. They get a notification and their trip opens.','Cocher ceux de la liste':'Tick those on the list','Tout décocher':'Untick all','Approuver':'Approve','Refuser':'Decline','Déjà traitées':'Already handled','✓ dans la liste':'✓ on the list','⚠ inconnu':'⚠ unknown','Aucune demande en attente.':'No pending request.','Approuvé':'Approved','Refusé':'Declined','Astuce : importez la liste du groupe (Mon groupe) pour repérer automatiquement les bons noms.':'Tip: import the group list (My group) to spot the right names automatically.','Cochez au moins une personne.':'Tick at least one person.','Préparation des accès…':'Preparing access…','Toucher encore pour refuser':'Tap again to decline','Mon profil':'My profile','Affiché aux voyageurs de vos voyages (onglet Infos) : ils pourront vous appeler, vous texter, vous écrire sur WhatsApp ou par courriel. Cellulaire et courriel facultatifs.':'Shown to your trips’ travellers (Info tab): they can call, text, WhatsApp or email you. Mobile and email are optional.','Nom affiché':'Display name','Cellulaire':'Mobile','Courriel':'Email','Enregistrer le profil':'Save profile','Double authentification':'Two-step verification','Obligatoire pour tous les comptes : elle protège l’éditeur de vos voyages. Installez d’abord une app d’authentification (Google Authenticator, Microsoft Authenticator, 1Password ou l’app Mots de passe de l’iPhone), puis activez-la. Deux minutes, une seule fois.':'Required for every account: it protects your trips’ editor. First install an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or the iPhone Passwords app), then turn it on. Two minutes, only once.','Activer maintenant':'Turn on now','Ouvrez vos voyages, l’éditeur et Mon groupe à partir de cette app : sur iPhone, chaque app de l’écran d’accueil garde ses propres données. La liste du groupe importée ici reste ici.':'Open your trips, the editor and My group from this app: on iPhone, each Home Screen app keeps its own data. A group list imported here stays here.','Les deux mots de passe ne sont pas identiques.':'The two passwords do not match.','Réglages':'Settings',
 'Les listes de groupe restent sur le téléphone de l’accompagnateur : elles ne passent jamais par Internet.':'Group lists stay on the trip leader’s phone: they never go over the Internet.',
 'App du voyage':'Trip app','Éditeur':'Editor','Mon groupe':'My group','Partager l’app':'Share the app',
-'Voyages passés':'Past trips','En cours':'Underway','À venir':'Upcoming','Terminé':'Over','Clos':'Closed',
+'Voyages passés':'Past trips','Alertes des demandes d’accès':'Access request alerts','Une notification sur ce téléphone dès qu’un voyageur demande l’accès à l’un de vos voyages.':'A notification on this phone as soon as a traveller asks for access to one of your trips.','Alertes des demandes activées':'Request alerts on','Sur ce téléphone.':'On this phone.','Couper':'Turn off','Sur iPhone : ajoutez l’app à l’écran d’accueil et ouvrez-la depuis son icône pour recevoir les alertes.':'On iPhone: add the app to the Home Screen and open it from its icon to get alerts.','Ce navigateur ne reçoit pas de notifications.':'This browser cannot receive notifications.','Notifications bloquées':'Notifications blocked','Réactivez-les dans les réglages du téléphone (Notifications › Mon accompagnateur).':'Turn them back on in the phone settings (Notifications › Mon accompagnateur).','Être averti des demandes d’accès':'Get notified of access requests','Une notification dès qu’un voyageur demande l’accès.':'A notification as soon as a traveller asks for access.','Activer':'Turn on','Alertes activées ✓ Une notification d’essai vient d’être envoyée.':'Alerts on ✓ A test notification was just sent.','Alertes activées ✓':'Alerts on ✓','Alertes des demandes coupées sur ce téléphone.':'Request alerts turned off on this phone.','Accès retiré':'Access removed','ancienne clé':'old key','Retirer':'Remove','Redonner':'Restore','Confirmer':'Confirm','Leur envoyer la nouvelle clé':'Send them the new key','Retirer un accès : le voyage s’efface de son téléphone à la prochaine ouverture de l’app, et la personne ne reçoit plus les alertes du groupe. Pour une coupure certaine (téléphone resté hors ligne, captures d’écran), changez aussi la phrase du voyage dans l’éditeur, puis revenez ici envoyer la nouvelle clé aux voyageurs approuvés.':'Removing access: the trip is erased from their phone the next time the app opens, and they stop getting group alerts. To be certain (phone kept offline, screenshots), also change the trip passphrase in the editor, then come back here to send the new key to approved travellers.','En cours':'Underway','À venir':'Upcoming','Terminé':'Over','Clos':'Closed',
 };
 const T=s=>LANG==='en'&&EN[s]?EN[s]:s;
 document.documentElement.lang=LANG;
@@ -252,9 +266,15 @@ async function demarrer(){
   $('#qui').innerHTML=(LANG==='en'?'Signed in: ':'Connecté : ')+'<b>'+esc(PROFIL.nom)+'</b>';
   $('#b-admin').hidden=PROFIL.role!=='admin';
   vue('v-app');
+  dessinerAlertes();
+  // Garde l’abonnement à jour (le téléphone peut le renouveler)
+  if(alActif()&&pushOk()&&Notification.permission==='granted')activerAlertes(false).catch(()=>{});
   try{DATA=await api('GET','/api/mes-voyages');}catch(x){msg(esc(x.message),'err');return;}
   await dates();dessiner();
+  const h=location.hash.match(/^#dem=(.+)$/);
+  if(h){history.replaceState(null,'',location.pathname);const id=decodeURIComponent(h[1]);if(DATA.voyages.some(v=>v.id===id))ouvrirDem(id);}
 }
+addEventListener('hashchange',()=>{const h=location.hash.match(/^#dem=(.+)$/);if(h&&DATA){history.replaceState(null,'',location.pathname);ouvrirDem(decodeURIComponent(h[1]));}});
 
 /* Dates publiques de chaque voyage (lues dans son voyage.json, même chiffré) */
 async function dates(){
@@ -308,7 +328,10 @@ function dessiner(){
 let DEMV=null,DEMS=[];
 const nrm=t=>normPhrase(t).replace(/-/g,' ');
 function dansListe(id){try{const g=JSON.parse(localStorage.getItem(id+'-groupe-local-v1')||'null');return new Set((g&&g.voyageurs||[]).flatMap(p=>[nrm((p.prenom||'')+' '+(p.nom||'')),nrm((p.nom||'')+' '+(p.prenom||''))]));}catch(e){return new Set();}}
+let SEL=null;   // sel de la phrase actuelle du voyage (public, dans voyage.json)
+const perimee=d=>!!(SEL&&d.sel&&d.sel!==SEL);
 async function ouvrirDem(id){DEMV=DATA.voyages.find(x=>x.id===id);if(!DEMV)return;
+  SEL=null;try{const r=await fetch('/'+id+'/voyage.json',{cache:'no-store'});if(r.ok){const j=await r.json();SEL=j.chiffre?j.chiffre.salt:null;}}catch(e){}
   $('#dem-t').textContent=(LANG==='en'?'Access requests · ':'Demandes d’accès · ')+(DEMV.appCourt||DEMV.titre);$('#dem-msg').textContent='';$('#dem-list').innerHTML='<p class="small">…</p>';
   vue('v-dem');scrollTo(0,0);
   try{DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(id))).demandes||[];}catch(x){$('#dem-list').innerHTML=`<p class="small">${esc(x.message)}</p>`;return;}
@@ -319,7 +342,11 @@ function dessinerDem(){
   const att=DEMS.filter(d=>d.statut==='attente'),old=DEMS.filter(d=>d.statut!=='attente');
   $('#dem-list').innerHTML=att.map(d=>{const y=L.has(nrm(d.nom));return `<label class="dq"><input type="checkbox" value="${esc(d.id)}"${y?' checked':''}><span><b>${esc(d.nom)}</b><small>${fmt(d.created)}${d.notif?' · 🔔':''}</small></span><span class="m ${y?'y':'n'}">${y?T('✓ dans la liste'):T('⚠ inconnu')}</span></label>`;}).join('')
     ||`<p class="small">${T('Aucune demande en attente.')}</p>`;
-  $('#dem-old').innerHTML=old.map(d=>`<div class="dq"><span><b>${esc(d.nom)}</b><small>${d.statut==='ok'?T('Approuvé'):T('Refusé')} · ${fmt(d.decided||d.created)}${d.par?' · '+esc(d.par):''}</small></span>${d.statut==='refus'?`<button type="button" class="light m" data-dem-re="${esc(d.id)}">${T('Approuver')}</button>`:''}</div>`).join('')||`<p class="small">—</p>`;
+  const etat=d=>d.statut==='ok'?T('Approuvé'):d.statut==='retire'?T('Accès retiré'):T('Refusé');
+  $('#dem-old').innerHTML=old.map(d=>`<div class="dq"><span><b>${esc(d.nom)}</b><small>${etat(d)} · ${fmt(d.decided||d.created)}${d.par?' · '+esc(d.par):''}${d.statut==='ok'&&perimee(d)?' · 🔑 '+T('ancienne clé'):''}</small></span>${d.statut==='ok'?`<button type="button" class="light danger m" data-dem-rm="${esc(d.id)}">${T('Retirer')}</button>`:`<button type="button" class="light m" data-dem-re="${esc(d.id)}">${d.statut==='retire'?T('Redonner'):T('Approuver')}</button>`}</div>`).join('')||`<p class="small">—</p>`;
+  const vieux=DEMS.filter(d=>d.statut==='ok'&&perimee(d));
+  $('#dem-rekey').innerHTML=vieux.length?`<div class="rekey"><b>🔑 ${LANG==='en'?`The trip passphrase changed: ${vieux.length} approved traveller${vieux.length>1?'s have':' has'} the old key.`:`La phrase du voyage a changé : ${vieux.length} voyageur${vieux.length>1?'s approuvés ont':' approuvé a'} l’ancienne clé.`}</b><div style="margin-top:8px"><button type="button" id="dem-rk">${T('Leur envoyer la nouvelle clé')}</button></div></div>`:'';
+  const rk=$('#dem-rk');if(rk)rk.onclick=()=>decider(vieux.map(d=>d.id),true);
   $('#dem-hist').hidden=!old.length;$('#dem-ok').disabled=$('#dem-no').disabled=!att.length;
   if(!L.size&&att.length)$('#dem-msg').textContent=T('Astuce : importez la liste du groupe (Mon groupe) pour repérer automatiquement les bons noms.');
 }
@@ -346,22 +373,71 @@ async function chiffrerPour(pub,cle){
 }
 async function decider(ids,ok){
   if(!ids.length){$('#dem-msg').textContent=T('Cochez au moins une personne.');return;}
+  if(ok==='retirer'){$('#dem-msg').textContent='…';
+    try{const r=await api('POST','/api/acces/decision',{trip:DEMV.id,decisions:ids.map(id=>({id,retirer:true}))});
+      DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();
+      $('#dem-msg').textContent=LANG==='en'?'Access removed. The trip will disappear from that phone the next time the app opens.':'Accès retiré. Le voyage s’effacera de ce téléphone à la prochaine ouverture de l’app.';}
+    catch(x){$('#dem-msg').textContent=x.message;}
+    return;}
   $('#dem-ok').disabled=$('#dem-no').disabled=true;$('#dem-msg').textContent=ok?T('Préparation des accès…'):'…';
   try{
     let decisions;
     if(ok){const cle=await cleVoyage(DEMV);if(cle===undefined){$('#dem-msg').textContent='';dessinerDem();return;}
-      decisions=[];for(const id of ids){const d=DEMS.find(x=>x.id===id);decisions.push({id,ok:true,cle:cle?await chiffrerPour(d.pub,cle):null});}}
+      decisions=[];for(const id of ids){const d=DEMS.find(x=>x.id===id);decisions.push({id,ok:true,cle:cle?await chiffrerPour(d.pub,cle):null,sel:cle?cle.salt:undefined});}}
     else decisions=ids.map(id=>({id,ok:false}));
     const r=await api('POST','/api/acces/decision',{trip:DEMV.id,decisions});
     DEMS=(await api('GET','/api/acces/demandes?trip='+encodeURIComponent(DEMV.id))).demandes||[];dessinerDem();
-    $('#dem-msg').textContent=ok?(LANG==='en'?`${r.approuvees} approved · ${r.notifiees} notified right away.`:`${r.approuvees} approuvé${r.approuvees>1?'s':''} · ${r.notifiees} averti${r.notifiees>1?'s':''} par notification.`)
+    $('#dem-msg').textContent=ok&&r.renouvelees&&!r.approuvees?(LANG==='en'?`New key sent to ${r.renouvelees} traveller${r.renouvelees>1?'s':''}: their trip opens again the next time the app opens.`:`Nouvelle clé envoyée à ${r.renouvelees} voyageur${r.renouvelees>1?'s':''} : leur voyage se rouvre à la prochaine ouverture de l’app.`)
+      :ok?(LANG==='en'?`${r.approuvees} approved · ${r.notifiees} notified right away.`:`${r.approuvees} approuvé${r.approuvees>1?'s':''} · ${r.notifiees} averti${r.notifiees>1?'s':''} par notification.`)
       :(LANG==='en'?`${r.refusees} declined.`:`${r.refusees} refusé${r.refusees>1?'s':''}.`);
   }catch(x){$('#dem-msg').textContent=x.message;dessinerDem();}
 }
 $('#dem-ok').onclick=()=>decider($$('#dem-list input:checked').map(i=>i.value),true);
 let noArm=false;$('#dem-no').onclick=()=>{const ids=$$('#dem-list input:checked').map(i=>i.value);if(!ids.length){$('#dem-msg').textContent=T('Cochez au moins une personne.');return;}
   if(!noArm){noArm=true;$('#dem-no').textContent=T('Toucher encore pour refuser');setTimeout(()=>{noArm=false;$('#dem-no').textContent=T('Refuser');},3500);return;}noArm=false;$('#dem-no').textContent=T('Refuser');decider(ids,false);};
-document.addEventListener('click',e=>{const d=e.target.closest('[data-dem]');if(d){ouvrirDem(d.dataset.dem);return;}const re=e.target.closest('[data-dem-re]');if(re)decider([re.dataset.demRe],true);});
+document.addEventListener('click',e=>{const d=e.target.closest('[data-dem]');if(d){ouvrirDem(d.dataset.dem);return;}const re=e.target.closest('[data-dem-re]');if(re){decider([re.dataset.demRe],true);return;}
+  const rm=e.target.closest('[data-dem-rm]');if(rm){
+    if(!rm.dataset.arm){rm.dataset.arm='1';rm.textContent=T('Confirmer');setTimeout(()=>{if(rm.isConnected){delete rm.dataset.arm;rm.textContent=T('Retirer');}},3500);return;}
+    decider([rm.dataset.demRm],'retirer');}});
+
+/* ---------- Alertes des demandes d’accès (notifications sur le téléphone de l’accompagnateur) ---------- */
+const ALK='monaccompagnateur-alertes-acc';
+const iosA=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const autonome=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const pushOk=()=>'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window&&!(iosA&&!autonome());
+const b64uA=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';return Uint8Array.from(atob(t),c=>c.charCodeAt(0));};
+async function abonnementA(){
+  const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(()=>no(Error(LANG==='en'?'The app is not ready yet: try again.':'L’app n’est pas encore prête : réessayez.')),8000))]);
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub){const {publicKey}=await api('GET','/api/vapid',null,false);sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uA(publicKey)});}
+  const j=sub.toJSON();return {endpoint:j.endpoint,keys:j.keys};
+}
+const alActif=()=>{try{return localStorage.getItem(ALK)==='1';}catch(e){return false;}};
+function dessinerAlertes(){
+  let h;const on=alActif()&&pushOk()&&Notification.permission==='granted';
+  if(on)h=`<div class="alrt on"><span>🔔</span><span><b>${T('Alertes des demandes activées')}</b><small>${T('Sur ce téléphone.')}</small></span><button type="button" class="light" data-al="off">${T('Couper')}</button></div>`;
+  else if(!pushOk())h=`<div class="alrt"><span>🔕</span><span><b>${T('Alertes des demandes d’accès')}</b><small>${iosA&&!autonome()?T('Sur iPhone : ajoutez l’app à l’écran d’accueil et ouvrez-la depuis son icône pour recevoir les alertes.'):T('Ce navigateur ne reçoit pas de notifications.')}</small></span></div>`;
+  else if(Notification.permission==='denied')h=`<div class="alrt"><span>🔕</span><span><b>${T('Notifications bloquées')}</b><small>${T('Réactivez-les dans les réglages du téléphone (Notifications › Mon accompagnateur).')}</small></span></div>`;
+  else h=`<div class="alrt"><span>🔔</span><span><b>${T('Être averti des demandes d’accès')}</b><small>${T('Une notification dès qu’un voyageur demande l’accès.')}</small></span><button type="button" data-al="on">${T('Activer')}</button></div>`;
+  $('#alrt-r').innerHTML=h;
+  $('#alrt').innerHTML=on?'':h;   // dans la liste seulement tant que ce n’est pas fait
+}
+async function activerAlertes(test){
+  if(Notification.permission==='default'){const p=await Notification.requestPermission().catch(()=>'default');if(p!=='granted'){dessinerAlertes();return;}}
+  if(Notification.permission!=='granted'){dessinerAlertes();return;}
+  const r=await api('POST','/api/acces/alertes',{sub:await abonnementA(),test:!!test});
+  try{localStorage.setItem(ALK,'1');}catch(e){}
+  dessinerAlertes();return r;
+}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-al]');if(!b)return;b.disabled=true;
+  try{if(b.dataset.al==='on'){const r=await activerAlertes(true);if(r)msg(r.test?T('Alertes activées ✓ Une notification d’essai vient d’être envoyée.'):T('Alertes activées ✓'),'ok');}
+    else{let ep='';try{const reg=await navigator.serviceWorker.ready;const s=await reg.pushManager.getSubscription();ep=s?s.endpoint:'';}catch(x){}
+      if(ep)await api('POST','/api/acces/alertes',{actif:false,endpoint:ep});try{localStorage.removeItem(ALK);}catch(x){}dessinerAlertes();msg(T('Alertes des demandes coupées sur ce téléphone.'),'info');}}
+  catch(x){msg(esc(x.message),'err');b.disabled=false;}});
+// Notification reçue pendant que l’app est ouverte : on met la liste à jour
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};if(d.kind!=='demande'||!DATA)return;
+  if(d.event==='opened'&&d.id&&DATA.voyages.some(v=>v.id===d.id)){ouvrirDem(d.id);return;}
+  if(!$('#v-dem').hidden&&DEMV)ouvrirDem(DEMV.id);else if(!$('#v-app').hidden)demarrer();});
 
 /* Partager l’app : lien de la page d’installation avec la phrase (#cle=…), qui ouvre l’app déjà déverrouillée.
    La phrase n’est jamais sur le serveur : on reprend celle gardée par l’éditeur sur ce téléphone, sinon on la demande une fois. */
